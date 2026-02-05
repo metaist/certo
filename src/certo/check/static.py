@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tomllib
 
+from certo.blueprint import Blueprint
 from certo.check.core import CheckContext, CheckResult
 
 
@@ -39,7 +40,8 @@ def check_blueprint_valid_toml(ctx: CheckContext) -> CheckResult:
 
     try:
         with ctx.blueprint_path.open("rb") as f:
-            ctx.blueprint = tomllib.load(f)
+            data = tomllib.load(f)
+        ctx.blueprint = Blueprint.parse(data)
         return CheckResult(
             concern_id="c1",
             claim="A blueprint.toml file can be parsed",

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+
+from certo.blueprint import Blueprint
 
 
 @dataclass
@@ -24,7 +25,7 @@ class CheckContext:
 
     project_root: Path
     blueprint_path: Path
-    blueprint: dict[str, Any] | None = None
+    blueprint: Blueprint | None = None
     offline: bool = False
     no_cache: bool = False
     model: str | None = None
@@ -67,25 +68,20 @@ def check_blueprint(
         return results
 
     # Process concerns from blueprint
-    concerns = ctx.blueprint.get("concerns", [])
-    for concern in concerns:
-        strategy = concern.get("strategy", "auto")
-        verify_with = concern.get("verify_with", [])
-        has_context = bool(concern.get("context"))
-
-        if strategy == "static":
+    for concern in ctx.blueprint.concerns:
+        if concern.strategy == "static":
             # Check if we have a handler for this static concern
-            if "scan" in verify_with:
+            if "scan" in concern.verify_with:
                 result = check_concern_scan(ctx, concern)
                 results.append(result)
             # else: no handler, skip
             continue
 
-        if strategy == "llm":
+        if concern.strategy == "llm":
             # Explicit LLM strategy - verify with LLM
             result = check_concern_llm(ctx, concern)
             results.append(result)
-        elif strategy == "auto" and has_context:
+        elif concern.strategy == "auto" and concern.context:
             # Auto strategy with context - try LLM
             result = check_concern_llm(ctx, concern)
             results.append(result)

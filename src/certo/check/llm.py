@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from certo.blueprint import Concern
 from certo.check.core import CheckContext, CheckResult
 
 
-def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult:
+def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
     """Verify a concern using LLM."""
     from certo.llm.provider import LLMError, NoAPIKeyError
     from certo.llm.verify import (
@@ -16,24 +15,20 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
         verify_concern,
     )
 
-    concern_id = concern.get("id", "unknown")
-    claim = concern.get("claim", "")
-    context_patterns = concern.get("context", [])
-
     # Validate concern has required fields
-    if not claim:
+    if not concern.claim:
         return CheckResult(
-            concern_id=concern_id,
+            concern_id=concern.id,
             claim="(no claim specified)",
             passed=False,
             message="Concern is missing 'claim' field",
             strategy="llm",
         )
 
-    if not context_patterns:
+    if not concern.context:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=False,
             message="Concern is missing 'context' field (required for LLM strategy)",
             strategy="llm",
@@ -42,8 +37,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
     # Check offline mode
     if ctx.offline:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=True,  # Pass in offline mode (not a failure)
             message="Skipped: offline mode",
             strategy="llm",
@@ -51,9 +46,9 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
     try:
         result = verify_concern(
-            concern_id=concern_id,
-            claim=claim,
-            context_patterns=context_patterns,
+            concern_id=concern.id,
+            claim=concern.claim,
+            context_patterns=concern.context,
             project_root=ctx.project_root,
             model=ctx.model,
             no_cache=ctx.no_cache,
@@ -61,8 +56,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
         cache_note = " (cached)" if result.cached else ""
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=result.passed,
             message=f"{result.explanation}{cache_note}",
             strategy="llm",
@@ -70,8 +65,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
     except NoAPIKeyError as e:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=False,
             message=f"API key error: {e}",
             strategy="llm",
@@ -79,8 +74,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
     except FileMissingError as e:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=False,
             message=f"Missing context: {e}",
             strategy="llm",
@@ -88,8 +83,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
     except FileTooLargeError as e:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=False,
             message=f"Context too large: {e}",
             strategy="llm",
@@ -97,8 +92,8 @@ def check_concern_llm(ctx: CheckContext, concern: dict[str, Any]) -> CheckResult
 
     except LLMError as e:
         return CheckResult(
-            concern_id=concern_id,
-            claim=claim,
+            concern_id=concern.id,
+            claim=concern.claim,
             passed=False,
             message=f"LLM error: {e}",
             strategy="llm",
