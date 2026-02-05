@@ -60,6 +60,34 @@ certo -v spec show --claims
 Tags:
 ```
 
+## Verbose claims without author
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-abc1234"
+text = "Test claim"
+```
+
+```bash
+certo -v spec show --claims
+```
+
+**Expected**
+
+```
+  c-abc1234  Test claim
+```
+
+**Not Expected**
+
+```
+By
+```
+
 ## Verbose claims with author but no date
 
 ```toml
