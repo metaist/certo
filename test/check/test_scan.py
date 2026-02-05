@@ -14,7 +14,7 @@ def test_check_blueprint_scan_strategy_pass() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -41,7 +41,7 @@ def test_check_blueprint_scan_strategy_no_assumptions() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -67,7 +67,7 @@ def test_check_blueprint_scan_strategy_fail() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"

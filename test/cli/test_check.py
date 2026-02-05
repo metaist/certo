@@ -18,7 +18,7 @@ def test_main_check_success(capsys: CaptureFixture[str]) -> None:
     with TemporaryDirectory() as tmpdir:
         certo_dir = Path(tmpdir) / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         result = main(["check", tmpdir])
@@ -33,7 +33,7 @@ def test_main_check_quiet_success(capsys: CaptureFixture[str]) -> None:
     with TemporaryDirectory() as tmpdir:
         certo_dir = Path(tmpdir) / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         result = main(["-q", "check", tmpdir])
@@ -58,7 +58,7 @@ def test_main_check_verbose(capsys: CaptureFixture[str]) -> None:
     with TemporaryDirectory() as tmpdir:
         certo_dir = Path(tmpdir) / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         result = main(["-v", "check", tmpdir])
@@ -72,7 +72,7 @@ def test_main_check_json_success(capsys: CaptureFixture[str]) -> None:
     with TemporaryDirectory() as tmpdir:
         certo_dir = Path(tmpdir) / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         result = main(["--format", "json", "check", tmpdir])
@@ -109,7 +109,7 @@ def test_main_check_invalid_toml(capsys: CaptureFixture[str]) -> None:
     with TemporaryDirectory() as tmpdir:
         certo_dir = Path(tmpdir) / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("invalid [[[toml")
 
         result = main(["check", tmpdir])
@@ -125,7 +125,7 @@ def test_main_check_offline_verbose(capsys: CaptureFixture[str]) -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         result = main(["-v", "check", "--offline", tmpdir])

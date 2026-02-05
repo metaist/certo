@@ -14,7 +14,7 @@ def test_check_blueprint_integration() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         results = check_blueprint(blueprint)
@@ -24,7 +24,7 @@ def test_check_blueprint_integration() -> None:
 
 def test_check_blueprint_missing() -> None:
     """Test full check on missing blueprint."""
-    results = check_blueprint(Path("/nonexistent/.certo/blueprint.toml"))
+    results = check_blueprint(Path("/nonexistent/.certo/spec.toml"))
     assert len(results) == 1
     assert not results[0].passed
 
@@ -35,7 +35,7 @@ def test_check_blueprint_skips_static_concerns() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -58,7 +58,7 @@ def test_check_blueprint_auto_strategy_with_context() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -84,7 +84,7 @@ def test_check_blueprint_auto_strategy_without_context() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"

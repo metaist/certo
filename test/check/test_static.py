@@ -20,7 +20,7 @@ def _make_ctx(blueprint_path: Path) -> CheckContext:
 def test_check_blueprint_exists_success() -> None:
     """Test that existing blueprint is detected."""
     with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
+        blueprint = Path(tmpdir) / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
         ctx = _make_ctx(blueprint)
@@ -31,7 +31,7 @@ def test_check_blueprint_exists_success() -> None:
 
 def test_check_blueprint_exists_failure() -> None:
     """Test that missing blueprint is detected."""
-    ctx = _make_ctx(Path("/nonexistent/blueprint.toml"))
+    ctx = _make_ctx(Path("/nonexistent/spec.toml"))
     result = check_blueprint_exists(ctx)
     assert not result.passed
     assert "not found" in result.message.lower()
@@ -40,7 +40,7 @@ def test_check_blueprint_exists_failure() -> None:
 def test_check_blueprint_valid_toml_success() -> None:
     """Test that valid TOML is accepted."""
     with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
+        blueprint = Path(tmpdir) / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\nversion = "0.1.0"\n')
 
         ctx = _make_ctx(blueprint)
@@ -52,7 +52,7 @@ def test_check_blueprint_valid_toml_success() -> None:
 def test_check_blueprint_valid_toml_failure() -> None:
     """Test that invalid TOML is rejected."""
     with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
+        blueprint = Path(tmpdir) / "spec.toml"
         blueprint.write_text("this is not valid toml [[[")
 
         ctx = _make_ctx(blueprint)
@@ -63,7 +63,7 @@ def test_check_blueprint_valid_toml_failure() -> None:
 
 def test_check_blueprint_valid_toml_missing_file() -> None:
     """Test TOML check on missing file."""
-    ctx = _make_ctx(Path("/nonexistent/blueprint.toml"))
+    ctx = _make_ctx(Path("/nonexistent/spec.toml"))
     result = check_blueprint_valid_toml(ctx)
     assert not result.passed
     assert "does not exist" in result.message.lower()

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from certo.blueprint import Blueprint
+from certo.spec import Spec
 
 
 @dataclass
@@ -25,7 +25,7 @@ class CheckContext:
 
     project_root: Path
     blueprint_path: Path
-    blueprint: Blueprint | None = None
+    blueprint: Spec | None = None
     offline: bool = False
     no_cache: bool = False
     model: str | None = None
@@ -43,7 +43,7 @@ def check_blueprint(
     from certo.check.scan import check_concern_scan
     from certo.check.static import check_blueprint_exists, check_blueprint_valid_toml
 
-    project_root = blueprint_path.parent.parent  # .certo/blueprint.toml -> project root
+    project_root = blueprint_path.parent.parent  # .certo.spec.toml -> project root
 
     ctx = CheckContext(
         project_root=project_root,
@@ -55,7 +55,7 @@ def check_blueprint(
 
     results: list[CheckResult] = []
 
-    # c1: Blueprint can be parsed
+    # c1: Spec can be parsed
     exists_result = check_blueprint_exists(ctx)
     if not exists_result.passed:
         results.append(exists_result)

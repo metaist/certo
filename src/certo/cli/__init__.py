@@ -9,7 +9,7 @@ from pathlib import Path
 from certo.cli.check import cmd_check
 from certo.cli.kb import cmd_kb_update
 from certo.cli.output import Output, OutputFormat
-from certo.cli.plan import cmd_plan_show
+from certo.cli.spec import cmd_spec_show
 from certo.cli.scan import cmd_scan
 
 # Re-export for convenience
@@ -28,7 +28,7 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         return argv
 
     # Find where the subcommand is
-    subcommands = {"check", "scan", "kb", "plan"}
+    subcommands = {"check", "scan", "kb", "spec"}
     cmd_index = None
     for i, arg in enumerate(argv):
         if arg in subcommands:
@@ -171,48 +171,46 @@ def main(argv: list[str] | None = None) -> int:
     kb_update_parser.set_defaults(func=cmd_kb_update)
 
     # plan command
-    plan_parser = subparsers.add_parser("plan", help="view and manage blueprint")
+    spec_parser = subparsers.add_parser("spec", help="view and manage spec")
 
-    def cmd_plan_help(args: Namespace, output: Output) -> int:  # noqa: ARG001
-        plan_parser.print_help()
+    def cmd_spec_help(args: Namespace, output: Output) -> int:  # noqa: ARG001
+        spec_parser.print_help()
         return 0
 
-    plan_parser.set_defaults(func=cmd_plan_help)
-    plan_subparsers = plan_parser.add_subparsers(dest="plan_command")
+    spec_parser.set_defaults(func=cmd_spec_help)
+    spec_subparsers = spec_parser.add_subparsers(dest="spec_command")
 
     # plan show command
-    plan_show_parser = plan_subparsers.add_parser(
-        "show", help="display blueprint contents"
-    )
-    _add_global_args(plan_show_parser)
-    plan_show_parser.add_argument(
+    spec_show_parser = spec_subparsers.add_parser("show", help="display spec contents")
+    _add_global_args(spec_show_parser)
+    spec_show_parser.add_argument(
         "path",
         nargs="?",
         type=Path,
         default=Path.cwd(),
         help="project root (default: current directory)",
     )
-    plan_show_parser.add_argument(
+    spec_show_parser.add_argument(
         "id",
         nargs="?",
         help="specific item ID to show (e.g., d1, c3)",
     )
-    plan_show_parser.add_argument(
+    spec_show_parser.add_argument(
         "--decisions",
         action="store_true",
         help="show only decisions",
     )
-    plan_show_parser.add_argument(
+    spec_show_parser.add_argument(
         "--concerns",
         action="store_true",
         help="show only concerns",
     )
-    plan_show_parser.add_argument(
+    spec_show_parser.add_argument(
         "--contexts",
         action="store_true",
         help="show only contexts",
     )
-    plan_show_parser.set_defaults(func=cmd_plan_show)
+    spec_show_parser.set_defaults(func=cmd_spec_show)
 
     # Parse
     args = parser.parse_args(argv)

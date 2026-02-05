@@ -11,9 +11,9 @@ from certo.cli.output import Output, OutputFormat
 
 def cmd_check(args: Namespace, output: Output) -> int:
     """Run verification checks against the blueprint."""
-    blueprint_path = args.path / ".certo" / "blueprint.toml"
+    blueprint_path = args.path / ".certo" / "spec.toml"
 
-    output.verbose_info(f"Checking blueprint: {blueprint_path}")
+    output.verbose_info(f"Checking spec: {blueprint_path}")
 
     offline = getattr(args, "offline", False)
     no_cache = getattr(args, "no_cache", False)

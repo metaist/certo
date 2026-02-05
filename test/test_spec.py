@@ -1,4 +1,4 @@
-"""Tests for certo.blueprint module."""
+"""Tests for certo.spec module."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.blueprint import Blueprint, Concern, Context, Decision
+from certo.spec import Spec, Concern, Context, Decision
 
 
 def test_decision_parse_minimal() -> None:
@@ -119,55 +119,55 @@ def test_context_parse_full() -> None:
     assert context.overrides == {"strategy": "static"}
 
 
-def test_blueprint_parse_minimal() -> None:
-    """Test parsing a blueprint with minimal fields."""
-    data = {"blueprint": {"name": "test"}}
-    blueprint = Blueprint.parse(data)
-    assert blueprint.name == "test"
-    assert blueprint.version == ""
-    assert blueprint.created is None
-    assert blueprint.author == ""
-    assert blueprint.description == ""
-    assert blueprint.decisions == []
-    assert blueprint.concerns == []
-    assert blueprint.contexts == []
+def test_spec_parse_minimal() -> None:
+    """Test parsing a spec with minimal fields."""
+    data = {"spec": {"name": "test"}}
+    spec = Spec.parse(data)
+    assert spec.name == "test"
+    assert spec.version == ""
+    assert spec.created is None
+    assert spec.author == ""
+    assert spec.description == ""
+    assert spec.decisions == []
+    assert spec.concerns == []
+    assert spec.contexts == []
 
 
-def test_blueprint_parse_full() -> None:
-    """Test parsing a blueprint with all fields."""
+def test_spec_parse_full() -> None:
+    """Test parsing a spec with all fields."""
     dt = datetime(2026, 2, 5, tzinfo=timezone.utc)
     data = {
-        "blueprint": {
+        "spec": {
             "name": "test",
             "version": "1.0.0",
             "created": dt,
             "author": "metaist",
-            "description": "A test blueprint",
+            "description": "A test spec",
         },
         "decisions": [{"id": "d1", "title": "Decision 1"}],
         "concerns": [{"id": "c1", "claim": "Claim 1"}],
         "contexts": [{"id": "ctx1", "name": "Context 1"}],
     }
-    blueprint = Blueprint.parse(data)
-    assert blueprint.name == "test"
-    assert blueprint.version == "1.0.0"
-    assert blueprint.created == dt
-    assert blueprint.author == "metaist"
-    assert blueprint.description == "A test blueprint"
-    assert len(blueprint.decisions) == 1
-    assert blueprint.decisions[0].id == "d1"
-    assert len(blueprint.concerns) == 1
-    assert blueprint.concerns[0].id == "c1"
-    assert len(blueprint.contexts) == 1
-    assert blueprint.contexts[0].id == "ctx1"
+    spec = Spec.parse(data)
+    assert spec.name == "test"
+    assert spec.version == "1.0.0"
+    assert spec.created == dt
+    assert spec.author == "metaist"
+    assert spec.description == "A test spec"
+    assert len(spec.decisions) == 1
+    assert spec.decisions[0].id == "d1"
+    assert len(spec.concerns) == 1
+    assert spec.concerns[0].id == "c1"
+    assert len(spec.contexts) == 1
+    assert spec.contexts[0].id == "ctx1"
 
 
-def test_blueprint_load() -> None:
-    """Test loading a blueprint from a file."""
+def test_spec_load() -> None:
+    """Test loading a spec from a file."""
     with TemporaryDirectory() as tmpdir:
-        path = Path(tmpdir) / "blueprint.toml"
+        path = Path(tmpdir) / "spec.toml"
         path.write_text("""
-[blueprint]
+[spec]
 name = "test"
 version = "1.0.0"
 
@@ -179,59 +179,59 @@ title = "Test decision"
 id = "c1"
 claim = "Test claim"
 """)
-        blueprint = Blueprint.load(path)
-        assert blueprint.name == "test"
-        assert blueprint.version == "1.0.0"
-        assert len(blueprint.decisions) == 1
-        assert len(blueprint.concerns) == 1
+        spec = Spec.load(path)
+        assert spec.name == "test"
+        assert spec.version == "1.0.0"
+        assert len(spec.decisions) == 1
+        assert len(spec.concerns) == 1
 
 
-def test_blueprint_get_concern() -> None:
+def test_spec_get_concern() -> None:
     """Test getting a concern by ID."""
     data = {
-        "blueprint": {"name": "test"},
+        "spec": {"name": "test"},
         "concerns": [
             {"id": "c1", "claim": "Claim 1"},
             {"id": "c2", "claim": "Claim 2"},
         ],
     }
-    blueprint = Blueprint.parse(data)
-    c1 = blueprint.get_concern("c1")
+    spec = Spec.parse(data)
+    c1 = spec.get_concern("c1")
     assert c1 is not None
     assert c1.claim == "Claim 1"
-    assert blueprint.get_concern("c2") is not None
-    assert blueprint.get_concern("c3") is None
+    assert spec.get_concern("c2") is not None
+    assert spec.get_concern("c3") is None
 
 
-def test_blueprint_get_decision() -> None:
+def test_spec_get_decision() -> None:
     """Test getting a decision by ID."""
     data = {
-        "blueprint": {"name": "test"},
+        "spec": {"name": "test"},
         "decisions": [
             {"id": "d1", "title": "Decision 1"},
             {"id": "d2", "title": "Decision 2"},
         ],
     }
-    blueprint = Blueprint.parse(data)
-    d1 = blueprint.get_decision("d1")
+    spec = Spec.parse(data)
+    d1 = spec.get_decision("d1")
     assert d1 is not None
     assert d1.title == "Decision 1"
-    assert blueprint.get_decision("d2") is not None
-    assert blueprint.get_decision("d3") is None
+    assert spec.get_decision("d2") is not None
+    assert spec.get_decision("d3") is None
 
 
-def test_blueprint_get_context() -> None:
+def test_spec_get_context() -> None:
     """Test getting a context by ID."""
     data = {
-        "blueprint": {"name": "test"},
+        "spec": {"name": "test"},
         "contexts": [
             {"id": "ctx1", "name": "Context 1"},
             {"id": "ctx2", "name": "Context 2"},
         ],
     }
-    blueprint = Blueprint.parse(data)
-    ctx1 = blueprint.get_context("ctx1")
+    spec = Spec.parse(data)
+    ctx1 = spec.get_context("ctx1")
     assert ctx1 is not None
     assert ctx1.name == "Context 1"
-    assert blueprint.get_context("ctx2") is not None
-    assert blueprint.get_context("ctx3") is None
+    assert spec.get_context("ctx2") is not None
+    assert spec.get_context("ctx3") is None

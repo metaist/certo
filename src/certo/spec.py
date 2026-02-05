@@ -92,8 +92,8 @@ class Context:
 
 
 @dataclass
-class Blueprint:
-    """A living specification for a project."""
+class Spec:
+    """A specification for a project."""
 
     name: str
     version: str = ""
@@ -106,8 +106,8 @@ class Blueprint:
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a blueprint from TOML data."""
-        meta = data.get("blueprint", {})
+        """Parse a spec from TOML data."""
+        meta = data.get("spec", {})
         return cls(
             name=meta.get("name", ""),
             version=meta.get("version", ""),
@@ -121,7 +121,7 @@ class Blueprint:
 
     @classmethod
     def load(cls, path: Path) -> Self:
-        """Load a blueprint from a TOML file."""
+        """Load a spec from a TOML file."""
         with path.open("rb") as f:
             data = tomllib.load(f)
         return cls.parse(data)

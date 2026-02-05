@@ -13,7 +13,7 @@ uv add certo
 ## Quick Start
 
 ```bash
-# Check your project against its blueprint
+# Check your project against its spec
 certo check
 
 # Start an interview to capture intent

@@ -1,10 +1,10 @@
-"""Plan command implementation."""
+"""Spec command implementation."""
 
 from __future__ import annotations
 
 from argparse import Namespace
 
-from certo.blueprint import Blueprint, Concern, Context, Decision
+from certo.spec import Spec, Concern, Context, Decision
 from certo.cli.output import Output
 
 # Item type prefixes (order matters - longer prefixes first)
@@ -19,15 +19,15 @@ def _get_item_type(item_id: str) -> str | None:
     return None
 
 
-def cmd_plan_show(args: Namespace, output: Output) -> int:
-    """Show blueprint contents."""
-    blueprint_path = args.path / ".certo" / "blueprint.toml"
+def cmd_spec_show(args: Namespace, output: Output) -> int:
+    """Show spec contents."""
+    blueprint_path = args.path / ".certo" / "spec.toml"
 
     if not blueprint_path.exists():
-        output.error(f"No blueprint found at {blueprint_path}")
+        output.error(f"No spec found at {blueprint_path}")
         return 1
 
-    blueprint = Blueprint.load(blueprint_path)
+    blueprint = Spec.load(blueprint_path)
     item_id = getattr(args, "id", None)
 
     # Show specific item
@@ -99,7 +99,7 @@ def cmd_plan_show(args: Namespace, output: Output) -> int:
     return 0
 
 
-def _show_item(blueprint: Blueprint, item_id: str, output: Output) -> int:
+def _show_item(blueprint: Spec, item_id: str, output: Output) -> int:
     """Show a specific item by ID."""
     item_type = _get_item_type(item_id)
 
@@ -165,7 +165,7 @@ def _show_item(blueprint: Blueprint, item_id: str, output: Output) -> int:
     return 0
 
 
-def _show_decisions(blueprint: Blueprint, output: Output) -> None:
+def _show_decisions(blueprint: Spec, output: Output) -> None:
     """Show decisions list."""
     output.info("Decisions:")
     for d in blueprint.decisions:
@@ -214,7 +214,7 @@ def _show_decision_detail(decision: Decision, output: Output) -> None:
         output.info(f"Decided by {decision.decided_by} on {date_str}".rstrip())
 
 
-def _show_concerns(blueprint: Blueprint, output: Output) -> None:
+def _show_concerns(blueprint: Spec, output: Output) -> None:
     """Show concerns list."""
     output.info("Concerns:")
     for c in blueprint.concerns:
@@ -252,7 +252,7 @@ def _show_concern_detail(concern: Concern, output: Output) -> None:
         output.info(f"Traces to: {', '.join(concern.traces_to)}")
 
 
-def _show_contexts(blueprint: Blueprint, output: Output) -> None:
+def _show_contexts(blueprint: Spec, output: Output) -> None:
     """Show contexts list."""
     output.info("Contexts:")
     for c in blueprint.contexts:

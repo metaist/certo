@@ -16,7 +16,7 @@ def test_check_blueprint_with_llm_concern_offline() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -44,7 +44,7 @@ def test_check_blueprint_llm_missing_context() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -74,7 +74,7 @@ def test_check_blueprint_llm_missing_claim() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -99,7 +99,7 @@ def test_check_blueprint_llm_missing_context_field() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -123,7 +123,7 @@ def test_check_blueprint_llm_no_api_key() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -155,7 +155,7 @@ def test_check_blueprint_llm_file_too_large() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -184,7 +184,7 @@ def test_check_blueprint_llm_api_error() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"
@@ -215,7 +215,7 @@ def test_check_blueprint_llm_cached_result() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
+        blueprint = certo_dir / "spec.toml"
         blueprint.write_text("""
 [blueprint]
 name = "test"

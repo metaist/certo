@@ -18,7 +18,7 @@ certo check -q        # quiet after subcommand
 
 ### `certo check`
 
-Verify the blueprint against code.
+Verify the spec against code.
 
 ```bash
 certo check [path] [options]
@@ -38,7 +38,40 @@ certo check [path] [options]
 
 - `0` - All checks passed
 - `1` - One or more checks failed
-- `2` - Error (e.g., blueprint not found)
+- `2` - Error (e.g., spec not found)
+
+### `certo spec`
+
+View and manage the specification. Running `certo spec` without a subcommand displays help.
+
+#### `certo spec show`
+
+Display spec contents.
+
+```bash
+certo spec show [path] [id] [options]
+```
+
+**Arguments:**
+
+- `path` - Project root (default: current directory)
+- `id` - Specific item ID to show (e.g., d1, c3, ctx1)
+
+**Options:**
+
+- `--decisions` - Show only decisions
+- `--concerns` - Show only concerns
+- `--contexts` - Show only contexts
+
+**Examples:**
+
+```bash
+certo spec show                    # Show all
+certo spec show --decisions        # Show only decisions
+certo spec show . d5               # Show decision d5
+certo spec show -v                 # Verbose output
+certo spec show --format json      # JSON output
+```
 
 ### `certo scan`
 

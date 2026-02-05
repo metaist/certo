@@ -1,8 +1,8 @@
-# Certo Blueprint
-# This file captures the living specification for certo itself.
+# Certo Spec
+# This file captures the spec for certo itself.
 # Format: TOML (safe, explicit, no implicit typing)
 
-[blueprint]
+[spec]
 name = "certo"
 version = "0.1.0"
 created = 2026-02-05T14:07:00Z

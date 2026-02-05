@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from certo.blueprint import Concern
+from certo.spec import Concern
 from certo.check.core import CheckContext, CheckResult
 
 
