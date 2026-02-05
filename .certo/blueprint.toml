@@ -333,14 +333,14 @@ are pinned to version tags (e.g., @v6) rather than commit hashes. This is a \
 supply chain security concern—tags can be moved maliciously.
 """
 source = "LTS template"
-status = "acknowledged"
+status = "resolved"
 resolution = """
-For security-focused software like certo, we should pin to hashes. However, \
-this is inherited from the LTS project template. Options: (1) fix in LTS and \
-regenerate, (2) fix locally and diverge from template, (3) accept risk during \
-bootstrap. Currently accepting risk during bootstrap phase.
+Pinned all GitHub Actions to commit hashes with version comments. Added \
+dependabot.yml to receive update notifications. Also fixed persist-credentials \
+and moved permissions to job level per zizmor recommendations.
 """
 raised_on = 2026-02-05T14:07:00Z
+resolved_on = 2026-02-05T16:30:00Z
 
 [[issues]]
 id = "i2"
