@@ -1,0 +1,55 @@
+site_name: "certo"
+site_url: https://docs.metaist.com/certo/
+site_description: "Turn conversations into verifiable specifications."
+site_author: Metaist LLC
+
+repo_name: metaist/certo
+repo_url: https://github.com/metaist/certo
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: light mode
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.instant
+    - navigation.sections
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+
+nav:
+  - Home: index.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/metaist/certo
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/certo

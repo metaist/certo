@@ -1,0 +1,162 @@
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "certo"
+
+[project.urls]
+Homepage = "https://github.com/metaist/certo"
+Documentation = "https://metaist.github.io/certo/"
+Repository = "https://github.com/metaist/certo.git"
+Changelog = "https://github.com/metaist/certo/blob/main/CHANGELOG.md"
+
+[project]
+name = "certo"
+version = "0.1.0"
+description = "Turn conversations into verifiable specifications."
+keywords = ["specification", "verification", "blueprint", "intent", "testing"]
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  # lib => pinned range
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.md"]
+authors = [{ name = "Metaist LLC", email = "metaist@metaist.com" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Libraries",
+  "Typing :: Typed",
+]
+
+[project.scripts]
+certo = "certo.cli:main"
+
+[dependency-groups]
+dev = [
+  # dev => latest
+  "cogapp",
+  "coverage",
+  "ds-run",
+  "mkdocs-material",
+  "mypy",
+  "pip", # for mypy
+  "pyright",
+  "pytest-cov",
+  "pytest",
+  "ruff",
+  "ty",
+]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "@overload"]
+exclude_also = ["no cover: start(?s:.)*?no cover: stop"]
+
+[tool.mypy]
+disable_error_code = "unused-ignore"
+
+[tool.pyright]
+exclude = ["**/_vendor/**"]
+
+[tool.ds.scripts] # run dev scripts <https://github.com/metaist/ds>
+# Build
+setup = "uv sync"
+build = "uv build"
+clean = """
+  rm -rf .mypy_cache;
+  rm -rf .pytest_cache;
+  rm -rf .ruff_cache;
+  rm -rf dist;
+  rm -rf htmlcov;
+  rm -rf src/*.egg-info
+  rm -rf .coverage;
+"""
+
+# Intention Check
+certo = "uv run certo check"
+
+# Format & Lint
+lint = ["ruff-*", "prettier", "cspell", "zizmor"]
+ruff-format = "uvx ruff format ${@:-.}"
+ruff-lint = "uvx ruff check --fix ${@:-.}"
+cspell = "npx --yes cspell lint --no-progress --unique --gitignore '**/*.{py,txt,md,markdown}'"
+prettier = "npx -y prettier --log-level warn --write '**/*.{md,markdown,json,yaml,yml}' '!**/node_modules/**' '!**/.venv/**'"
+zizmor = "uvx zizmor --quiet .github"
+
+# Type Check
+types = ["ty", "pyrefly", "pyright", "mypy"]
+ty = "uvx ty check --python-version ${PYTHON_VERSION:-3.14}"
+pyrefly = "uvx pyrefly check --python-version ${PYTHON_VERSION:-3.14}"
+pyright = "npx --yes pyright --pythonversion ${PYTHON_VERSION:-3.14} src test"
+mypy = """
+  mypy \
+    --strict \
+    --install-types \
+    --non-interactive \
+    --python-version ${PYTHON_VERSION:-3.14} \
+    src test
+"""
+
+# Test
+test.help = "run unit tests"
+test.env = { PYTHONPATH = "src" }
+test.shell = """
+  pytest \
+    --doctest-modules \
+    --cov=src --cov-branch --cov-report=term-missing \
+    '--ignore-glob=_ignore*'
+"""
+
+# Documentation
+docs = ["cog", "mkdocs build"]
+cog = "cog -r README.md docs/*.md"
+mkdocs-serve = "mkdocs serve"
+
+# Common
+dev.help = "lint, type-check, and unit tests"
+dev.composite = ["certo", "lint", "types", "test"]
+
+dev-all.help = "check every supported python version"
+dev-all.shell = """
+  ds lint;
+  versions=($(sed -n 's/.*Python :: \\([0-9][0-9]*\\.[0-9][0-9]*\\)",*/\\1/p' pyproject.toml));
+  for v in ${versions[@]};
+  do
+    PYTHON_VERSION=$v
+    uv run --isolated --all-extras --python $v -- ds types test;
+    if [[ $? != 0 ]]; then exit $?; fi;
+    echo;
+  done;
+"""
+
+# Release
+recent.help = "see commits since last tag"
+recent.shell = "git log --oneline --color $(git describe --tags --abbrev=0)..HEAD"
+recent-closed = ["recent | rg 'closes #'"]
+
+release.help = "commit & tag the release"
+release.shell = """
+  uv version $1;
+  git commit -am "release: $1";
+  git tag $1;
+  git push;
+  git push --tags;
+  git checkout main;
+  git merge --no-ff --no-edit prod;
+  git push;
+
+  awk 'BEGIN {count=0} /---/ {count++} count==2 && !/---/ {print} count==3 {exit}' \
+  CHANGELOG.md | gh release create $1 dist/* --draft --verify-tag --title $1 --notes-file -
+"""

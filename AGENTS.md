@@ -1,107 +1,114 @@
-# Certo
+# Project-Specific (certo)
 
-Certo is a tool that turns conversations about intent into living specifications (blueprints) that can be verified against code.
+**Goal**: Turn conversations into verifiable specifications.
 
-## Vision
+**Read [CERTO.md](CERTO.md)** for the vision, core concepts, and interview protocol. That document defines _what_ certo is; this file covers _how_ to develop it.
 
-Software verification is fundamentally an attention allocation problem. Humans can't review everything, so certo's job is to surface the right things at the right time.
+## Development Commands
 
-The core insight: when the same agent writes code and tests, we lose independent verification. Certo bridges the semantic gap between intent and implementation by capturing intent through conversation, expanding it into testable implications, and checking code against those implications using multiple verification strategies.
+| Command   | Purpose                                                                  |
+| --------- | ------------------------------------------------------------------------ |
+| `ds dev`  | **Must pass before every commit** — lint, type check, tests, spell check |
+| `ds test` | Run tests only                                                           |
+| `ds lint` | Run linters only                                                         |
+| `ds docs` | Build documentation                                                      |
 
-## Core Concepts
+## Validation Rules
 
-**Blueprint**: A structured representation of everything between natural language intent and code. Contains business needs, requirements, decisions, concerns (with testable statements), and contexts. Stored in version control alongside code.
+**`ds dev` is mandatory before commits.** Check the **full output**, not just the last few lines.
 
-**Concern**: A category of quality (functional, performance, security, etc.) with statements that must be true. All concerns follow the same structure: claim, conditions, verification strategies, failure response, provenance.
+Common issues caught by `ds dev`:
 
-**Decision**: An explicit choice made during specification, with alternatives considered, rationale, and history. Decisions can evolve; implications update accordingly.
+- **cspell**: Unknown words → add to `.cspell.json`
+- **ruff**: Python lint/format issues
+- **ty/pyrefly/pyright/mypy**: Type errors
+- **pytest**: Test failures
 
-**Context**: Where different rules apply. Exemptions, modifications, environment-specific overrides. Contexts have expiration dates.
+If `ds dev` fails, fix the issue before committing. Don't assume CI will catch it.
 
-**Zoom**: Semantic zoom—view specifications at any level of detail, from one-line summary to formal proof. Edit at any level.
+---
 
-## Verification Strategies
+# General Principles (all projects)
 
-Certo tries all applicable strategies for each statement:
+## Preflight
 
-- Static analysis (AST, patterns, data flow)
-- Behavioral tests (generated, then verified)
-- Property-based tests
-- Contracts (via wrappers, non-invasive)
-- Benchmarks and profiling
-- Runtime monitoring
-- LLM-based review (adversarial, semantic)
+Before starting any task:
 
-Strategies provide different kinds of evidence. Agreement increases confidence. Disagreement is the most valuable signal.
+1. Confirm you have the tools to do the work _and_ verify it succeeded
+2. Identify the goal and immediate task; restate if conversation is long or after compaction
+3. Check for relevant GitHub issues; add comments for significant progress
+4. Clarify: **quick experiment** (user will check) or **deep dive** (use judgment)?
 
-## Layered Execution
+## Working Style
 
-1. Static (fast, every commit)
-2. ML models (moderate cost, PR/merge)
-3. Test execution (slow but concrete)
-4. LLM review (expensive, selective)
-5. Human review (decision points only)
+- Default to minimal changes; propose scope before larger refactors
+- Don't delete files you didn't create (others may be working in same directory)
+- Don't delete build artifacts needlessly; prefer idempotent approaches
+- Follow existing patterns in the codebase
+- Prefer editing existing files over creating new ones
+- Don't add unnecessary comments or docstrings to unchanged code
 
-## Non-Functional Coverage
+## Communication
 
-Beyond functional correctness: performance, efficiency, resource bounds, UX, security, observability, failure modes, data integrity, compliance, accessibility, maintainability, dependencies, deployment, human factors.
+- Number items in summaries so user can reference specifics
+- Present meaningful alternatives and wait—unless this is a deep dive
+- If solving a different problem than started, stop and check in
+- For long-running commands: `cmd 2>&1 | tee /tmp/build.log`
+- If something hangs, investigate rather than waiting silently
+- Notify when long-running tasks complete
 
-## Language Strategy
+## Shell Commands
 
-LLM-powered language-agnostic core first. Python adapter fast-follow. Framework plugins later.
+| Instead of | Use  | Why                                   |
+| ---------- | ---- | ------------------------------------- |
+| `find`     | `fd` | Respects `.gitignore`, simpler syntax |
+| `grep`     | `rg` | Faster, respects `.gitignore`         |
+| `pip`      | `uv` | Faster, better dependency resolution  |
 
-## Bootstrapping Certo
+## Code Style
 
-Certo should be built using certo. The blueprint for certo itself should be the first blueprint created.
+- Type hints with modern syntax (`Path | None` not `Optional[Path]`)
+- Require 100% test coverage; task isn't complete without it
+- `# pragma: no cover` only for trivial `if __name__ == "__main__"` or truly unreachable code
+- Test observable behavior, not implementation details
 
-### First Actions
+## Workflow
 
-1. Propose a native blueprint format (YAML or similar)
-2. Begin the requirements interview for certo itself
-3. Produce a v0 blueprint for certo
-4. Identify the first verifiable implications
-5. Build the minimal checker that can verify those implications
+1. Create an issue before implementing non-trivial changes
+2. Add comments to issues when scope expands or for significant progress
+3. Discuss structural/organizational changes before implementing
+4. **Run validation commands and check full output** before committing
+5. Commit frequently, but **do not push until asked**
+6. Pushing to `main` triggers CI; batch commits to limit runs
 
-### Interview Protocol
+## Commit Messages
 
-When conducting a requirements interview:
+Format: `prefix: description (#issue)`
 
-- Ask one question at a time
-- Distinguish between statements (exploratory), decisions (commitments), and deferrals (acknowledged open questions)
-- Surface implications from common sense, but mark them as proposed until confirmed
-- When you encounter a fork (multiple valid paths), identify it explicitly and ask for a decision
-- Track provenance: who decided, when, based on what
-- Periodically summarize and confirm understanding
-- Propose zoom levels: "Here's the one-liner. Want me to expand?"
+| Prefix      | Use for                                    |
+| ----------- | ------------------------------------------ |
+| `add:`      | New features, files, capabilities          |
+| `fix:`      | Bug fixes, corrections                     |
+| `update:`   | Changes to existing functionality, docs    |
+| `remove:`   | Deletions                                  |
+| `refactor:` | Code restructuring without behavior change |
 
-### Blueprint Format Requirements
+Rules:
 
-The native format should:
+- Lowercase titles, sentence fragments (no trailing period)
+- Backticks for code: ``fix: bug in `keep_going` parsing``
+- Reference issues: `(#123)` or `(closes #123)`
+- Include `Co-Authored-By: {Model Name + Version} <noreply@anthropic.com>` in body
 
-- Be human-readable and editable
-- Support the full structure (business needs, requirements, decisions, concerns, contexts)
-- Track provenance inline
-- Support history/evolution without losing current-state readability
-- Be diffable in git
-- Be parseable for the checker
+## GitHub Issues and Comments
 
-## Success Criteria
+- Same prefix convention as commits
+- Lowercase titles; backticks for code references
+- Add `aigen` label for AI-generated issues
+- Start body: "Created by {Model Name + Version} during {context}..."
+- Prefer flat hierarchy in markdown; use bolding appropriately
 
-Certo succeeds if:
+## Conventions
 
-- Someone can rebuild a system from its blueprint (not the exact code, but one that passes all checks)
-- The checker catches real mismatches between intent and implementation
-- Decisions are traceable from failing check back to business need
-- Humans only see what requires their judgment
-- The tool is usable enough that people actually use it
-
-## Open Questions (Deferred)
-
-- Exact CLI interface
-- Web UI / TUI design
-- Collaboration features
-- Knowledge base curation and sharing
-- Pricing/distribution model
-- Offline operation capability
-
-These will be addressed through the requirements interview process.
+- Dates: ISO 8601 (`YYYY-MM-DD`)
+- Prefer well-adopted standards where they exist

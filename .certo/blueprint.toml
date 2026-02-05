@@ -1,0 +1,311 @@
+# Certo Blueprint
+# This file captures the living specification for certo itself.
+# Format: TOML (safe, explicit, no implicit typing)
+
+[blueprint]
+name = "certo"
+version = "0.1.0"
+created = 2026-02-05T14:07:00Z
+author = "metaist"
+description = """
+Certo turns conversations about intent into living specifications (blueprints) \
+that can be verified against code. It bridges the semantic gap between what \
+humans want and what code does.
+"""
+
+# =============================================================================
+# DECISIONS
+# =============================================================================
+# Explicit choices made during specification, with alternatives and rationale.
+# Status: proposed | confirmed | superseded | deferred
+
+[[decisions]]
+id = "d1"
+title = "Primary problem framing"
+status = "confirmed"
+description = """
+The immediate trigger is AI-generated code volume exceeding human verification \
+capacity. But the underlying problem—gap between intent and implementation—predates \
+AI. Certo addresses both; it is not AI-specific.
+"""
+alternatives = ["AI-only focus", "Human-only focus"]
+rationale = "The verification problem is universal; AI just made it urgent"
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d2"
+title = "Spectrum of assurance"
+status = "confirmed"
+description = """
+Certo provides multiple types of assurance: confidence, proof, auditability, \
+alerting. The system offers the strongest assurance available for each statement \
+and is explicit about what kind it's providing.
+"""
+alternatives = ["Single assurance type", "Binary pass/fail only"]
+rationale = "Different contexts need different assurance levels; be explicit about what we can and cannot guarantee"
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d3"
+title = "User progression"
+status = "confirmed"
+description = """
+Target users in order: (1) metaist building certo, (2) metaist on other projects, \
+(3) technical users, (4) non-technical stakeholders who know what they want but \
+not how to build it.
+"""
+alternatives = ["Developer-only focus", "Enterprise-first"]
+rationale = "Dogfood from day zero; conversational interface is core, not nice-to-have"
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d4"
+title = "Minimal viable loop"
+status = "confirmed"
+description = """
+The smallest useful thing: a blueprint file capturing decisions and concerns, \
+plus a checker that can verify at least one statement against code.
+"""
+alternatives = ["Full verification suite first", "Interview system first"]
+rationale = "Need a working loop to bootstrap; can verify certo with certo immediately"
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d5"
+title = "Blueprint format: TOML"
+status = "confirmed"
+description = "Use TOML for blueprint files."
+alternatives = ["YAML", "JSON", "KDL", "Markdown+frontmatter"]
+rationale = """
+TOML is explicit, has no implicit type coercion, no code execution risk, \
+reasonable verbosity trade-off for safety and clarity. Dates as first-class \
+objects is a feature, not a bug.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d6"
+title = "Narrow-broad-narrow structure"
+status = "confirmed"
+description = """
+Data structures should have few top-level categories, many items at the middle \
+level, and few fields per item. Use flat lists with ID references instead of \
+deep nesting.
+"""
+alternatives = ["Deeply nested hierarchies", "Completely flat"]
+rationale = "Easy to place items, easy to scan, avoids indentation hell and context loss"
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d7"
+title = "Folder structure: .certo/"
+status = "confirmed"
+description = """
+Certo artifacts live in .certo/ directory containing: blueprint.toml (the spec), \
+transcripts/*.jsonl (conversation logs), evidence/ (verification artifacts).
+"""
+alternatives = ["Single file", "Scattered files", "certo/ (not dotted)", "certo.toml at root"]
+rationale = """
+Dotted because it's tool-managed, like .git. The blueprint is critical, but \
+you interact with it through certo (conversations, commands). You can edit \
+manually, but it's a special place where mistakes affect the whole system. \
+The dot signals 'here be dragons (friendly ones).'
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T14:07:00Z
+
+[[decisions]]
+id = "d8"
+title = "Context overrides: structured, nested"
+status = "confirmed"
+description = """
+Context modifications use structured overrides nested within the context, \
+rather than prose or a DSL. Each override specifies concern, field, value, \
+and reason.
+"""
+alternatives = ["Prose description", "DSL string", "Separate top-level section"]
+rationale = """
+Structured is machine-readable, validates cleanly, and follows narrow-broad-narrow. \
+Nested keeps overrides co-located with their context. DSL adds parsing risk. \
+Prose is ambiguous to machines.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T14:45:00Z
+
+[[decisions]]
+id = "d9"
+title = "Timestamps: UTC with timezone"
+status = "confirmed"
+description = """
+All timestamps in blueprints use RFC 3339 format with explicit UTC timezone \
+(e.g., 2026-02-05T14:07:00Z). This enables understanding the timeline of \
+when decisions were made and changed.
+"""
+alternatives = ["Local dates only", "Unix timestamps", "Quoted strings"]
+rationale = """
+TOML natively supports datetime with timezone. UTC avoids ambiguity across \
+timezones. Unquoted is safe—TOML parses as datetime, not string.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T14:45:00Z
+
+[[decisions]]
+id = "d10"
+title = "certo check must be fast for dev loop"
+status = "confirmed"
+description = """
+certo check runs as the first step in ds dev. It must complete quickly \
+(under 1 second for typical projects) to avoid blocking the development \
+workflow. This constrains verification strategy choices—expensive checks \
+must be deferred to CI or explicit invocation.
+"""
+alternatives = ["No performance constraint", "Async/background checking", "Tiered check levels"]
+rationale = """
+Developers run ds dev frequently. Slow checks get disabled or ignored. \
+Fast feedback is essential for adoption. Expensive verification (LLM review, \
+full test execution) can run in CI or on explicit request.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T14:50:00Z
+
+# =============================================================================
+# CONCERNS
+# =============================================================================
+# Statements that must be true, organized by category.
+# Each concern has: claim, conditions, verification strategies, failure response.
+# Categories: functional, performance, security, observability, maintainability, etc.
+
+[[concerns]]
+id = "c1"
+category = "functional"
+claim = "A blueprint.toml file can be parsed"
+conditions = ["File exists at .certo/blueprint.toml", "File contains valid TOML"]
+verify_with = ["static", "test"]
+failure = "block-commit"
+traces_to = ["d5"]
+
+[[concerns]]
+id = "c2"
+category = "functional"
+claim = "At least one concern can be verified against code"
+conditions = ["Checker exists", "Blueprint has at least one concern"]
+verify_with = ["test"]
+failure = "block-release"
+traces_to = ["d4"]
+
+[[concerns]]
+id = "c3"
+category = "functional"
+claim = "Decisions are traceable from blueprint to rationale"
+conditions = ["Each decision has id, title, rationale, decided_by, decided_on"]
+verify_with = ["static"]
+failure = "warn"
+traces_to = ["d2"]
+
+[[concerns]]
+id = "c4"
+category = "maintainability"
+claim = "Blueprint structure follows narrow-broad-narrow principle"
+conditions = ["Max nesting depth is 2", "Items use ID references not deep nesting"]
+verify_with = ["static", "llm-review"]
+failure = "warn"
+traces_to = ["d6"]
+
+[[concerns]]
+id = "c5"
+category = "performance"
+claim = "certo check completes quickly enough for dev loop"
+conditions = ["Runs in under 1 second for typical projects"]
+verify_with = ["benchmark"]
+failure = "warn"
+traces_to = ["d10"]
+
+# =============================================================================
+# CONTEXTS
+# =============================================================================
+# Where different rules apply. Exemptions, modifications, environment-specific.
+
+[[contexts]]
+id = "ctx1"
+name = "bootstrap"
+description = "While building certo with certo; relaxed constraints"
+expires = 2026-06-01
+
+[[contexts.overrides]]
+concern = "c2"
+field = "failure"
+value = "warn"
+reason = "Acceptable risk during bootstrap"
+
+# =============================================================================
+# BUSINESS NEEDS
+# =============================================================================
+# High-level goals that drive requirements.
+
+[[needs]]
+id = "n1"
+description = "Humans cannot verify the volume of AI-generated code"
+traces_to = []
+
+[[needs]]
+id = "n2"
+description = "Non-technical stakeholders need to express intent and verify it's met"
+traces_to = []
+
+[[needs]]
+id = "n3"
+description = "Verification should provide the strongest appropriate assurance for context"
+traces_to = []
+
+# =============================================================================
+# OPEN QUESTIONS
+# =============================================================================
+# Acknowledged unknowns, deferred for later.
+
+[[deferrals]]
+id = "q1"
+question = "Exact CLI interface design"
+context = "Need working checker first"
+raised_on = 2026-02-05T14:07:00Z
+
+[[deferrals]]
+id = "q2"
+question = "How to handle blueprint evolution and history"
+context = "Git provides history; do we need inline history too?"
+raised_on = 2026-02-05T14:07:00Z
+
+[[deferrals]]
+id = "q3"
+question = "Transcript format details"
+context = "JSONL is decided; exact schema TBD"
+raised_on = 2026-02-05T14:07:00Z
+
+# =============================================================================
+# KNOWN ISSUES
+# =============================================================================
+# Documented problems, tracked for resolution.
+
+[[issues]]
+id = "i1"
+title = "GitHub Actions not pinned to commit hashes"
+category = "security"
+description = """
+The zizmor security scanner flags that GitHub Actions in .github/workflows/ \
+are pinned to version tags (e.g., @v6) rather than commit hashes. This is a \
+supply chain security concern—tags can be moved maliciously.
+"""
+source = "LTS template"
+status = "acknowledged"
+resolution = """
+For security-focused software like certo, we should pin to hashes. However, \
+this is inherited from the LTS project template. Options: (1) fix in LTS and \
+regenerate, (2) fix locally and diverge from template, (3) accept risk during \
+bootstrap. Currently accepting risk during bootstrap phase.
+"""
+raised_on = 2026-02-05T14:07:00Z
