@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from certo.check import CheckResult, check_blueprint
+from certo.scan import scan_project
 
 
 class OutputFormat(Enum):
@@ -110,6 +111,73 @@ def cmd_check(args: Namespace, output: Output) -> int:
     return 1 if failed > 0 else 0
 
 
+def cmd_scan(args: Namespace, output: Output) -> int:
+    """Scan project for assumptions and consistency issues."""
+    output.verbose_info(f"Scanning project: {args.path}")
+
+    result = scan_project(args.path)
+
+    # Display assumptions
+    if result.assumptions:
+        output.info("Discovered assumptions:")
+        for assumption in result.assumptions:
+            status_icon = "✓" if assumption.status == "verified" else "?"
+            output.info(f"  [{status_icon}] {assumption.description}")
+            if output.verbose:
+                for ev in assumption.evidence:
+                    output.verbose_info(f"      Evidence: {ev}")
+                for match in assumption.should_match:
+                    output.verbose_info(f"      Should match: {match}")
+
+    # Display issues
+    if result.issues:
+        output.info("")
+        output.info("Consistency issues:")
+        for issue in result.issues:
+            icon = "✗" if issue.severity == "error" else "⚠"
+            # Always show issues, even in quiet mode
+            if output.quiet and output.format == OutputFormat.TEXT:
+                print(f"{icon} {issue.message}")
+            else:
+                output.info(f"  {icon} {issue.message}")
+            if output.verbose:
+                output.verbose_info(f"      Sources: {', '.join(issue.sources)}")
+
+    # Summary
+    if not output.quiet:
+        output.info("")
+        output.info(
+            f"Assumptions: {len(result.assumptions)}, Issues: {len(result.issues)}"
+        )
+
+    # JSON output
+    output.json_output(
+        {
+            "assumptions": [
+                {
+                    "id": a.id,
+                    "description": a.description,
+                    "category": a.category,
+                    "evidence": a.evidence,
+                    "should_match": a.should_match,
+                    "status": a.status,
+                }
+                for a in result.assumptions
+            ],
+            "issues": [
+                {
+                    "message": i.message,
+                    "sources": i.sources,
+                    "severity": i.severity,
+                }
+                for i in result.issues
+            ],
+        }
+    )
+
+    return 1 if result.issues else 0
+
+
 def cmd_version(args: Namespace, output: Output) -> int:  # noqa: ARG001
     """Print version information."""
     from certo import __version__
@@ -156,6 +224,19 @@ def main(argv: list[str] | None = None) -> int:
         help="project root (default: current directory)",
     )
     check_parser.set_defaults(func=cmd_check)
+
+    # scan command
+    scan_parser = subparsers.add_parser(
+        "scan", help="discover assumptions and check consistency"
+    )
+    scan_parser.add_argument(
+        "path",
+        nargs="?",
+        type=Path,
+        default=Path.cwd(),
+        help="project root (default: current directory)",
+    )
+    scan_parser.set_defaults(func=cmd_scan)
 
     # Parse
     args = parser.parse_args(argv)
