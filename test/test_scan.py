@@ -307,6 +307,21 @@ def test_scan_imports_import_from_no_module() -> None:
         assert any("tomllib" in e for e in evidence)
 
 
+def test_scan_imports_import_from_with_module() -> None:
+    """Test scanning 'from X import y' style imports where X is stdlib."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        src = root / "src"
+        src.mkdir()
+        module = src / "test.py"
+        # ImportFrom with a module name (stdlib)
+        module.write_text("from tomllib import loads\n")
+
+        min_ver, evidence = scan_imports(root)
+        assert min_ver == (3, 11)
+        assert any("tomllib" in e for e in evidence)
+
+
 def test_parse_ci_workflows_exception() -> None:
     """Test handling exception when reading workflow file."""
     with TemporaryDirectory() as tmpdir:
@@ -319,3 +334,61 @@ def test_parse_ci_workflows_exception() -> None:
 
         versions = parse_ci_workflows(root)
         assert versions == []
+
+
+def test_parse_pyproject_no_requires_python() -> None:
+    """Test parsing pyproject.toml without requires-python."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        pyproject = root / "pyproject.toml"
+        # No requires-python field
+        pyproject.write_text('[project]\nname = "test"\n')
+
+        info = parse_pyproject(root)
+        assert info.requires_python is None
+        assert info.min_version is None
+
+
+def test_scan_imports_syntax_error() -> None:
+    """Test scan_imports handles syntax errors gracefully."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        src = root / "src"
+        src.mkdir()
+        module = src / "bad.py"
+        # Invalid Python syntax
+        module.write_text("def broken(\n")
+
+        min_ver, evidence = scan_imports(root)
+        assert min_ver is None
+        assert evidence == []
+
+
+def test_scan_project_no_ci_no_classifiers() -> None:
+    """Test scan_project without CI workflows or classifiers."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = ">=3.11"\n')
+
+        result = scan_project(root)
+        assert len(result.assumptions) == 1
+        # should_match should be empty (no CI, no classifiers)
+        assert result.assumptions[0].should_match == []
+
+
+def test_scan_imports_multiple_imports_lower_version_not_update() -> None:
+    """Test that lower version imports don't override higher ones."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        src = root / "src"
+        src.mkdir()
+        module = src / "test.py"
+        # tomllib requires 3.11, sys requires 3.0
+        # After finding tomllib (3.11), sys (3.0) should NOT update min_version
+        module.write_text("import tomllib\nimport sys\n")
+
+        min_ver, evidence = scan_imports(root)
+        assert min_ver == (3, 11)  # Should stay at 3.11, not drop to 3.0
+        assert any("tomllib" in e for e in evidence)
+        assert any("sys" in e for e in evidence)

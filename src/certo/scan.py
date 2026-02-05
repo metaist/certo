@@ -6,22 +6,21 @@ import ast
 import re
 import tomllib
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
-# Known stdlib modules and their introduction versions
-STDLIB_VERSIONS: dict[str, str] = {
-    "tomllib": "3.11",
-    "importlib.metadata": "3.8",
-    "dataclasses": "3.7",
-    "typing": "3.5",
-    "pathlib": "3.4",
-    "asyncio": "3.4",
-    "enum": "3.4",
-    "statistics": "3.4",
-    "contextvars": "3.7",
-    "graphlib": "3.9",
-    "zoneinfo": "3.9",
-}
+from certo.kb.python_stdlib import load_stdlib_versions
+
+
+@lru_cache(maxsize=1)
+def get_stdlib_versions() -> dict[str, str]:
+    """Get stdlib module versions from knowledge base.
+
+    Returns a dict mapping module name to minimum Python version.
+    Cached for performance.
+    """
+    versions = load_stdlib_versions()
+    return {name: info.added for name, info in versions.items()}
 
 
 @dataclass
@@ -179,8 +178,9 @@ def scan_imports(project_root: Path) -> tuple[tuple[int, int] | None, list[str]]
                         module_name = node.module.split(".")[0]
                     lineno = node.lineno
 
-                if module_name and module_name in STDLIB_VERSIONS:
-                    required = STDLIB_VERSIONS[module_name]
+                stdlib_versions = get_stdlib_versions()
+                if module_name and module_name in stdlib_versions:
+                    required = stdlib_versions[module_name]
                     required_tuple = parse_version_tuple(required)
                     rel_path = py_file.relative_to(project_root)
                     evidence.append(

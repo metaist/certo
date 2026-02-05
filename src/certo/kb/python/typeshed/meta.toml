@@ -1,0 +1,10 @@
+[source]
+name = "typeshed"
+url = "https://github.com/python/typeshed"
+commit = "d7595e2b327bc55239b8e6ecc4408d51373c4782"
+updated_at = 2026-02-05T17:28:01Z
+license = "Apache-2.0"
+files = [
+  "stdlib/VERSIONS",
+  "LICENSE",
+]

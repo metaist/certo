@@ -93,7 +93,7 @@ ruff-format = "uvx ruff format ${@:-.}"
 ruff-lint = "uvx ruff check --fix ${@:-.}"
 cspell = "npx --yes cspell lint --no-progress --unique --gitignore '**/*.{py,txt,md,markdown}'"
 prettier = "npx -y prettier --log-level warn --write '**/*.{md,markdown,json,yaml,yml}' '!**/node_modules/**' '!**/.venv/**'"
-zizmor = "uvx zizmor --quiet .github"
+zizmor = "uvx zizmor --quiet --pedantic .github"
 
 # Type Check
 types = ["ty", "pyrefly", "pyright", "mypy"]

@@ -148,7 +148,7 @@ def test_main_check_invalid_toml(capsys: CaptureFixture[str]) -> None:
 
 def test_output_info(capsys: CaptureFixture[str]) -> None:
     """Test Output.info method."""
-    from certo.cli import Output, OutputFormat
+    from certo.cli_util import Output, OutputFormat
 
     output = Output(quiet=False, verbose=False, fmt=OutputFormat.TEXT)
     output.info("test message")
@@ -158,7 +158,7 @@ def test_output_info(capsys: CaptureFixture[str]) -> None:
 
 def test_output_info_quiet(capsys: CaptureFixture[str]) -> None:
     """Test Output.info is suppressed in quiet mode."""
-    from certo.cli import Output, OutputFormat
+    from certo.cli_util import Output, OutputFormat
 
     output = Output(quiet=True, verbose=False, fmt=OutputFormat.TEXT)
     output.info("test message")
@@ -168,7 +168,7 @@ def test_output_info_quiet(capsys: CaptureFixture[str]) -> None:
 
 def test_output_error(capsys: CaptureFixture[str]) -> None:
     """Test Output.error method."""
-    from certo.cli import Output, OutputFormat
+    from certo.cli_util import Output, OutputFormat
 
     output = Output(quiet=False, verbose=False, fmt=OutputFormat.TEXT)
     output.error("error message")
@@ -178,7 +178,7 @@ def test_output_error(capsys: CaptureFixture[str]) -> None:
 
 def test_output_error_json(capsys: CaptureFixture[str]) -> None:
     """Test Output.error is suppressed in JSON mode."""
-    from certo.cli import Output, OutputFormat
+    from certo.cli_util import Output, OutputFormat
 
     output = Output(quiet=False, verbose=False, fmt=OutputFormat.JSON)
     output.error("error message")
@@ -337,3 +337,112 @@ classifiers = ["Programming Language :: Python :: 3.9"]
         assert result == 1
         captured = capsys.readouterr()
         assert "⚠" in captured.out
+
+
+def test_main_kb_no_subcommand(capsys: CaptureFixture[str]) -> None:
+    """Test kb command without subcommand shows help."""
+    result = main(["kb"])
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "update" in captured.out
+
+
+def test_main_kb_update_python(
+    capsys: CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test kb update python command."""
+    monkeypatch.setattr("certo.kb.update.update_python", lambda verbose: True)
+
+    result = main(["kb", "update", "python"])
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "python" in captured.out.lower()
+
+
+def test_main_kb_update_all(
+    capsys: CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test kb update command (all sources)."""
+    monkeypatch.setattr("certo.kb.update.update_all", lambda verbose: 1)
+
+    result = main(["kb", "update"])
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "1" in captured.out
+
+
+def test_main_kb_update_failure(
+    capsys: CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test kb update python command failure."""
+    monkeypatch.setattr("certo.kb.update.update_python", lambda verbose: False)
+
+    result = main(["kb", "update", "python"])
+    assert result == 1
+    captured = capsys.readouterr()
+    assert "failed" in captured.err.lower()
+
+
+def test_normalize_argv_global_flags_before() -> None:
+    """Test that global flags before subcommand work."""
+    from certo.cli import _normalize_argv
+
+    # -q before scan should be moved after
+    result = _normalize_argv(["-q", "scan"])
+    assert result == ["scan", "-q"]
+
+    # Multiple flags
+    result = _normalize_argv(["-q", "-v", "check", "."])
+    assert result == ["check", ".", "-q", "-v"]
+
+    # --format with value
+    result = _normalize_argv(["--format", "json", "scan"])
+    assert result == ["scan", "--format", "json"]
+
+    # --format=value
+    result = _normalize_argv(["--format=json", "scan"])
+    assert result == ["scan", "--format=json"]
+
+    # Non-global args before subcommand stay in other_args_before
+    # --version is NOT in GLOBAL_FLAGS, so it stays before the subcommand
+    result = _normalize_argv(["--version", "scan"])
+    assert result == ["--version", "scan"]
+
+
+def test_normalize_argv_no_subcommand() -> None:
+    """Test normalize_argv with no subcommand."""
+    from certo.cli import _normalize_argv
+
+    result = _normalize_argv(["--version"])
+    assert result == ["--version"]
+
+    result = _normalize_argv([])
+    assert result == []
+
+
+def test_normalize_argv_flags_after() -> None:
+    """Test that flags after subcommand stay in place."""
+    from certo.cli import _normalize_argv
+
+    result = _normalize_argv(["scan", "-q"])
+    assert result == ["scan", "-q"]
+
+
+def test_main_quiet_before_subcommand(capsys: CaptureFixture[str]) -> None:
+    """Test -q flag before subcommand."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text('[project]\nrequires-python = ">=3.11"\n')
+
+        result = main(["-q", "scan", tmpdir])
+        assert result == 0
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+
+def test_main_with_none_argv(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test main() when argv is None (uses sys.argv)."""
+    monkeypatch.setattr("sys.argv", ["certo", "--version"])
+    result = main(None)
+    assert result == 0

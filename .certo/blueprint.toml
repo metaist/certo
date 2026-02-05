@@ -193,6 +193,97 @@ Explicit tracking enables automated consistency checking.
 decided_by = "metaist"
 decided_on = 2026-02-05T16:00:00Z
 
+[[decisions]]
+id = "d12"
+title = "Knowledge bundled with certo"
+status = "confirmed"
+description = """
+Ecosystem knowledge (stdlib versions, etc.) is bundled with the certo package. \
+Updating knowledge requires updating certo itself. This keeps things simple \
+and avoids schema versioning issues for external knowledge contributions.
+"""
+alternatives = ["Fetchable to ~/.certo/", "Separate certo-knowledge package", "Fetch on first run"]
+rationale = """
+We don't know enough about what kinds of knowledge we need yet. Bundling avoids \
+premature schema design. Community contributions and independent updates deferred.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
+[[decisions]]
+id = "d13"
+title = "TOML format for knowledge metadata"
+status = "confirmed"
+description = """
+Knowledge sources have a meta.toml file describing the source, commit, \
+update timestamp, license, and files to fetch. Consistent with blueprint format.
+"""
+alternatives = ["JSON", "YAML", "No metadata"]
+rationale = "TOML is already our standard. meta.toml provides reproducible fetches."
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
+[[decisions]]
+id = "d14"
+title = "Typeshed as primary source for Python stdlib"
+status = "confirmed"
+description = """
+Python stdlib module version information comes from typeshed's stdlib/VERSIONS \
+file. This is machine-readable, authoritative, and maintained by the Python community.
+"""
+alternatives = ["Scrape Python docs", "Scrape CPython repo", "Maintain our own database"]
+rationale = """
+Typeshed is already used by ty, pyright, mypy. The VERSIONS file is exactly \
+what we need. No need to scrape prose or maintain our own data.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
+[[decisions]]
+id = "d15"
+title = "certo kb update subcommand for transparency"
+status = "confirmed"
+description = """
+Knowledge updates happen via 'certo kb update' subcommand, not hidden scripts. \
+Anyone can inspect the knowledge and regenerate it themselves.
+"""
+alternatives = ["Hidden scripts", "CI-only updates", "Manual curation"]
+rationale = """
+Transparency aligns with certo's philosophy. Self-verifiable—certo can verify \
+its own knowledge sources. Anyone can audit or reproduce.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
+[[decisions]]
+id = "d16"
+title = "Start with Python stdlib, extensible to other ecosystems"
+status = "confirmed"
+description = """
+Knowledge base starts with Python stdlib only. Structure allows future \
+expansion to Rust, Node, etc. via kb/rust/, kb/node/ directories.
+"""
+alternatives = ["Multi-ecosystem from start", "Python-only forever"]
+rationale = "Prove the pattern with Python, then expand. Don't over-engineer."
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
+[[decisions]]
+id = "d17"
+title = "Use typeshed VERSIONS format directly"
+status = "confirmed"
+description = """
+The typeshed stdlib/VERSIONS file is used as-is, not converted to TOML or \
+other format. Metadata lives in separate meta.toml file.
+"""
+alternatives = ["Convert to TOML", "Convert to JSON", "Embed in meta.toml"]
+rationale = """
+The format is already machine-readable and simple. Converting adds no value \
+and risks drift from source. Ruff/ty use the same approach.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T17:00:00Z
+
 # =============================================================================
 # CONCERNS
 # =============================================================================
@@ -375,6 +466,23 @@ resolution = "Manually configured GitHub Pages to deploy from Actions."
 raised_on = 2026-02-05T15:00:00Z
 resolved_on = 2026-02-05T15:05:00Z
 
+[[issues]]
+id = "i4"
+title = "certo scan uses hardcoded STDLIB_VERSIONS"
+category = "correctness"
+description = """
+src/certo/scan.py contains a hardcoded STDLIB_VERSIONS dict that is incomplete \
+and will drift. This is not authoritative and was committed prematurely.
+"""
+source = "bootstrap"
+status = "resolved"
+resolution = """
+Replaced with typeshed stdlib/VERSIONS via certo kb update. Knowledge is now \
+bundled from authoritative source. See GitHub issue #7.
+"""
+raised_on = 2026-02-05T17:30:00Z
+resolved_on = 2026-02-05T17:45:00Z
+
 # =============================================================================
 # ASSUMPTIONS
 # =============================================================================
@@ -404,3 +512,23 @@ evidence = [".github/workflows/docs.yaml uses actions/deploy-pages"]
 should_match = ["GitHub repo Settings > Pages > Source"]
 status = "verified"
 verified_on = 2026-02-05T15:05:00Z
+
+[[assumptions]]
+id = "a-kb-1"
+description = "Typeshed is authoritative for Python stdlib version info"
+category = "knowledge"
+evidence = [
+  "Used by ty, pyright, mypy",
+  "Maintained by Python community",
+  "Machine-readable stdlib/VERSIONS file",
+]
+should_match = ["Python documentation", "CPython Lib/ directory"]
+status = "unverified"
+
+[[assumptions]]
+id = "a-kb-2"
+description = "Typeshed stdlib/VERSIONS format is stable"
+category = "knowledge"
+evidence = ["Used by major type checkers", "Simple line-based format"]
+should_match = ["Future typeshed commits"]
+status = "unverified"

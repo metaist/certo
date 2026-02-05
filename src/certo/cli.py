@@ -2,81 +2,59 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict
-from enum import Enum
 from pathlib import Path
-from typing import Any
 
 from certo.check import CheckResult, check_blueprint
+from certo.cli_util import Output, OutputFormat
 from certo.scan import scan_project
 
-
-class OutputFormat(Enum):
-    """Output format options."""
-
-    TEXT = "text"
-    JSON = "json"
+# Global flags that can appear before or after subcommand
+GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format"}
 
 
-class Output:
-    """Handle output based on verbosity and format settings."""
+def _normalize_argv(argv: list[str]) -> list[str]:
+    """Move global flags from before subcommand to after.
 
-    def __init__(
-        self, *, quiet: bool = False, verbose: bool = False, fmt: OutputFormat
-    ) -> None:
-        self.quiet = quiet
-        self.verbose = verbose
-        self.format = fmt
-        self._json_data: dict[str, Any] = {}
+    This allows: certo -q scan  ->  certo scan -q
+    """
+    if not argv:
+        return argv
 
-    def info(self, message: str) -> None:
-        """Print info message (normal and verbose mode only)."""
-        if not self.quiet and self.format == OutputFormat.TEXT:
-            print(message)
+    # Find where the subcommand is
+    subcommands = {"check", "scan", "kb"}
+    cmd_index = None
+    for i, arg in enumerate(argv):
+        if arg in subcommands:
+            cmd_index = i
+            break
 
-    def verbose_info(self, message: str) -> None:
-        """Print verbose message (verbose mode only)."""
-        if self.verbose and self.format == OutputFormat.TEXT:
-            print(message)
+    if cmd_index is None:
+        return argv  # No subcommand found
 
-    def error(self, message: str) -> None:
-        """Print error message (always in text mode, collected for JSON)."""
-        if self.format == OutputFormat.TEXT:
-            print(message, file=sys.stderr)
+    # Collect global flags before the subcommand
+    global_flags_before: list[str] = []
+    other_args_before: list[str] = []
 
-    def result(self, result: CheckResult) -> None:
-        """Output a single check result."""
-        if self.format == OutputFormat.TEXT:
-            status = "✓" if result.passed else "✗"
-            if result.passed:
-                if not self.quiet:
-                    print(f"{status} [{result.concern_id}] {result.claim}")
-                    if self.verbose:
-                        print(f"    Strategy: {result.strategy}")
-                        print(f"    {result.message}")
-            else:
-                # Always show failures
-                print(f"{status} [{result.concern_id}] {result.claim}")
-                print(f"    {result.message}")
+    i = 0
+    while i < cmd_index:
+        arg = argv[i]
+        if arg in GLOBAL_FLAGS:
+            global_flags_before.append(arg)
+            # Check if this flag takes a value
+            if arg == "--format" and i + 1 < cmd_index:
+                i += 1
+                global_flags_before.append(argv[i])
+        elif arg.startswith("--format="):
+            global_flags_before.append(arg)
+        else:
+            other_args_before.append(arg)
+        i += 1
 
-    def summary(self, passed: int, failed: int) -> None:
-        """Output summary."""
-        if self.format == OutputFormat.TEXT:
-            if not self.quiet or failed > 0:
-                print()
-                print(f"Passed: {passed}, Failed: {failed}")
-
-    def json_output(self, data: dict[str, Any]) -> None:
-        """Set JSON output data."""
-        self._json_data = data
-
-    def finalize(self) -> None:
-        """Finalize output (print JSON if in JSON mode)."""
-        if self.format == OutputFormat.JSON:
-            print(json.dumps(self._json_data, default=str))
+    # Reconstruct: other_before + subcommand_and_after + global_flags
+    return other_args_before + argv[cmd_index:] + global_flags_before
 
 
 def cmd_check(args: Namespace, output: Output) -> int:
@@ -91,13 +69,13 @@ def cmd_check(args: Namespace, output: Output) -> int:
     passed = 0
     failed = 0
     for result in results:
-        output.result(result)
+        _output_check_result(output, result)
         if result.passed:
             passed += 1
         else:
             failed += 1
 
-    output.summary(passed, failed)
+    _output_summary(output, passed, failed)
 
     # JSON output
     output.json_output(
@@ -109,6 +87,30 @@ def cmd_check(args: Namespace, output: Output) -> int:
     )
 
     return 1 if failed > 0 else 0
+
+
+def _output_check_result(output: Output, result: CheckResult) -> None:
+    """Output a single check result."""
+    if output.format == OutputFormat.TEXT:
+        status = "✓" if result.passed else "✗"
+        if result.passed:
+            if not output.quiet:
+                print(f"{status} [{result.concern_id}] {result.claim}")
+                if output.verbose:
+                    print(f"    Strategy: {result.strategy}")
+                    print(f"    {result.message}")
+        else:
+            # Always show failures
+            print(f"{status} [{result.concern_id}] {result.claim}")
+            print(f"    {result.message}")
+
+
+def _output_summary(output: Output, passed: int, failed: int) -> None:
+    """Output summary."""
+    if output.format == OutputFormat.TEXT:
+        if not output.quiet or failed > 0:
+            print()
+            print(f"Passed: {passed}, Failed: {failed}")
 
 
 def cmd_scan(args: Namespace, output: Output) -> int:
@@ -178,6 +180,29 @@ def cmd_scan(args: Namespace, output: Output) -> int:
     return 1 if result.issues else 0
 
 
+def cmd_kb_update(args: Namespace, output: Output) -> int:
+    """Update knowledge base from authoritative sources."""
+    from certo.kb.update import update_all, update_python
+
+    source = getattr(args, "source", None)
+
+    if source == "python":
+        output.info("Updating Python knowledge...")
+        success = update_python(verbose=output.verbose)
+        if success:
+            output.info("Python knowledge updated.")
+        else:
+            output.error("Failed to update Python knowledge.")
+            return 1
+    else:
+        output.info("Updating all knowledge sources...")
+        count = update_all(verbose=output.verbose)
+        output.info(f"Updated {count} source(s).")
+
+    output.json_output({"updated": source or "all", "success": True})
+    return 0
+
+
 def cmd_version(args: Namespace, output: Output) -> int:  # noqa: ARG001
     """Print version information."""
     from certo import __version__
@@ -189,12 +214,8 @@ def cmd_version(args: Namespace, output: Output) -> int:  # noqa: ARG001
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Main entry point."""
-    parser = ArgumentParser(
-        prog="certo",
-        description="Turn conversations into verifiable specifications.",
-    )
+def _add_global_args(parser: ArgumentParser) -> None:
+    """Add global arguments to a parser."""
     parser.add_argument("--version", action="store_true", help="print version and exit")
     parser.add_argument(
         "-q",
@@ -212,10 +233,25 @@ def main(argv: list[str] | None = None) -> int:
         help="output format (default: text)",
     )
 
+
+def main(argv: list[str] | None = None) -> int:
+    """Main entry point."""
+    # Normalize argv to move global flags after subcommand
+    if argv is None:
+        argv = sys.argv[1:]
+    argv = _normalize_argv(list(argv))
+
+    parser = ArgumentParser(
+        prog="certo",
+        description="Turn conversations into verifiable specifications.",
+    )
+    _add_global_args(parser)
+
     subparsers = parser.add_subparsers(dest="command")
 
     # check command
     check_parser = subparsers.add_parser("check", help="verify blueprint against code")
+    _add_global_args(check_parser)
     check_parser.add_argument(
         "path",
         nargs="?",
@@ -229,6 +265,7 @@ def main(argv: list[str] | None = None) -> int:
     scan_parser = subparsers.add_parser(
         "scan", help="discover assumptions and check consistency"
     )
+    _add_global_args(scan_parser)
     scan_parser.add_argument(
         "path",
         nargs="?",
@@ -237,6 +274,29 @@ def main(argv: list[str] | None = None) -> int:
         help="project root (default: current directory)",
     )
     scan_parser.set_defaults(func=cmd_scan)
+
+    # kb command
+    kb_parser = subparsers.add_parser("kb", help="manage knowledge base")
+
+    def cmd_kb_help(args: Namespace, output: Output) -> int:  # noqa: ARG001
+        kb_parser.print_help()
+        return 0
+
+    kb_parser.set_defaults(func=cmd_kb_help)
+    kb_subparsers = kb_parser.add_subparsers(dest="kb_command")
+
+    # kb update command
+    kb_update_parser = kb_subparsers.add_parser(
+        "update", help="update knowledge from authoritative sources"
+    )
+    _add_global_args(kb_update_parser)
+    kb_update_parser.add_argument(
+        "source",
+        nargs="?",
+        choices=["python"],
+        help="specific source to update (default: all)",
+    )
+    kb_update_parser.set_defaults(func=cmd_kb_update)
 
     # Parse
     args = parser.parse_args(argv)
