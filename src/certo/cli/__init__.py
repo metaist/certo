@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import sys
 from argparse import ArgumentParser, Namespace
-from dataclasses import asdict
 from pathlib import Path
 
-from certo.check import CheckResult, check_blueprint
-from certo.cli_util import Output, OutputFormat
-from certo.scan import scan_project
+from certo.cli.check import cmd_check
+from certo.cli.kb import cmd_kb_update
+from certo.cli.output import Output, OutputFormat
+from certo.cli.plan import cmd_plan_show
+from certo.cli.scan import cmd_scan
+
+# Re-export for convenience
+__all__ = ["Output", "OutputFormat", "main"]
 
 # Global flags that can appear before or after subcommand
 GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format"}
@@ -24,7 +28,7 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         return argv
 
     # Find where the subcommand is
-    subcommands = {"check", "scan", "kb"}
+    subcommands = {"check", "scan", "kb", "plan"}
     cmd_index = None
     for i, arg in enumerate(argv):
         if arg in subcommands:
@@ -55,164 +59,6 @@ def _normalize_argv(argv: list[str]) -> list[str]:
 
     # Reconstruct: other_before + subcommand_and_after + global_flags
     return other_args_before + argv[cmd_index:] + global_flags_before
-
-
-def cmd_check(args: Namespace, output: Output) -> int:
-    """Run verification checks against the blueprint."""
-    blueprint_path = args.path / ".certo" / "blueprint.toml"
-
-    output.verbose_info(f"Checking blueprint: {blueprint_path}")
-
-    offline = getattr(args, "offline", False)
-    no_cache = getattr(args, "no_cache", False)
-    model = getattr(args, "model", None)
-
-    if offline:
-        output.verbose_info("Running in offline mode (LLM checks will be skipped)")
-
-    results = check_blueprint(
-        blueprint_path,
-        offline=offline,
-        no_cache=no_cache,
-        model=model,
-    )
-
-    # Display results
-    passed = 0
-    failed = 0
-    for result in results:
-        _output_check_result(output, result)
-        if result.passed:
-            passed += 1
-        else:
-            failed += 1
-
-    _output_summary(output, passed, failed)
-
-    # JSON output
-    output.json_output(
-        {
-            "passed": passed,
-            "failed": failed,
-            "results": [asdict(r) for r in results],
-        }
-    )
-
-    return 1 if failed > 0 else 0
-
-
-def _output_check_result(output: Output, result: CheckResult) -> None:
-    """Output a single check result."""
-    if output.format == OutputFormat.TEXT:
-        status = "✓" if result.passed else "✗"
-        if result.passed:
-            if not output.quiet:
-                print(f"{status} [{result.concern_id}] {result.claim}")
-                if output.verbose:
-                    print(f"    Strategy: {result.strategy}")
-                    print(f"    {result.message}")
-        else:
-            # Always show failures
-            print(f"{status} [{result.concern_id}] {result.claim}")
-            print(f"    {result.message}")
-
-
-def _output_summary(output: Output, passed: int, failed: int) -> None:
-    """Output summary."""
-    if output.format == OutputFormat.TEXT:
-        if not output.quiet or failed > 0:
-            print()
-            print(f"Passed: {passed}, Failed: {failed}")
-
-
-def cmd_scan(args: Namespace, output: Output) -> int:
-    """Scan project for assumptions and consistency issues."""
-    output.verbose_info(f"Scanning project: {args.path}")
-
-    result = scan_project(args.path)
-
-    # Display assumptions
-    if result.assumptions:
-        output.info("Discovered assumptions:")
-        for assumption in result.assumptions:
-            status_icon = "✓" if assumption.status == "verified" else "?"
-            output.info(f"  [{status_icon}] {assumption.description}")
-            if output.verbose:
-                for ev in assumption.evidence:
-                    output.verbose_info(f"      Evidence: {ev}")
-                for match in assumption.should_match:
-                    output.verbose_info(f"      Should match: {match}")
-
-    # Display issues
-    if result.issues:
-        output.info("")
-        output.info("Consistency issues:")
-        for issue in result.issues:
-            icon = "✗" if issue.severity == "error" else "⚠"
-            # Always show issues, even in quiet mode
-            if output.quiet and output.format == OutputFormat.TEXT:
-                print(f"{icon} {issue.message}")
-            else:
-                output.info(f"  {icon} {issue.message}")
-            if output.verbose:
-                output.verbose_info(f"      Sources: {', '.join(issue.sources)}")
-
-    # Summary
-    if not output.quiet:
-        output.info("")
-        output.info(
-            f"Assumptions: {len(result.assumptions)}, Issues: {len(result.issues)}"
-        )
-
-    # JSON output
-    output.json_output(
-        {
-            "assumptions": [
-                {
-                    "id": a.id,
-                    "description": a.description,
-                    "category": a.category,
-                    "evidence": a.evidence,
-                    "should_match": a.should_match,
-                    "status": a.status,
-                }
-                for a in result.assumptions
-            ],
-            "issues": [
-                {
-                    "message": i.message,
-                    "sources": i.sources,
-                    "severity": i.severity,
-                }
-                for i in result.issues
-            ],
-        }
-    )
-
-    return 1 if result.issues else 0
-
-
-def cmd_kb_update(args: Namespace, output: Output) -> int:
-    """Update knowledge base from authoritative sources."""
-    from certo.kb.update import update_all, update_python
-
-    source = getattr(args, "source", None)
-
-    if source == "python":
-        output.info("Updating Python knowledge...")
-        success = update_python(verbose=output.verbose)
-        if success:
-            output.info("Python knowledge updated.")
-        else:
-            output.error("Failed to update Python knowledge.")
-            return 1
-    else:
-        output.info("Updating all knowledge sources...")
-        count = update_all(verbose=output.verbose)
-        output.info(f"Updated {count} source(s).")
-
-    output.json_output({"updated": source or "all", "success": True})
-    return 0
 
 
 def cmd_version(args: Namespace, output: Output) -> int:  # noqa: ARG001
@@ -323,6 +169,50 @@ def main(argv: list[str] | None = None) -> int:
         help="specific source to update (default: all)",
     )
     kb_update_parser.set_defaults(func=cmd_kb_update)
+
+    # plan command
+    plan_parser = subparsers.add_parser("plan", help="view and manage blueprint")
+
+    def cmd_plan_help(args: Namespace, output: Output) -> int:  # noqa: ARG001
+        plan_parser.print_help()
+        return 0
+
+    plan_parser.set_defaults(func=cmd_plan_help)
+    plan_subparsers = plan_parser.add_subparsers(dest="plan_command")
+
+    # plan show command
+    plan_show_parser = plan_subparsers.add_parser(
+        "show", help="display blueprint contents"
+    )
+    _add_global_args(plan_show_parser)
+    plan_show_parser.add_argument(
+        "path",
+        nargs="?",
+        type=Path,
+        default=Path.cwd(),
+        help="project root (default: current directory)",
+    )
+    plan_show_parser.add_argument(
+        "id",
+        nargs="?",
+        help="specific item ID to show (e.g., d1, c3)",
+    )
+    plan_show_parser.add_argument(
+        "--decisions",
+        action="store_true",
+        help="show only decisions",
+    )
+    plan_show_parser.add_argument(
+        "--concerns",
+        action="store_true",
+        help="show only concerns",
+    )
+    plan_show_parser.add_argument(
+        "--contexts",
+        action="store_true",
+        help="show only contexts",
+    )
+    plan_show_parser.set_defaults(func=cmd_plan_show)
 
     # Parse
     args = parser.parse_args(argv)

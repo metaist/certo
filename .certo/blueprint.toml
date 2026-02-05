@@ -409,6 +409,18 @@ strategy = "static"
 failure = "warn"
 traces_to = ["d19"]
 
+[[concerns]]
+id = "c9"
+category = "maintainability"
+claim = "Test coverage is 100%"
+conditions = [
+  "All statements covered",
+  "All branches covered",
+]
+strategy = "static"
+verify_with = ["coverage"]
+failure = "block-commit"
+
 # =============================================================================
 # CONTEXTS
 # =============================================================================

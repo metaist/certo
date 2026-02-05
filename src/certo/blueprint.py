@@ -139,3 +139,10 @@ class Blueprint:
             if decision.id == decision_id:
                 return decision
         return None
+
+    def get_context(self, context_id: str) -> Context | None:
+        """Get a context by ID."""
+        for context in self.contexts:
+            if context.id == context_id:
+                return context
+        return None

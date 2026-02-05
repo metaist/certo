@@ -218,3 +218,20 @@ def test_blueprint_get_decision() -> None:
     assert d1.title == "Decision 1"
     assert blueprint.get_decision("d2") is not None
     assert blueprint.get_decision("d3") is None
+
+
+def test_blueprint_get_context() -> None:
+    """Test getting a context by ID."""
+    data = {
+        "blueprint": {"name": "test"},
+        "contexts": [
+            {"id": "ctx1", "name": "Context 1"},
+            {"id": "ctx2", "name": "Context 2"},
+        ],
+    }
+    blueprint = Blueprint.parse(data)
+    ctx1 = blueprint.get_context("ctx1")
+    assert ctx1 is not None
+    assert ctx1.name == "Context 1"
+    assert blueprint.get_context("ctx2") is not None
+    assert blueprint.get_context("ctx3") is None
