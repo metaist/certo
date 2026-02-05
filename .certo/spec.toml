@@ -1,606 +1,428 @@
 # Certo Spec
-# This file captures the spec for certo itself.
-# Format: TOML (safe, explicit, no implicit typing)
+# Format: TOML
 
 [spec]
 name = "certo"
-version = "0.1.0"
+version = 1
 created = 2026-02-05T14:07:00Z
 author = "metaist"
-description = """
-Certo turns conversations about intent into living specifications (blueprints) \
-that can be verified against code. It bridges the semantic gap between what \
-humans want and what code does.
-"""
 
 # =============================================================================
-# DECISIONS
+# CLAIMS
 # =============================================================================
-# Explicit choices made during specification, with alternatives and rationale.
-# Status: proposed | confirmed | superseded | deferred
 
-[[decisions]]
-id = "d1"
-title = "Primary problem framing"
+[[claims]]
+id = "c-19f95d9"
+text = "Primary problem framing"
 status = "confirmed"
-description = """
-The immediate trigger is AI-generated code volume exceeding human verification \
-capacity. But the underlying problem—gap between intent and implementation—predates \
-AI. Certo addresses both; it is not AI-specific.
-"""
-alternatives = ["AI-only focus", "Human-only focus"]
-rationale = "The verification problem is universal; AI just made it urgent"
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "The verification problem is universal; AI just made it urgent"
+considered = ["AI-only focus", "Human-only focus"]
 
-[[decisions]]
-id = "d2"
-title = "Spectrum of assurance"
+[[claims]]
+id = "c-934b629"
+text = "Spectrum of assurance"
 status = "confirmed"
-description = """
-Certo provides multiple types of assurance: confidence, proof, auditability, \
-alerting. The system offers the strongest assurance available for each statement \
-and is explicit about what kind it's providing.
-"""
-alternatives = ["Single assurance type", "Binary pass/fail only"]
-rationale = "Different contexts need different assurance levels; be explicit about what we can and cannot guarantee"
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "Different contexts need different assurance levels; be explicit about what we can and cannot guarantee"
+considered = ["Single assurance type", "Binary pass/fail only"]
 
-[[decisions]]
-id = "d3"
-title = "User progression"
+[[claims]]
+id = "c-bde8f78"
+text = "User progression"
 status = "confirmed"
-description = """
-Target users in order: (1) metaist building certo, (2) metaist on other projects, \
-(3) technical users, (4) non-technical stakeholders who know what they want but \
-not how to build it.
-"""
-alternatives = ["Developer-only focus", "Enterprise-first"]
-rationale = "Dogfood from day zero; conversational interface is core, not nice-to-have"
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "Dogfood from day zero; conversational interface is core, not nice-to-have"
+considered = ["Developer-only focus", "Enterprise-first"]
 
-[[decisions]]
-id = "d4"
-title = "Minimal viable loop"
+[[claims]]
+id = "c-ad3b0df"
+text = "Minimal viable loop"
 status = "confirmed"
-description = """
-The smallest useful thing: a blueprint file capturing decisions and concerns, \
-plus a checker that can verify at least one statement against code.
-"""
-alternatives = ["Full verification suite first", "Interview system first"]
-rationale = "Need a working loop to bootstrap; can verify certo with certo immediately"
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "Need a working loop to bootstrap; can verify certo with certo immediately"
+considered = ["Full verification suite first", "Interview system first"]
 
-[[decisions]]
-id = "d5"
-title = "Blueprint format: TOML"
+[[claims]]
+id = "c-c348c55"
+text = "Blueprint format: TOML"
 status = "confirmed"
-description = "Use TOML for blueprint files."
-alternatives = ["YAML", "JSON", "KDL", "Markdown+frontmatter"]
-rationale = """
-TOML is explicit, has no implicit type coercion, no code execution risk, \
-reasonable verbosity trade-off for safety and clarity. Dates as first-class \
-objects is a feature, not a bug.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "TOML is explicit, has no implicit type coercion, no code execution risk, reasonable verbosity trade-off for safety and clarity. Dates as first-class objects is a feature, not a bug."
+considered = ["YAML", "JSON", "KDL", "Markdown+frontmatter"]
 
-[[decisions]]
-id = "d6"
-title = "Narrow-broad-narrow structure"
+[[claims]]
+id = "c-18f186f"
+text = "Narrow-broad-narrow structure"
 status = "confirmed"
-description = """
-Data structures should have few top-level categories, many items at the middle \
-level, and few fields per item. Use flat lists with ID references instead of \
-deep nesting.
-"""
-alternatives = ["Deeply nested hierarchies", "Completely flat"]
-rationale = "Easy to place items, easy to scan, avoids indentation hell and context loss"
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "Easy to place items, easy to scan, avoids indentation hell and context loss"
+considered = ["Deeply nested hierarchies", "Completely flat"]
 
-[[decisions]]
-id = "d7"
-title = "Folder structure: .certo/"
+[[claims]]
+id = "c-19eac83"
+text = "Folder structure: .certo/"
 status = "confirmed"
-description = """
-Certo artifacts live in .certo/ directory containing: blueprint.toml (the spec), \
-transcripts/*.jsonl (conversation logs), evidence/ (verification artifacts).
-"""
-alternatives = ["Single file", "Scattered files", "certo/ (not dotted)", "certo.toml at root"]
-rationale = """
-Dotted because it's tool-managed, like .git. The blueprint is critical, but \
-you interact with it through certo (conversations, commands). You can edit \
-manually, but it's a special place where mistakes affect the whole system. \
-The dot signals 'here be dragons (friendly ones).'
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T14:07:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
+why = "Dotted because it's tool-managed, like .git. The blueprint is critical, but you interact with it through certo (conversations, commands). You can edit manually, but it's a special place where mistakes affect the whole system. The dot signals 'here be dragons (friendly ones).'"
+considered = ["Single file", "Scattered files", "certo/ (not dotted)", "certo.toml at root"]
 
-[[decisions]]
-id = "d8"
-title = "Context overrides: structured, nested"
+[[claims]]
+id = "c-4fb41ca"
+text = "Context overrides: structured, nested"
 status = "confirmed"
-description = """
-Context modifications use structured overrides nested within the context, \
-rather than prose or a DSL. Each override specifies concern, field, value, \
-and reason.
-"""
-alternatives = ["Prose description", "DSL string", "Separate top-level section"]
-rationale = """
-Structured is machine-readable, validates cleanly, and follows narrow-broad-narrow. \
-Nested keeps overrides co-located with their context. DSL adds parsing risk. \
-Prose is ambiguous to machines.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T14:45:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:45:00Z
+why = "Structured is machine-readable, validates cleanly, and follows narrow-broad-narrow. Nested keeps overrides co-located with their context. DSL adds parsing risk. Prose is ambiguous to machines."
+considered = ["Prose description", "DSL string", "Separate top-level section"]
 
-[[decisions]]
-id = "d9"
-title = "Timestamps: UTC with timezone"
+[[claims]]
+id = "c-386d28e"
+text = "Timestamps: UTC with timezone"
 status = "confirmed"
-description = """
-All timestamps in blueprints use RFC 3339 format with explicit UTC timezone \
-(e.g., 2026-02-05T14:07:00Z). This enables understanding the timeline of \
-when decisions were made and changed.
-"""
-alternatives = ["Local dates only", "Unix timestamps", "Quoted strings"]
-rationale = """
-TOML natively supports datetime with timezone. UTC avoids ambiguity across \
-timezones. Unquoted is safe—TOML parses as datetime, not string.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T14:45:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:45:00Z
+why = "TOML natively supports datetime with timezone. UTC avoids ambiguity across timezones. Unquoted is safe—TOML parses as datetime, not string."
+considered = ["Local dates only", "Unix timestamps", "Quoted strings"]
 
-[[decisions]]
-id = "d10"
-title = "certo check must be fast for dev loop"
+[[claims]]
+id = "c-d3a4cde"
+text = "certo check must be fast for dev loop"
 status = "confirmed"
-description = """
-certo check runs as the first step in ds dev. It must complete quickly \
-(under 1 second for typical projects) to avoid blocking the development \
-workflow. This constrains verification strategy choices—expensive checks \
-must be deferred to CI or explicit invocation.
-"""
-alternatives = ["No performance constraint", "Async/background checking", "Tiered check levels"]
-rationale = """
-Developers run ds dev frequently. Slow checks get disabled or ignored. \
-Fast feedback is essential for adoption. Expensive verification (LLM review, \
-full test execution) can run in CI or on explicit request.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T14:50:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:50:00Z
+why = "Developers run ds dev frequently. Slow checks get disabled or ignored. Fast feedback is essential for adoption. Expensive verification (LLM review, full test execution) can run in CI or on explicit request."
+considered = ["No performance constraint", "Async/background checking", "Tiered check levels"]
 
-[[decisions]]
-id = "d11"
-title = "Track implicit assumptions explicitly"
+[[claims]]
+id = "c-d289312"
+text = "Track implicit assumptions explicitly"
 status = "confirmed"
-description = """
-Blueprints include an [[assumptions]] section to capture implicit assumptions \
-about environment, dependencies, and configuration. Assumptions have evidence \
-(what implies the assumption) and should_match (what else must agree). \
-certo scan discovers and verifies assumptions.
-"""
-alternatives = ["Assumptions in concerns only", "No explicit tracking", "External documentation"]
-rationale = """
-CI failures from Python version mismatch revealed that assumptions exist in \
-multiple places (code imports, pyproject.toml, CI matrix) and can drift. \
-Explicit tracking enables automated consistency checking.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T16:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T16:00:00Z
+why = "CI failures from Python version mismatch revealed that assumptions exist in multiple places (code imports, pyproject.toml, CI matrix) and can drift. Explicit tracking enables automated consistency checking."
+considered = ["Assumptions in concerns only", "No explicit tracking", "External documentation"]
 
-[[decisions]]
-id = "d12"
-title = "Knowledge bundled with certo"
+[[claims]]
+id = "c-1ec33e8"
+text = "Knowledge bundled with certo"
 status = "confirmed"
-description = """
-Ecosystem knowledge (stdlib versions, etc.) is bundled with the certo package. \
-Updating knowledge requires updating certo itself. This keeps things simple \
-and avoids schema versioning issues for external knowledge contributions.
-"""
-alternatives = ["Fetchable to ~/.certo/", "Separate certo-knowledge package", "Fetch on first run"]
-rationale = """
-We don't know enough about what kinds of knowledge we need yet. Bundling avoids \
-premature schema design. Community contributions and independent updates deferred.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "We don't know enough about what kinds of knowledge we need yet. Bundling avoids premature schema design. Community contributions and independent updates deferred."
+considered = ["Fetchable to ~/.certo/", "Separate certo-knowledge package", "Fetch on first run"]
 
-[[decisions]]
-id = "d13"
-title = "TOML format for knowledge metadata"
+[[claims]]
+id = "c-d158ce8"
+text = "TOML format for knowledge metadata"
 status = "confirmed"
-description = """
-Knowledge sources have a meta.toml file describing the source, commit, \
-update timestamp, license, and files to fetch. Consistent with blueprint format.
-"""
-alternatives = ["JSON", "YAML", "No metadata"]
-rationale = "TOML is already our standard. meta.toml provides reproducible fetches."
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "TOML is already our standard. meta.toml provides reproducible fetches."
+considered = ["JSON", "YAML", "No metadata"]
 
-[[decisions]]
-id = "d14"
-title = "Typeshed as primary source for Python stdlib"
+[[claims]]
+id = "c-09b5d61"
+text = "Typeshed as primary source for Python stdlib"
 status = "confirmed"
-description = """
-Python stdlib module version information comes from typeshed's stdlib/VERSIONS \
-file. This is machine-readable, authoritative, and maintained by the Python community.
-"""
-alternatives = ["Scrape Python docs", "Scrape CPython repo", "Maintain our own database"]
-rationale = """
-Typeshed is already used by ty, pyright, mypy. The VERSIONS file is exactly \
-what we need. No need to scrape prose or maintain our own data.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "Typeshed is already used by ty, pyright, mypy. The VERSIONS file is exactly what we need. No need to scrape prose or maintain our own data."
+considered = ["Scrape Python docs", "Scrape CPython repo", "Maintain our own database"]
 
-[[decisions]]
-id = "d15"
-title = "certo kb update subcommand for transparency"
+[[claims]]
+id = "c-7803888"
+text = "certo kb update subcommand for transparency"
 status = "confirmed"
-description = """
-Knowledge updates happen via 'certo kb update' subcommand, not hidden scripts. \
-Anyone can inspect the knowledge and regenerate it themselves.
-"""
-alternatives = ["Hidden scripts", "CI-only updates", "Manual curation"]
-rationale = """
-Transparency aligns with certo's philosophy. Self-verifiable—certo can verify \
-its own knowledge sources. Anyone can audit or reproduce.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "Transparency aligns with certo's philosophy. Self-verifiable—certo can verify its own knowledge sources. Anyone can audit or reproduce."
+considered = ["Hidden scripts", "CI-only updates", "Manual curation"]
 
-[[decisions]]
-id = "d16"
-title = "Start with Python stdlib, extensible to other ecosystems"
+[[claims]]
+id = "c-7b6619a"
+text = "Start with Python stdlib, extensible to other ecosystems"
 status = "confirmed"
-description = """
-Knowledge base starts with Python stdlib only. Structure allows future \
-expansion to Rust, Node, etc. via kb/rust/, kb/node/ directories.
-"""
-alternatives = ["Multi-ecosystem from start", "Python-only forever"]
-rationale = "Prove the pattern with Python, then expand. Don't over-engineer."
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "Prove the pattern with Python, then expand. Don't over-engineer."
+considered = ["Multi-ecosystem from start", "Python-only forever"]
 
-[[decisions]]
-id = "d17"
-title = "Use typeshed VERSIONS format directly"
+[[claims]]
+id = "c-56793ca"
+text = "Use typeshed VERSIONS format directly"
 status = "confirmed"
-description = """
-The typeshed stdlib/VERSIONS file is used as-is, not converted to TOML or \
-other format. Metadata lives in separate meta.toml file.
-"""
-alternatives = ["Convert to TOML", "Convert to JSON", "Embed in meta.toml"]
-rationale = """
-The format is already machine-readable and simple. Converting adds no value \
-and risks drift from source. Ruff/ty use the same approach.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T17:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T17:00:00Z
+why = "The format is already machine-readable and simple. Converting adds no value and risks drift from source. Ruff/ty use the same approach."
+considered = ["Convert to TOML", "Convert to JSON", "Embed in meta.toml"]
 
-[[decisions]]
-id = "d18"
-title = "LLM as generic verification fallback"
+[[claims]]
+id = "c-f1cde53"
+text = "LLM as generic verification fallback"
 status = "confirmed"
-description = """
-LLM-backed verification serves as the most generic fallback strategy for \
-concerns that can't be checked statically. Uses OpenRouter with configurable \
-model selection.
-"""
-alternatives = ["Static checks only", "Custom code for each check type"]
-rationale = """
-LLMs can handle anything expressible in natural language without upfront work \
-to add new check types. More expensive strategies (LLM, human review) are used \
-only when cheaper strategies (static analysis, tests) don't apply.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T18:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T18:00:00Z
+why = "LLMs can handle anything expressible in natural language without upfront work to add new check types. More expensive strategies (LLM, human review) are used only when cheaper strategies (static analysis, tests) don't apply."
+considered = ["Static checks only", "Custom code for each check type"]
 
-[[decisions]]
-id = "d19"
-title = "Test directory structure mirrors source directory structure"
+[[claims]]
+id = "c-eb9736a"
+text = "Test directory structure mirrors source directory structure"
 status = "confirmed"
-description = """
-Tests for src/certo/foo/ live in test/foo/test_*.py, not test/test_foo_*.py. \
-This makes it easy to find tests for a given module and keeps the test \
-directory organized as the project grows.
-"""
-alternatives = ["Flat test directory with prefixes", "Tests alongside source"]
-rationale = """
-Mirroring keeps navigation simple. When looking at src/certo/check/llm.py, \
-you know tests are in test/check/test_llm.py. Flat directories become unwieldy \
-as the project grows.
-"""
-decided_by = "metaist"
-decided_on = 2026-02-05T19:00:00Z
+source = "human"
+author = "metaist"
+level = "warn"
+tags = []
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T19:00:00Z
+why = "Mirroring keeps navigation simple. When looking at src/certo/check/llm.py, you know tests are in test/check/test_llm.py. Flat directories become unwieldy as the project grows."
+considered = ["Flat test directory with prefixes", "Tests alongside source"]
 
-# =============================================================================
-# CONCERNS
-# =============================================================================
-# Statements that must be true, organized by category.
-# Each concern has: claim, conditions, verification strategies, failure response.
-# Categories: functional, performance, security, observability, maintainability, etc.
+[[claims]]
+id = "c-bd602b0"
+text = "A blueprint.toml file can be parsed"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "block"
+tags = ["functional"]
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c1"
-category = "functional"
-claim = "A blueprint.toml file can be parsed"
-conditions = ["File exists at .certo/blueprint.toml", "File contains valid TOML"]
-verify_with = ["static", "test"]
-failure = "block-commit"
-traces_to = ["d5"]
+[[claims]]
+id = "c-15ec6de"
+text = "At least one concern can be verified against code"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "block"
+tags = ["functional"]
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c2"
-category = "functional"
-claim = "At least one concern can be verified against code"
-conditions = ["Checker exists", "Blueprint has at least one concern"]
-verify_with = ["test"]
-failure = "block-release"
-traces_to = ["d4"]
+[[claims]]
+id = "c-ad91fea"
+text = "Decisions are traceable from blueprint to rationale"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "warn"
+tags = ["functional"]
+verify = ["llm"]
+files = [".certo/blueprint.toml"]
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c3"
-category = "functional"
-claim = "Decisions are traceable from blueprint to rationale"
-conditions = ["Each decision has id, title, rationale, decided_by, decided_on"]
-strategy = "llm"
-context = [".certo/blueprint.toml"]
-failure = "warn"
-traces_to = ["d2"]
+[[claims]]
+id = "c-730450e"
+text = "Blueprint structure follows narrow-broad-narrow principle"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "warn"
+tags = ["maintainability"]
+verify = ["llm"]
+files = [".certo/blueprint.toml"]
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c4"
-category = "maintainability"
-claim = "Blueprint structure follows narrow-broad-narrow principle"
-conditions = ["Max nesting depth is 2", "Items use ID references not deep nesting"]
-strategy = "llm"
-context = [".certo/blueprint.toml"]
-failure = "warn"
-traces_to = ["d6"]
+[[claims]]
+id = "c-3a0bf02"
+text = "certo check completes quickly enough for dev loop"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "warn"
+tags = ["performance"]
+verify = []
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c5"
-category = "performance"
-claim = "certo check completes quickly enough for dev loop"
-conditions = ["Runs in under 1 second for typical projects"]
-verify_with = ["benchmark"]
-failure = "warn"
-traces_to = ["d10"]
+[[claims]]
+id = "c-da723cf"
+text = "certo runs on all declared Python versions"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "block"
+tags = ["compatibility"]
+verify = ["scan"]
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c6"
-category = "compatibility"
-claim = "certo runs on all declared Python versions"
-conditions = [
-  "CI matrix matches pyproject.toml requires-python",
-  "No imports require higher Python than declared",
-  "Classifiers match requires-python",
-]
-strategy = "static"
-verify_with = ["scan"]
-failure = "block-release"
-traces_to = ["d11"]
+[[claims]]
+id = "c-3ef6aa3"
+text = "docs/cli.md documents all CLI commands and their options"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "warn"
+tags = ["documentation"]
+verify = ["llm"]
+files = ["docs/cli.md", "src/certo/cli.py"]
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c7"
-category = "documentation"
-claim = "docs/cli.md documents all CLI commands and their options"
-strategy = "llm"
-context = ["docs/cli.md", "src/certo/cli.py"]
-failure = "warn"
-traces_to = ["d18"]
+[[claims]]
+id = "c-eb9736a"
+text = "Test directory structure mirrors source directory structure"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "warn"
+tags = ["maintainability"]
+verify = ["static"]
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
-[[concerns]]
-id = "c8"
-category = "maintainability"
-claim = "Test directory structure mirrors source directory structure"
-conditions = [
-  "src/certo/foo/ has corresponding test/foo/",
-  "test/foo/test_*.py tests src/certo/foo/*.py",
-]
-strategy = "static"
-failure = "warn"
-traces_to = ["d19"]
-
-[[concerns]]
-id = "c9"
-category = "maintainability"
-claim = "Test coverage is 100%"
-conditions = [
-  "All statements covered",
-  "All branches covered",
-]
-strategy = "static"
-verify_with = ["coverage"]
-failure = "block-commit"
+[[claims]]
+id = "c-69bbc46"
+text = "Test coverage is 100%"
+status = "confirmed"
+source = "human"
+author = "metaist"
+level = "block"
+tags = ["maintainability"]
+verify = ["static"]
+files = []
+evidence = []
+created = 2026-02-05T14:07:00Z
 
 # =============================================================================
 # CONTEXTS
 # =============================================================================
-# Where different rules apply. Exemptions, modifications, environment-specific.
 
 [[contexts]]
-id = "ctx1"
+id = "x-333c04d"
 name = "bootstrap"
 description = "While building certo with certo; relaxed constraints"
-expires = 2026-06-01
+created = 2026-02-05T14:07:00Z
+updated = 2026-02-05T14:07:00Z
+expires = 2026-06-01T00:00:00Z
+modifications = []
 
-[[contexts.overrides]]
-concern = "c2"
-field = "failure"
-value = "warn"
-reason = "Acceptable risk during bootstrap"
-
-# =============================================================================
-# BUSINESS NEEDS
-# =============================================================================
-# High-level goals that drive requirements.
-
-[[needs]]
-id = "n1"
-description = "Humans cannot verify the volume of AI-generated code"
-traces_to = []
-
-[[needs]]
-id = "n2"
-description = "Non-technical stakeholders need to express intent and verify it's met"
-traces_to = []
-
-[[needs]]
-id = "n3"
-description = "Verification should provide the strongest appropriate assurance for context"
-traces_to = []
-
-# =============================================================================
-# OPEN QUESTIONS
-# =============================================================================
-# Acknowledged unknowns, deferred for later.
-
-[[deferrals]]
-id = "q1"
-question = "Exact CLI interface design"
-context = "Need working checker first"
-raised_on = 2026-02-05T14:07:00Z
-
-[[deferrals]]
-id = "q2"
-question = "How to handle blueprint evolution and history"
-context = "Git provides history; do we need inline history too?"
-raised_on = 2026-02-05T14:07:00Z
-
-[[deferrals]]
-id = "q3"
-question = "Transcript format details"
-context = "JSONL is decided; exact schema TBD"
-raised_on = 2026-02-05T14:07:00Z
-
-# =============================================================================
-# KNOWN ISSUES
-# =============================================================================
-# Documented problems, tracked for resolution.
-
-[[issues]]
-id = "i1"
-title = "GitHub Actions not pinned to commit hashes"
-category = "security"
-description = """
-The zizmor security scanner flags that GitHub Actions in .github/workflows/ \
-are pinned to version tags (e.g., @v6) rather than commit hashes. This is a \
-supply chain security concern—tags can be moved maliciously.
-"""
-source = "LTS template"
-status = "resolved"
-resolution = """
-Pinned all GitHub Actions to commit hashes with version comments. Added \
-dependabot.yml to receive update notifications. Also fixed persist-credentials \
-and moved permissions to job level per zizmor recommendations.
-"""
-raised_on = 2026-02-05T14:07:00Z
-resolved_on = 2026-02-05T16:30:00Z
-
-[[issues]]
-id = "i2"
-title = "CI tested Python 3.10 but tomllib requires 3.11+"
-category = "compatibility"
-description = """
-CI workflow matrix included Python 3.10, but code imports tomllib which \
-was introduced in Python 3.11. ty linter caught the import issue, but the \
-connection to CI config wasn't made automatically.
-"""
-source = "bootstrap"
-status = "resolved"
-resolution = """
-Updated pyproject.toml requires-python to >=3.11 and removed 3.10 from \
-classifiers and CI matrix. This revealed the need for certo scan to \
-detect such mismatches automatically.
-"""
-raised_on = 2026-02-05T15:00:00Z
-resolved_on = 2026-02-05T15:10:00Z
-
-[[issues]]
-id = "i3"
-title = "GitHub Pages deployment assumed branch mode"
-category = "deployment"
-description = """
-Docs workflow assumed GitHub Pages was configured to deploy from Actions, \
-but the repo defaulted to branch-based deployment.
-"""
-source = "bootstrap"
-status = "resolved"
-resolution = "Manually configured GitHub Pages to deploy from Actions."
-raised_on = 2026-02-05T15:00:00Z
-resolved_on = 2026-02-05T15:05:00Z
-
-[[issues]]
-id = "i4"
-title = "certo scan uses hardcoded STDLIB_VERSIONS"
-category = "correctness"
-description = """
-src/certo/scan.py contains a hardcoded STDLIB_VERSIONS dict that is incomplete \
-and will drift. This is not authoritative and was committed prematurely.
-"""
-source = "bootstrap"
-status = "resolved"
-resolution = """
-Replaced with typeshed stdlib/VERSIONS via certo kb update. Knowledge is now \
-bundled from authoritative source. See GitHub issue #7.
-"""
-raised_on = 2026-02-05T17:30:00Z
-resolved_on = 2026-02-05T17:45:00Z
-
-# =============================================================================
-# ASSUMPTIONS
-# =============================================================================
-# Implicit assumptions about environment, dependencies, and configuration.
-# Status: verified | unverified | violated
-
-[[assumptions]]
-id = "a1"
-description = "Python 3.11+ is required"
-category = "compatibility"
-evidence = [
-  "tomllib import in src/certo/check.py",
-  "pyproject.toml requires-python = '>=3.11,<3.15'",
-]
-should_match = [
-  ".github/workflows/ci.yaml matrix",
-  "pyproject.toml classifiers",
-]
-status = "verified"
-verified_on = 2026-02-05T15:30:00Z
-
-[[assumptions]]
-id = "a2"
-description = "GitHub Pages deploys from Actions, not branch"
-category = "deployment"
-evidence = [".github/workflows/docs.yaml uses actions/deploy-pages"]
-should_match = ["GitHub repo Settings > Pages > Source"]
-status = "verified"
-verified_on = 2026-02-05T15:05:00Z
-
-[[assumptions]]
-id = "a-kb-1"
-description = "Typeshed is authoritative for Python stdlib version info"
-category = "knowledge"
-evidence = [
-  "Used by ty, pyright, mypy",
-  "Maintained by Python community",
-  "Machine-readable stdlib/VERSIONS file",
-]
-should_match = ["Python documentation", "CPython Lib/ directory"]
-status = "unverified"
-
-[[assumptions]]
-id = "a-kb-2"
-description = "Typeshed stdlib/VERSIONS format is stable"
-category = "knowledge"
-evidence = ["Used by major type checkers", "Simple line-based format"]
-should_match = ["Future typeshed commits"]
-status = "unverified"

@@ -193,17 +193,17 @@ def main(argv: list[str] | None = None) -> int:
     spec_show_parser.add_argument(
         "id",
         nargs="?",
-        help="specific item ID to show (e.g., d1, c3)",
+        help="specific item ID to show (e.g., c-xxx, i-xxx, x-xxx)",
     )
     spec_show_parser.add_argument(
-        "--decisions",
+        "--claims",
         action="store_true",
-        help="show only decisions",
+        help="show only claims",
     )
     spec_show_parser.add_argument(
-        "--concerns",
+        "--issues",
         action="store_true",
-        help="show only concerns",
+        help="show only issues",
     )
     spec_show_parser.add_argument(
         "--contexts",

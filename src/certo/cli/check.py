@@ -5,15 +5,15 @@ from __future__ import annotations
 from argparse import Namespace
 from dataclasses import asdict
 
-from certo.check import CheckResult, check_blueprint
+from certo.check import CheckResult, check_spec
 from certo.cli.output import Output, OutputFormat
 
 
 def cmd_check(args: Namespace, output: Output) -> int:
-    """Run verification checks against the blueprint."""
-    blueprint_path = args.path / ".certo" / "spec.toml"
+    """Run verification checks against the spec."""
+    spec_path = args.path / ".certo" / "spec.toml"
 
-    output.verbose_info(f"Checking spec: {blueprint_path}")
+    output.verbose_info(f"Checking spec: {spec_path}")
 
     offline = getattr(args, "offline", False)
     no_cache = getattr(args, "no_cache", False)
@@ -22,8 +22,8 @@ def cmd_check(args: Namespace, output: Output) -> int:
     if offline:
         output.verbose_info("Running in offline mode (LLM checks will be skipped)")
 
-    results = check_blueprint(
-        blueprint_path,
+    results = check_spec(
+        spec_path,
         offline=offline,
         no_cache=no_cache,
         model=model,
@@ -59,13 +59,13 @@ def _output_check_result(output: Output, result: CheckResult) -> None:
         status = "✓" if result.passed else "✗"
         if result.passed:
             if not output.quiet:
-                print(f"{status} [{result.concern_id}] {result.claim}")
+                print(f"{status} [{result.claim_id}] {result.claim_text}")
                 if output.verbose:
                     print(f"    Strategy: {result.strategy}")
                     print(f"    {result.message}")
         else:
             # Always show failures
-            print(f"{status} [{result.concern_id}] {result.claim}")
+            print(f"{status} [{result.claim_id}] {result.claim_text}")
             print(f"    {result.message}")
 
 

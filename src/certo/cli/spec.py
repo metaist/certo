@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from argparse import Namespace
 
-from certo.spec import Spec, Concern, Context, Decision
 from certo.cli.output import Output
+from certo.spec import Claim, Context, Issue, Spec
 
 # Item type prefixes (order matters - longer prefixes first)
-ITEM_PREFIXES = [("ctx", "context"), ("d", "decision"), ("c", "concern")]
+ITEM_PREFIXES = [("x-", "context"), ("i-", "issue"), ("c-", "claim")]
 
 
 def _get_item_type(item_id: str) -> str | None:
@@ -21,129 +21,131 @@ def _get_item_type(item_id: str) -> str | None:
 
 def cmd_spec_show(args: Namespace, output: Output) -> int:
     """Show spec contents."""
-    blueprint_path = args.path / ".certo" / "spec.toml"
+    spec_path = args.path / ".certo" / "spec.toml"
 
-    if not blueprint_path.exists():
-        output.error(f"No spec found at {blueprint_path}")
+    if not spec_path.exists():
+        output.error(f"No spec found at {spec_path}")
         return 1
 
-    blueprint = Spec.load(blueprint_path)
+    spec = Spec.load(spec_path)
     item_id = getattr(args, "id", None)
 
     # Show specific item
     if item_id:
-        return _show_item(blueprint, item_id, output)
+        return _show_item(spec, item_id, output)
 
     # Filter flags
-    show_decisions = getattr(args, "decisions", False)
-    show_concerns = getattr(args, "concerns", False)
+    show_claims = getattr(args, "claims", False)
+    show_issues = getattr(args, "issues", False)
     show_contexts = getattr(args, "contexts", False)
 
     # If no filter, show all
-    if not any([show_decisions, show_concerns, show_contexts]):
-        show_decisions = show_concerns = show_contexts = True
+    if not any([show_claims, show_issues, show_contexts]):
+        show_claims = show_issues = show_contexts = True
 
     # Build output data for JSON
     json_data: dict[str, list[dict[str, object]]] = {}
 
-    if show_decisions and blueprint.decisions:
-        _show_decisions(blueprint, output)
-        json_data["decisions"] = [
-            {
-                "id": d.id,
-                "title": d.title,
-                "status": d.status,
-                "description": d.description,
-                "rationale": d.rationale,
-                "alternatives": d.alternatives,
-                "decided_by": d.decided_by,
-                "decided_on": d.decided_on.isoformat() if d.decided_on else None,
-            }
-            for d in blueprint.decisions
-        ]
-
-    if show_concerns and blueprint.concerns:
-        if show_decisions and blueprint.decisions:
-            output.info("")
-        _show_concerns(blueprint, output)
-        json_data["concerns"] = [
+    if show_claims and spec.claims:
+        _show_claims(spec, output)
+        json_data["claims"] = [
             {
                 "id": c.id,
-                "claim": c.claim,
-                "category": c.category,
-                "strategy": c.strategy,
-                "failure": c.failure,
-                "traces_to": c.traces_to,
+                "text": c.text,
+                "status": c.status,
+                "source": c.source,
+                "author": c.author,
+                "level": c.level,
+                "tags": c.tags,
+                "verify": c.verify,
+                "created": c.created.isoformat() if c.created else None,
             }
-            for c in blueprint.concerns
+            for c in spec.claims
         ]
 
-    if show_contexts and blueprint.contexts:
-        if (show_decisions and blueprint.decisions) or (
-            show_concerns and blueprint.concerns
-        ):
+    if show_issues and spec.issues:
+        if show_claims and spec.claims:
             output.info("")
-        _show_contexts(blueprint, output)
+        _show_issues(spec, output)
+        json_data["issues"] = [
+            {
+                "id": i.id,
+                "text": i.text,
+                "status": i.status,
+                "tags": i.tags,
+                "created": i.created.isoformat() if i.created else None,
+            }
+            for i in spec.issues
+        ]
+
+    if show_contexts and spec.contexts:
+        if (show_claims and spec.claims) or (show_issues and spec.issues):
+            output.info("")
+        _show_contexts(spec, output)
         json_data["contexts"] = [
             {
                 "id": c.id,
                 "name": c.name,
                 "description": c.description,
-                "applies_to": c.applies_to,
                 "expires": c.expires.isoformat() if c.expires else None,
             }
-            for c in blueprint.contexts
+            for c in spec.contexts
         ]
 
     output.json_output(json_data)
     return 0
 
 
-def _show_item(blueprint: Spec, item_id: str, output: Output) -> int:
+def _show_item(spec: Spec, item_id: str, output: Output) -> int:
     """Show a specific item by ID."""
     item_type = _get_item_type(item_id)
 
-    if item_type == "decision":
-        decision = blueprint.get_decision(item_id)
-        if not decision:
-            output.error(f"Decision not found: {item_id}")
+    if item_type == "claim":
+        claim = spec.get_claim(item_id)
+        if not claim:
+            output.error(f"Claim not found: {item_id}")
             return 1
-        _show_decision_detail(decision, output)
+        _show_claim_detail(claim, output)
         output.json_output(
             {
-                "id": decision.id,
-                "title": decision.title,
-                "status": decision.status,
-                "description": decision.description,
-                "rationale": decision.rationale,
-                "alternatives": decision.alternatives,
-                "decided_by": decision.decided_by,
-                "decided_on": decision.decided_on.isoformat()
-                if decision.decided_on
-                else None,
+                "id": claim.id,
+                "text": claim.text,
+                "status": claim.status,
+                "source": claim.source,
+                "author": claim.author,
+                "level": claim.level,
+                "tags": claim.tags,
+                "verify": claim.verify,
+                "files": claim.files,
+                "evidence": claim.evidence,
+                "why": claim.why,
+                "considered": claim.considered,
+                "traces_to": claim.traces_to,
+                "supersedes": claim.supersedes,
+                "closes": claim.closes,
+                "created": claim.created.isoformat() if claim.created else None,
+                "updated": claim.updated.isoformat() if claim.updated else None,
             }
         )
-    elif item_type == "concern":
-        concern = blueprint.get_concern(item_id)
-        if not concern:
-            output.error(f"Concern not found: {item_id}")
+    elif item_type == "issue":
+        issue = spec.get_issue(item_id)
+        if not issue:
+            output.error(f"Issue not found: {item_id}")
             return 1
-        _show_concern_detail(concern, output)
+        _show_issue_detail(issue, output)
         output.json_output(
             {
-                "id": concern.id,
-                "claim": concern.claim,
-                "category": concern.category,
-                "strategy": concern.strategy,
-                "context": concern.context,
-                "verify_with": concern.verify_with,
-                "conditions": concern.conditions,
-                "failure": concern.failure,
-                "traces_to": concern.traces_to,
+                "id": issue.id,
+                "text": issue.text,
+                "status": issue.status,
+                "tags": issue.tags,
+                "closed_reason": issue.closed_reason,
+                "created": issue.created.isoformat() if issue.created else None,
+                "updated": issue.updated.isoformat() if issue.updated else None,
             }
         )
     elif item_type == "context":
-        context = blueprint.get_context(item_id)
+        context = spec.get_context(item_id)
         if not context:
             output.error(f"Context not found: {item_id}")
             return 1
@@ -153,9 +155,18 @@ def _show_item(blueprint: Spec, item_id: str, output: Output) -> int:
                 "id": context.id,
                 "name": context.name,
                 "description": context.description,
-                "applies_to": context.applies_to,
                 "expires": context.expires.isoformat() if context.expires else None,
-                "overrides": context.overrides,
+                "modifications": [
+                    {
+                        "action": m.action,
+                        "claim": m.claim,
+                        "level": m.level,
+                        "topic": m.topic,
+                    }
+                    for m in context.modifications
+                ],
+                "created": context.created.isoformat() if context.created else None,
+                "updated": context.updated.isoformat() if context.updated else None,
             }
         )
     else:
@@ -165,97 +176,112 @@ def _show_item(blueprint: Spec, item_id: str, output: Output) -> int:
     return 0
 
 
-def _show_decisions(blueprint: Spec, output: Output) -> None:
-    """Show decisions list."""
-    output.info("Decisions:")
-    for d in blueprint.decisions:
+def _show_claims(spec: Spec, output: Output) -> None:
+    """Show claims list."""
+    output.info("Claims:")
+    for c in spec.claims:
         status_marker = ""
-        if d.status == "superseded":
+        if c.status == "superseded":
             status_marker = " [superseded]"
-        elif d.status == "deferred":
-            status_marker = " [deferred]"
-        elif d.status == "proposed":
-            status_marker = " [proposed]"
+        elif c.status == "rejected":
+            status_marker = " [rejected]"
+        elif c.status == "pending":
+            status_marker = " [pending]"
 
-        output.info(f"  {d.id}  {d.title}{status_marker}")
+        level_marker = ""
+        if c.level == "block":
+            level_marker = " *"
+        elif c.level == "skip":
+            level_marker = " -"
+
+        output.info(f"  {c.id}  {c.text}{status_marker}{level_marker}")
 
         if output.verbose:
-            if d.description:
-                # Show first line of description
-                first_line = d.description.strip().split("\n")[0]
-                if len(first_line) > 60:
-                    first_line = first_line[:57] + "..."
-                output.info(f"        {first_line}")
-            if d.decided_by:
-                date_str = d.decided_on.strftime("%Y-%m-%d") if d.decided_on else ""
-                output.info(f"        Decided by {d.decided_by} {date_str}".rstrip())
+            if c.tags:
+                output.info(f"        Tags: {', '.join(c.tags)}")
+            if c.author:
+                date_str = c.created.strftime("%Y-%m-%d") if c.created else ""
+                output.info(f"        By {c.author} {date_str}".rstrip())
 
 
-def _show_decision_detail(decision: Decision, output: Output) -> None:
-    """Show full decision details."""
-    output.info(f"{decision.id}: {decision.title}")
-    output.info(f"Status: {decision.status}")
-    if decision.description:
+def _show_claim_detail(claim: Claim, output: Output) -> None:
+    """Show full claim details."""
+    output.info(f"{claim.id}: {claim.text}")
+    output.info(f"Status: {claim.status}")
+    output.info(f"Level: {claim.level}")
+    output.info(f"Source: {claim.source}")
+    if claim.author:
+        output.info(f"Author: {claim.author}")
+    if claim.tags:
+        output.info(f"Tags: {', '.join(claim.tags)}")
+    if claim.why:
         output.info("")
-        output.info(decision.description.strip())
-    if decision.alternatives:
+        output.info(f"Why: {claim.why}")
+    if claim.considered:
         output.info("")
-        output.info("Alternatives considered:")
-        for alt in decision.alternatives:
+        output.info("Considered:")
+        for alt in claim.considered:
             output.info(f"  - {alt}")
-    if decision.rationale:
+    if claim.verify:
         output.info("")
-        output.info(f"Rationale: {decision.rationale}")
-    if decision.decided_by:
-        date_str = (
-            decision.decided_on.strftime("%Y-%m-%d") if decision.decided_on else ""
-        )
+        output.info(f"Verify: {', '.join(claim.verify)}")
+    if claim.files:
         output.info("")
-        output.info(f"Decided by {decision.decided_by} on {date_str}".rstrip())
+        output.info("Files:")
+        for f in claim.files:
+            output.info(f"  - {f}")
+    if claim.evidence:
+        output.info("")
+        output.info("Evidence:")
+        for e in claim.evidence:
+            output.info(f"  - {e}")
+    if claim.traces_to:
+        output.info("")
+        output.info(f"Traces to: {', '.join(claim.traces_to)}")
+    if claim.supersedes:
+        output.info(f"Supersedes: {claim.supersedes}")
+    if claim.closes:
+        output.info(f"Closes: {', '.join(claim.closes)}")
+    if claim.created:
+        output.info("")
+        output.info(f"Created: {claim.created.strftime('%Y-%m-%d %H:%M')}")
+    if claim.updated:
+        output.info(f"Updated: {claim.updated.strftime('%Y-%m-%d %H:%M')}")
 
 
-def _show_concerns(blueprint: Spec, output: Output) -> None:
-    """Show concerns list."""
-    output.info("Concerns:")
-    for c in blueprint.concerns:
-        category = f"[{c.category}] " if c.category else ""
-        output.info(f"  {c.id}  {category}{c.claim}")
+def _show_issues(spec: Spec, output: Output) -> None:
+    """Show issues list."""
+    output.info("Issues:")
+    for i in spec.issues:
+        status_marker = " [closed]" if i.status == "closed" else ""
+        output.info(f"  {i.id}  {i.text}{status_marker}")
 
         if output.verbose:
-            output.info(f"        Strategy: {c.strategy}, Failure: {c.failure}")
-            if c.traces_to:
-                output.info(f"        Traces to: {', '.join(c.traces_to)}")
+            if i.tags:
+                output.info(f"        Tags: {', '.join(i.tags)}")
+            if i.closed_reason:
+                output.info(f"        Reason: {i.closed_reason}")
 
 
-def _show_concern_detail(concern: Concern, output: Output) -> None:
-    """Show full concern details."""
-    output.info(f"{concern.id}: {concern.claim}")
-    if concern.category:
-        output.info(f"Category: {concern.category}")
-    output.info(f"Strategy: {concern.strategy}")
-    output.info(f"Failure: {concern.failure}")
-    if concern.conditions:
+def _show_issue_detail(issue: Issue, output: Output) -> None:
+    """Show full issue details."""
+    output.info(f"{issue.id}: {issue.text}")
+    output.info(f"Status: {issue.status}")
+    if issue.tags:
+        output.info(f"Tags: {', '.join(issue.tags)}")
+    if issue.closed_reason:
+        output.info(f"Closed reason: {issue.closed_reason}")
+    if issue.created:
         output.info("")
-        output.info("Conditions:")
-        for cond in concern.conditions:
-            output.info(f"  - {cond}")
-    if concern.context:
-        output.info("")
-        output.info("Context files:")
-        for ctx in concern.context:
-            output.info(f"  - {ctx}")
-    if concern.verify_with:
-        output.info("")
-        output.info(f"Verify with: {', '.join(concern.verify_with)}")
-    if concern.traces_to:
-        output.info("")
-        output.info(f"Traces to: {', '.join(concern.traces_to)}")
+        output.info(f"Created: {issue.created.strftime('%Y-%m-%d %H:%M')}")
+    if issue.updated:
+        output.info(f"Updated: {issue.updated.strftime('%Y-%m-%d %H:%M')}")
 
 
-def _show_contexts(blueprint: Spec, output: Output) -> None:
+def _show_contexts(spec: Spec, output: Output) -> None:
     """Show contexts list."""
     output.info("Contexts:")
-    for c in blueprint.contexts:
+    for c in spec.contexts:
         output.info(f"  {c.id}  {c.name}")
 
         if output.verbose:
@@ -274,16 +300,24 @@ def _show_context_detail(context: Context, output: Output) -> None:
     if context.description:
         output.info("")
         output.info(context.description.strip())
-    if context.applies_to:
-        output.info("")
-        output.info("Applies to:")
-        for item in context.applies_to:
-            output.info(f"  - {item}")
     if context.expires:
         output.info("")
         output.info(f"Expires: {context.expires.strftime('%Y-%m-%d')}")
-    if context.overrides:
+    if context.modifications:
         output.info("")
-        output.info("Overrides:")
-        for key, value in context.overrides.items():
-            output.info(f"  {key}: {value}")
+        output.info("Modifications:")
+        for m in context.modifications:
+            if m.claim:
+                target = m.claim
+            elif m.level:
+                target = f"level={m.level}"
+            elif m.topic:
+                target = f"topic={m.topic}"
+            else:
+                target = "(unknown)"
+            output.info(f"  - {target}: {m.action}")
+    if context.created:
+        output.info("")
+        output.info(f"Created: {context.created.strftime('%Y-%m-%d %H:%M')}")
+    if context.updated:
+        output.info(f"Updated: {context.updated.strftime('%Y-%m-%d %H:%M')}")

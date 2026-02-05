@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from certo.spec import Concern
 from certo.check.core import CheckContext, CheckResult
+from certo.spec import Claim
 
 
-def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
-    """Verify a concern using LLM."""
+def check_claim_llm(ctx: CheckContext, claim: Claim) -> CheckResult:
+    """Verify a claim using LLM."""
     from certo.llm.provider import LLMError, NoAPIKeyError
     from certo.llm.verify import (
         FileMissingError,
@@ -15,30 +15,30 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
         verify_concern,
     )
 
-    # Validate concern has required fields
-    if not concern.claim:
+    # Validate claim has required fields
+    if not claim.text:
         return CheckResult(
-            concern_id=concern.id,
-            claim="(no claim specified)",
+            claim_id=claim.id,
+            claim_text="(no claim text specified)",
             passed=False,
-            message="Concern is missing 'claim' field",
+            message="Claim is missing 'text' field",
             strategy="llm",
         )
 
-    if not concern.context:
+    if not claim.files:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=False,
-            message="Concern is missing 'context' field (required for LLM strategy)",
+            message="Claim is missing 'files' field (required for LLM verification)",
             strategy="llm",
         )
 
     # Check offline mode
     if ctx.offline:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=True,  # Pass in offline mode (not a failure)
             message="Skipped: offline mode",
             strategy="llm",
@@ -46,9 +46,9 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
     try:
         result = verify_concern(
-            concern_id=concern.id,
-            claim=concern.claim,
-            context_patterns=concern.context,
+            concern_id=claim.id,
+            claim=claim.text,
+            context_patterns=claim.files,
             project_root=ctx.project_root,
             model=ctx.model,
             no_cache=ctx.no_cache,
@@ -56,8 +56,8 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
         cache_note = " (cached)" if result.cached else ""
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=result.passed,
             message=f"{result.explanation}{cache_note}",
             strategy="llm",
@@ -65,8 +65,8 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
     except NoAPIKeyError as e:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=False,
             message=f"API key error: {e}",
             strategy="llm",
@@ -74,8 +74,8 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
     except FileMissingError as e:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=False,
             message=f"Missing context: {e}",
             strategy="llm",
@@ -83,8 +83,8 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
     except FileTooLargeError as e:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=False,
             message=f"Context too large: {e}",
             strategy="llm",
@@ -92,9 +92,13 @@ def check_concern_llm(ctx: CheckContext, concern: Concern) -> CheckResult:
 
     except LLMError as e:
         return CheckResult(
-            concern_id=concern.id,
-            claim=concern.claim,
+            claim_id=claim.id,
+            claim_text=claim.text,
             passed=False,
             message=f"LLM error: {e}",
             strategy="llm",
         )
+
+
+# Backward compatibility alias
+check_concern_llm = check_claim_llm

@@ -88,7 +88,7 @@ def test_main_exception_text(
     def raise_error(*args: object, **kwargs: object) -> None:
         raise RuntimeError("test error")
 
-    monkeypatch.setattr("certo.cli.check.check_blueprint", raise_error)
+    monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
         result = main(["check", tmpdir])
@@ -105,7 +105,7 @@ def test_main_exception_json(
     def raise_error(*args: object, **kwargs: object) -> None:
         raise RuntimeError("test error")
 
-    monkeypatch.setattr("certo.cli.check.check_blueprint", raise_error)
+    monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
         result = main(["--format", "json", "check", tmpdir])

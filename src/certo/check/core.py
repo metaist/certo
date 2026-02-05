@@ -12,8 +12,8 @@ from certo.spec import Spec
 class CheckResult:
     """Result of a single verification check."""
 
-    concern_id: str
-    claim: str
+    claim_id: str
+    claim_text: str
     passed: bool
     message: str
     strategy: str
@@ -24,30 +24,30 @@ class CheckContext:
     """Context for running checks."""
 
     project_root: Path
-    blueprint_path: Path
-    blueprint: Spec | None = None
+    spec_path: Path
+    spec: Spec | None = None
     offline: bool = False
     no_cache: bool = False
     model: str | None = None
 
 
-def check_blueprint(
-    blueprint_path: Path,
+def check_spec(
+    spec_path: Path,
     *,
     offline: bool = False,
     no_cache: bool = False,
     model: str | None = None,
 ) -> list[CheckResult]:
-    """Run all blueprint checks and return results."""
-    from certo.check.llm import check_concern_llm
-    from certo.check.scan import check_concern_scan
-    from certo.check.static import check_blueprint_exists, check_blueprint_valid_toml
+    """Run all spec checks and return results."""
+    from certo.check.llm import check_claim_llm
+    from certo.check.scan import check_claim_scan
+    from certo.check.static import check_spec_exists, check_spec_valid_toml
 
-    project_root = blueprint_path.parent.parent  # .certo.spec.toml -> project root
+    project_root = spec_path.parent.parent  # .certo/spec.toml -> project root
 
     ctx = CheckContext(
         project_root=project_root,
-        blueprint_path=blueprint_path,
+        spec_path=spec_path,
         offline=offline,
         no_cache=no_cache,
         model=model,
@@ -55,36 +55,46 @@ def check_blueprint(
 
     results: list[CheckResult] = []
 
-    # c1: Spec can be parsed
-    exists_result = check_blueprint_exists(ctx)
+    # Built-in: Spec can be parsed
+    exists_result = check_spec_exists(ctx)
     if not exists_result.passed:
         results.append(exists_result)
         return results
 
-    toml_result = check_blueprint_valid_toml(ctx)
+    toml_result = check_spec_valid_toml(ctx)
     results.append(toml_result)
 
-    if not toml_result.passed or ctx.blueprint is None:
+    if not toml_result.passed or ctx.spec is None:
         return results
 
-    # Process concerns from blueprint
-    for concern in ctx.blueprint.concerns:
-        if concern.strategy == "static":
-            # Check if we have a handler for this static concern
-            if "scan" in concern.verify_with:
-                result = check_concern_scan(ctx, concern)
-                results.append(result)
-            # else: no handler, skip
+    # Process claims from spec
+    for claim in ctx.spec.claims:
+        # Skip claims that shouldn't be checked
+        if claim.status in ("rejected", "superseded"):
+            continue
+        if claim.level == "skip":
             continue
 
-        if concern.strategy == "llm":
-            # Explicit LLM strategy - verify with LLM
-            result = check_concern_llm(ctx, concern)
+        # Determine verification strategy
+        strategies = claim.verify if claim.verify else ["auto"]
+
+        if "scan" in strategies:
+            result = check_claim_scan(ctx, claim)
             results.append(result)
-        elif concern.strategy == "auto" and concern.context:
-            # Auto strategy with context - try LLM
-            result = check_concern_llm(ctx, concern)
+        elif "llm" in strategies:
+            result = check_claim_llm(ctx, claim)
             results.append(result)
-        # else: auto without context - skip (no way to verify yet)
+        elif "static" in strategies:
+            # No generic static handler yet, skip
+            continue
+        elif "auto" in strategies and claim.files:
+            # Auto with files - try LLM
+            result = check_claim_llm(ctx, claim)
+            results.append(result)
+        # else: auto without files - skip (no way to verify yet)
 
     return results
+
+
+# Backward compatibility alias
+check_blueprint = check_spec

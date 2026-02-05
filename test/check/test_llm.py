@@ -7,60 +7,64 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from certo.check import check_blueprint
+from certo.check import check_spec
 
 
-def test_check_blueprint_with_llm_concern_offline() -> None:
-    """Test that LLM concerns are skipped in offline mode."""
+def test_check_spec_with_llm_claim_offline() -> None:
+    """Test that LLM claims are skipped in offline mode."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["README.md"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["README.md"]
 """)
         # Create the context file
         (root / "README.md").write_text("# Test")
 
-        results = check_blueprint(blueprint, offline=True)
-        # Should have c1 (TOML valid) + c-test (skipped)
+        results = check_spec(spec, offline=True)
+        # Should have builtin (TOML valid) + c-test (skipped)
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert results[1].passed  # Skipped counts as pass
         assert "skipped" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_missing_context() -> None:
-    """Test that missing context files fail fast."""
+def test_check_spec_llm_missing_files() -> None:
+    """Test that missing files fail fast."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["nonexistent.md"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["nonexistent.md"]
 """)
 
         # Not offline, so it will try to verify
         # Missing files should fail before API key check
-        results = check_blueprint(blueprint, offline=False)
+        results = check_spec(spec, offline=False)
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
         assert (
             "missing" in results[1].message.lower()
@@ -68,86 +72,92 @@ context = ["nonexistent.md"]
         )
 
 
-def test_check_blueprint_llm_missing_claim() -> None:
-    """Test that concerns without claim fail."""
+def test_check_spec_llm_missing_text() -> None:
+    """Test that claims without text fail."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-strategy = "llm"
-context = ["README.md"]
+status = "confirmed"
+verify = ["llm"]
+files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
 
-        results = check_blueprint(blueprint, offline=True)
+        results = check_spec(spec, offline=True)
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
-        assert "claim" in results[1].message.lower()
+        assert "text" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_missing_context_field() -> None:
-    """Test that concerns without context field fail."""
+def test_check_spec_llm_missing_files_field() -> None:
+    """Test that claims without files field fail."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
 """)
 
-        results = check_blueprint(blueprint, offline=True)
+        results = check_spec(spec, offline=True)
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
-        assert "context" in results[1].message.lower()
+        assert "files" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_no_api_key() -> None:
+def test_check_spec_llm_no_api_key() -> None:
     """Test that missing API key gives clear error."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["README.md"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
 
         # Ensure no API key
         with patch.dict(os.environ, {}, clear=True):
             os.environ.pop("OPENROUTER_API_KEY", None)
-            results = check_blueprint(blueprint, offline=False)
+            results = check_spec(spec, offline=False)
 
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
         assert "api key" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_file_too_large() -> None:
+def test_check_spec_llm_file_too_large() -> None:
     """Test that large files give clear error."""
     from certo.llm.verify import MAX_CONTEXT_FILE_SIZE
 
@@ -155,28 +165,30 @@ def test_check_blueprint_llm_file_too_large() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["large.txt"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["large.txt"]
 """)
         # Create a file larger than the limit
         (root / "large.txt").write_text("x" * (MAX_CONTEXT_FILE_SIZE + 1))
 
-        results = check_blueprint(blueprint, offline=False)
+        results = check_spec(spec, offline=False)
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
         assert "too large" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_api_error() -> None:
+def test_check_spec_llm_api_error() -> None:
     """Test that API errors give clear message."""
     from certo.llm.provider import APIError
 
@@ -184,30 +196,32 @@ def test_check_blueprint_llm_api_error() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["README.md"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
 
         with patch("certo.llm.verify.call_llm") as mock_call:
             mock_call.side_effect = APIError("Connection failed")
-            results = check_blueprint(blueprint, offline=False)
+            results = check_spec(spec, offline=False)
 
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert not results[1].passed
         assert "llm error" in results[1].message.lower()
 
 
-def test_check_blueprint_llm_cached_result() -> None:
+def test_check_spec_llm_cached_result() -> None:
     """Test that cached results show (cached) in message."""
     from certo.llm.verify import VerificationResult
 
@@ -215,16 +229,18 @@ def test_check_blueprint_llm_cached_result() -> None:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
         certo_dir.mkdir()
-        blueprint = certo_dir / "spec.toml"
-        blueprint.write_text("""
-[blueprint]
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
 name = "test"
+version = 1
 
-[[concerns]]
+[[claims]]
 id = "c-test"
-claim = "Test claim"
-strategy = "llm"
-context = ["README.md"]
+text = "Test claim"
+status = "confirmed"
+verify = ["llm"]
+files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
 
@@ -241,9 +257,9 @@ context = ["README.md"]
         )
 
         with patch("certo.llm.verify.verify_concern", return_value=mock_result):
-            results = check_blueprint(blueprint, offline=False)
+            results = check_spec(spec, offline=False)
 
         assert len(results) == 2
-        assert results[1].concern_id == "c-test"
+        assert results[1].claim_id == "c-test"
         assert results[1].passed
         assert "(cached)" in results[1].message

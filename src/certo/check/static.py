@@ -4,56 +4,61 @@ from __future__ import annotations
 
 import tomllib
 
-from certo.spec import Spec
 from certo.check.core import CheckContext, CheckResult
+from certo.spec import Spec
 
 
-def check_blueprint_exists(ctx: CheckContext) -> CheckResult:
-    """Check that a blueprint file exists."""
-    if ctx.blueprint_path.exists():
+def check_spec_exists(ctx: CheckContext) -> CheckResult:
+    """Check that a spec file exists."""
+    if ctx.spec_path.exists():
         return CheckResult(
-            concern_id="c1",
-            claim="A spec.toml file can be parsed",
+            claim_id="builtin-spec-exists",
+            claim_text="A spec.toml file can be parsed",
             passed=True,
             message="File exists",
             strategy="static",
         )
     return CheckResult(
-        concern_id="c1",
-        claim="A spec.toml file can be parsed",
+        claim_id="builtin-spec-exists",
+        claim_text="A spec.toml file can be parsed",
         passed=False,
-        message=f"File not found: {ctx.blueprint_path}",
+        message=f"File not found: {ctx.spec_path}",
         strategy="static",
     )
 
 
-def check_blueprint_valid_toml(ctx: CheckContext) -> CheckResult:
-    """Check that the blueprint is valid TOML."""
-    if not ctx.blueprint_path.exists():
+def check_spec_valid_toml(ctx: CheckContext) -> CheckResult:
+    """Check that the spec is valid TOML."""
+    if not ctx.spec_path.exists():
         return CheckResult(
-            concern_id="c1",
-            claim="A spec.toml file can be parsed",
+            claim_id="builtin-spec-valid",
+            claim_text="A spec.toml file can be parsed",
             passed=False,
             message="Cannot check TOML validity: file does not exist",
             strategy="static",
         )
 
     try:
-        with ctx.blueprint_path.open("rb") as f:
+        with ctx.spec_path.open("rb") as f:
             data = tomllib.load(f)
-        ctx.blueprint = Spec.parse(data)
+        ctx.spec = Spec.parse(data)
         return CheckResult(
-            concern_id="c1",
-            claim="A spec.toml file can be parsed",
+            claim_id="builtin-spec-valid",
+            claim_text="A spec.toml file can be parsed",
             passed=True,
             message="Valid TOML",
             strategy="static",
         )
     except tomllib.TOMLDecodeError as e:
         return CheckResult(
-            concern_id="c1",
-            claim="A spec.toml file can be parsed",
+            claim_id="builtin-spec-valid",
+            claim_text="A spec.toml file can be parsed",
             passed=False,
             message=f"Invalid TOML: {e}",
             strategy="static",
         )
+
+
+# Backward compatibility aliases
+check_blueprint_exists = check_spec_exists
+check_blueprint_valid_toml = check_spec_valid_toml

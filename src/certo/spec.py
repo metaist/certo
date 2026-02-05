@@ -1,7 +1,9 @@
-"""Blueprint data types."""
+"""Spec data types."""
 
 from __future__ import annotations
 
+import hashlib
+import time
 import tomllib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -9,61 +11,107 @@ from pathlib import Path
 from typing import Any, Self
 
 
-@dataclass
-class Decision:
-    """An explicit choice made during specification."""
+def generate_id(prefix: str) -> str:
+    """Generate a unique ID with the given prefix."""
+    # Use timestamp + random bytes for uniqueness
+    data = f"{time.time_ns()}".encode()
+    hash_bytes = hashlib.sha256(data).hexdigest()[:7]
+    return f"{prefix}-{hash_bytes}"
 
-    id: str
-    title: str
-    status: str = "proposed"  # proposed | confirmed | superseded | deferred
-    description: str = ""
-    alternatives: list[str] = field(default_factory=list)
-    rationale: str = ""
-    decided_by: str = ""
-    decided_on: datetime | None = None
+
+@dataclass
+class Modification:
+    """A modification to a claim within a context."""
+
+    action: str  # relax | promote | exempt
+    claim: str = ""  # specific claim ID
+    level: str = ""  # target all claims at this level
+    topic: str = ""  # target all claims with this tag
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a decision from TOML data."""
+        """Parse a modification from TOML data."""
         return cls(
-            id=data.get("id", "unknown"),
-            title=data.get("title", ""),
-            status=data.get("status", "proposed"),
-            description=data.get("description", ""),
-            alternatives=data.get("alternatives", []),
-            rationale=data.get("rationale", ""),
-            decided_by=data.get("decided_by", ""),
-            decided_on=data.get("decided_on"),
+            action=data.get("action", ""),
+            claim=data.get("claim", ""),
+            level=data.get("level", ""),
+            topic=data.get("topic", ""),
         )
 
 
 @dataclass
-class Concern:
-    """A statement that must be true, with verification strategy."""
+class Claim:
+    """A statement that can be verified."""
 
     id: str
-    claim: str
-    category: str = ""
-    strategy: str = "auto"  # auto | static | llm | test
-    context: list[str] = field(default_factory=list)
-    verify_with: list[str] = field(default_factory=list)
-    conditions: list[str] = field(default_factory=list)
-    failure: str = "warn"  # warn | block-commit | block-release
+    text: str
+    status: str = "pending"  # pending | confirmed | rejected | superseded
+    source: str = "human"  # human | inferred | scan
+    author: str = ""
+    level: str = "warn"  # block | warn | skip
+    tags: list[str] = field(default_factory=list)
+    verify: list[str] = field(
+        default_factory=list
+    )  # auto | static | llm | scan | coverage
+    files: list[str] = field(default_factory=list)  # for LLM verification
+    evidence: list[str] = field(default_factory=list)  # for audit trail
+    created: datetime | None = None
+    updated: datetime | None = None
+
+    # Optional
+    why: str = ""
+    considered: list[str] = field(default_factory=list)
     traces_to: list[str] = field(default_factory=list)
+    supersedes: str = ""
+    closes: list[str] = field(default_factory=list)
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a concern from TOML data."""
+        """Parse a claim from TOML data."""
         return cls(
-            id=data.get("id", "unknown"),
-            claim=data.get("claim", ""),
-            category=data.get("category", ""),
-            strategy=data.get("strategy", "auto"),
-            context=data.get("context", []),
-            verify_with=data.get("verify_with", []),
-            conditions=data.get("conditions", []),
-            failure=data.get("failure", "warn"),
+            id=data.get("id", ""),
+            text=data.get("text", ""),
+            status=data.get("status", "pending"),
+            source=data.get("source", "human"),
+            author=data.get("author", ""),
+            level=data.get("level", "warn"),
+            tags=data.get("tags", []),
+            verify=data.get("verify", []),
+            files=data.get("files", []),
+            evidence=data.get("evidence", []),
+            created=data.get("created"),
+            updated=data.get("updated"),
+            why=data.get("why", ""),
+            considered=data.get("considered", []),
             traces_to=data.get("traces_to", []),
+            supersedes=data.get("supersedes", ""),
+            closes=data.get("closes", []),
+        )
+
+
+@dataclass
+class Issue:
+    """An open issue or question."""
+
+    id: str
+    text: str
+    status: str = "open"  # open | closed
+    tags: list[str] = field(default_factory=list)
+    created: datetime | None = None
+    updated: datetime | None = None
+    closed_reason: str = ""  # when status = closed
+
+    @classmethod
+    def parse(cls, data: dict[str, Any]) -> Self:
+        """Parse an issue from TOML data."""
+        return cls(
+            id=data.get("id", ""),
+            text=data.get("text", ""),
+            status=data.get("status", "open"),
+            tags=data.get("tags", []),
+            created=data.get("created"),
+            updated=data.get("updated"),
+            closed_reason=data.get("closed_reason", ""),
         )
 
 
@@ -74,20 +122,24 @@ class Context:
     id: str
     name: str
     description: str = ""
-    applies_to: list[str] = field(default_factory=list)
+    created: datetime | None = None
+    updated: datetime | None = None
     expires: datetime | None = None
-    overrides: dict[str, Any] = field(default_factory=dict)
+    modifications: list[Modification] = field(default_factory=list)
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a context from TOML data."""
         return cls(
-            id=data.get("id", "unknown"),
+            id=data.get("id", ""),
             name=data.get("name", ""),
             description=data.get("description", ""),
-            applies_to=data.get("applies_to", []),
+            created=data.get("created"),
+            updated=data.get("updated"),
             expires=data.get("expires"),
-            overrides=data.get("overrides", {}),
+            modifications=[
+                Modification.parse(m) for m in data.get("modifications", [])
+            ],
         )
 
 
@@ -96,12 +148,11 @@ class Spec:
     """A specification for a project."""
 
     name: str
-    version: str = ""
+    version: int = 1  # schema version
     created: datetime | None = None
     author: str = ""
-    description: str = ""
-    decisions: list[Decision] = field(default_factory=list)
-    concerns: list[Concern] = field(default_factory=list)
+    claims: list[Claim] = field(default_factory=list)
+    issues: list[Issue] = field(default_factory=list)
     contexts: list[Context] = field(default_factory=list)
 
     @classmethod
@@ -110,12 +161,11 @@ class Spec:
         meta = data.get("spec", {})
         return cls(
             name=meta.get("name", ""),
-            version=meta.get("version", ""),
+            version=meta.get("version", 1),
             created=meta.get("created"),
             author=meta.get("author", ""),
-            description=meta.get("description", ""),
-            decisions=[Decision.parse(d) for d in data.get("decisions", [])],
-            concerns=[Concern.parse(c) for c in data.get("concerns", [])],
+            claims=[Claim.parse(c) for c in data.get("claims", [])],
+            issues=[Issue.parse(i) for i in data.get("issues", [])],
             contexts=[Context.parse(c) for c in data.get("contexts", [])],
         )
 
@@ -126,18 +176,18 @@ class Spec:
             data = tomllib.load(f)
         return cls.parse(data)
 
-    def get_concern(self, concern_id: str) -> Concern | None:
-        """Get a concern by ID."""
-        for concern in self.concerns:
-            if concern.id == concern_id:
-                return concern
+    def get_claim(self, claim_id: str) -> Claim | None:
+        """Get a claim by ID."""
+        for claim in self.claims:
+            if claim.id == claim_id:
+                return claim
         return None
 
-    def get_decision(self, decision_id: str) -> Decision | None:
-        """Get a decision by ID."""
-        for decision in self.decisions:
-            if decision.id == decision_id:
-                return decision
+    def get_issue(self, issue_id: str) -> Issue | None:
+        """Get an issue by ID."""
+        for issue in self.issues:
+            if issue.id == issue_id:
+                return issue
         return None
 
     def get_context(self, context_id: str) -> Context | None:
