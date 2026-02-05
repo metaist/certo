@@ -302,6 +302,24 @@ only when cheaper strategies (static analysis, tests) don't apply.
 decided_by = "metaist"
 decided_on = 2026-02-05T18:00:00Z
 
+[[decisions]]
+id = "d19"
+title = "Test directory structure mirrors source directory structure"
+status = "confirmed"
+description = """
+Tests for src/certo/foo/ live in test/foo/test_*.py, not test/test_foo_*.py. \
+This makes it easy to find tests for a given module and keeps the test \
+directory organized as the project grows.
+"""
+alternatives = ["Flat test directory with prefixes", "Tests alongside source"]
+rationale = """
+Mirroring keeps navigation simple. When looking at src/certo/check/llm.py, \
+you know tests are in test/check/test_llm.py. Flat directories become unwieldy \
+as the project grows.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T19:00:00Z
+
 # =============================================================================
 # CONCERNS
 # =============================================================================
@@ -378,6 +396,18 @@ strategy = "llm"
 context = ["docs/cli.md", "src/certo/cli.py"]
 failure = "warn"
 traces_to = ["d18"]
+
+[[concerns]]
+id = "c8"
+category = "maintainability"
+claim = "Test directory structure mirrors source directory structure"
+conditions = [
+  "src/certo/foo/ has corresponding test/foo/",
+  "test/foo/test_*.py tests src/certo/foo/*.py",
+]
+strategy = "static"
+failure = "warn"
+traces_to = ["d19"]
 
 # =============================================================================
 # CONTEXTS

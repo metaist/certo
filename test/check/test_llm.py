@@ -1,97 +1,13 @@
-"""Tests for certo.check module."""
+"""Tests for certo.check.llm module."""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
-from certo.check import (
-    CheckContext,
-    check_blueprint,
-    check_blueprint_exists,
-    check_blueprint_valid_toml,
-)
-
-
-def _make_ctx(blueprint_path: Path) -> CheckContext:
-    """Create a CheckContext for testing."""
-    return CheckContext(
-        project_root=blueprint_path.parent,
-        blueprint_path=blueprint_path,
-    )
-
-
-def test_check_blueprint_exists_success() -> None:
-    """Test that existing blueprint is detected."""
-    with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
-        blueprint.write_text('[blueprint]\nname = "test"\n')
-
-        ctx = _make_ctx(blueprint)
-        result = check_blueprint_exists(ctx)
-        assert result.passed
-        assert result.concern_id == "c1"
-
-
-def test_check_blueprint_exists_failure() -> None:
-    """Test that missing blueprint is detected."""
-    ctx = _make_ctx(Path("/nonexistent/blueprint.toml"))
-    result = check_blueprint_exists(ctx)
-    assert not result.passed
-    assert "not found" in result.message.lower()
-
-
-def test_check_blueprint_valid_toml_success() -> None:
-    """Test that valid TOML is accepted."""
-    with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
-        blueprint.write_text('[blueprint]\nname = "test"\nversion = "0.1.0"\n')
-
-        ctx = _make_ctx(blueprint)
-        result = check_blueprint_valid_toml(ctx)
-        assert result.passed
-        assert result.strategy == "static"
-
-
-def test_check_blueprint_valid_toml_failure() -> None:
-    """Test that invalid TOML is rejected."""
-    with TemporaryDirectory() as tmpdir:
-        blueprint = Path(tmpdir) / "blueprint.toml"
-        blueprint.write_text("this is not valid toml [[[")
-
-        ctx = _make_ctx(blueprint)
-        result = check_blueprint_valid_toml(ctx)
-        assert not result.passed
-        assert "invalid toml" in result.message.lower()
-
-
-def test_check_blueprint_valid_toml_missing_file() -> None:
-    """Test TOML check on missing file."""
-    ctx = _make_ctx(Path("/nonexistent/blueprint.toml"))
-    result = check_blueprint_valid_toml(ctx)
-    assert not result.passed
-    assert "does not exist" in result.message.lower()
-
-
-def test_check_blueprint_integration() -> None:
-    """Test full blueprint check integration."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
-        blueprint.write_text('[blueprint]\nname = "test"\n')
-
-        results = check_blueprint(blueprint)
-        assert len(results) == 1
-        assert results[0].passed
-
-
-def test_check_blueprint_missing() -> None:
-    """Test full check on missing blueprint."""
-    results = check_blueprint(Path("/nonexistent/.certo/blueprint.toml"))
-    assert len(results) == 1
-    assert not results[0].passed
+from certo.check import check_blueprint
 
 
 def test_check_blueprint_with_llm_concern_offline() -> None:
@@ -141,8 +57,7 @@ context = ["nonexistent.md"]
 """)
 
         # Not offline, so it will try to verify
-        # But no API key, so it should fail with API key error first
-        # Actually, missing files should fail before API key check
+        # Missing files should fail before API key check
         results = check_blueprint(blueprint, offline=False)
         assert len(results) == 2
         assert results[1].concern_id == "c-test"
@@ -204,9 +119,6 @@ strategy = "llm"
 
 def test_check_blueprint_llm_no_api_key() -> None:
     """Test that missing API key gives clear error."""
-    import os
-    from unittest.mock import patch
-
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -266,8 +178,6 @@ context = ["large.txt"]
 
 def test_check_blueprint_llm_api_error() -> None:
     """Test that API errors give clear message."""
-    from unittest.mock import patch
-
     from certo.llm.provider import APIError
 
     with TemporaryDirectory() as tmpdir:
@@ -297,83 +207,8 @@ context = ["README.md"]
         assert "llm error" in results[1].message.lower()
 
 
-def test_check_blueprint_skips_static_concerns() -> None:
-    """Test that static concerns without handlers are skipped."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
-        blueprint.write_text("""
-[blueprint]
-name = "test"
-
-[[concerns]]
-id = "c-static"
-claim = "Some static check"
-strategy = "static"
-""")
-
-        results = check_blueprint(blueprint)
-        # Should only have c1 (TOML valid), not the static concern
-        assert len(results) == 1
-        assert results[0].concern_id == "c1"
-
-
-def test_check_blueprint_auto_strategy_with_context() -> None:
-    """Test auto strategy with context uses LLM."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
-        blueprint.write_text("""
-[blueprint]
-name = "test"
-
-[[concerns]]
-id = "c-test"
-claim = "Test claim"
-strategy = "auto"
-context = ["README.md"]
-""")
-        (root / "README.md").write_text("# Test")
-
-        # Auto with context should try LLM, but offline so skipped
-        results = check_blueprint(blueprint, offline=True)
-        assert len(results) == 2
-        assert results[1].concern_id == "c-test"
-        assert "skipped" in results[1].message.lower()
-
-
-def test_check_blueprint_auto_strategy_without_context() -> None:
-    """Test auto strategy without context is skipped."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        blueprint = certo_dir / "blueprint.toml"
-        blueprint.write_text("""
-[blueprint]
-name = "test"
-
-[[concerns]]
-id = "c-auto-no-context"
-claim = "Test claim without context"
-strategy = "auto"
-""")
-
-        # Auto without context should be silently skipped
-        results = check_blueprint(blueprint)
-        # Should only have c1 (TOML valid), not the auto concern
-        assert len(results) == 1
-        assert results[0].concern_id == "c1"
-
-
 def test_check_blueprint_llm_cached_result() -> None:
     """Test that cached results show (cached) in message."""
-    from unittest.mock import patch
-
     from certo.llm.verify import VerificationResult
 
     with TemporaryDirectory() as tmpdir:
