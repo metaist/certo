@@ -174,6 +174,25 @@ full test execution) can run in CI or on explicit request.
 decided_by = "metaist"
 decided_on = 2026-02-05T14:50:00Z
 
+[[decisions]]
+id = "d11"
+title = "Track implicit assumptions explicitly"
+status = "confirmed"
+description = """
+Blueprints include an [[assumptions]] section to capture implicit assumptions \
+about environment, dependencies, and configuration. Assumptions have evidence \
+(what implies the assumption) and should_match (what else must agree). \
+certo scan discovers and verifies assumptions.
+"""
+alternatives = ["Assumptions in concerns only", "No explicit tracking", "External documentation"]
+rationale = """
+CI failures from Python version mismatch revealed that assumptions exist in \
+multiple places (code imports, pyproject.toml, CI matrix) and can drift. \
+Explicit tracking enables automated consistency checking.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T16:00:00Z
+
 # =============================================================================
 # CONCERNS
 # =============================================================================
@@ -225,6 +244,19 @@ conditions = ["Runs in under 1 second for typical projects"]
 verify_with = ["benchmark"]
 failure = "warn"
 traces_to = ["d10"]
+
+[[concerns]]
+id = "c6"
+category = "compatibility"
+claim = "certo runs on all declared Python versions"
+conditions = [
+  "CI matrix matches pyproject.toml requires-python",
+  "No imports require higher Python than declared",
+  "Classifiers match requires-python",
+]
+verify_with = ["static", "scan"]
+failure = "block-release"
+traces_to = ["d11"]
 
 # =============================================================================
 # CONTEXTS
@@ -309,3 +341,66 @@ regenerate, (2) fix locally and diverge from template, (3) accept risk during \
 bootstrap. Currently accepting risk during bootstrap phase.
 """
 raised_on = 2026-02-05T14:07:00Z
+
+[[issues]]
+id = "i2"
+title = "CI tested Python 3.10 but tomllib requires 3.11+"
+category = "compatibility"
+description = """
+CI workflow matrix included Python 3.10, but code imports tomllib which \
+was introduced in Python 3.11. ty linter caught the import issue, but the \
+connection to CI config wasn't made automatically.
+"""
+source = "bootstrap"
+status = "resolved"
+resolution = """
+Updated pyproject.toml requires-python to >=3.11 and removed 3.10 from \
+classifiers and CI matrix. This revealed the need for certo scan to \
+detect such mismatches automatically.
+"""
+raised_on = 2026-02-05T15:00:00Z
+resolved_on = 2026-02-05T15:10:00Z
+
+[[issues]]
+id = "i3"
+title = "GitHub Pages deployment assumed branch mode"
+category = "deployment"
+description = """
+Docs workflow assumed GitHub Pages was configured to deploy from Actions, \
+but the repo defaulted to branch-based deployment.
+"""
+source = "bootstrap"
+status = "resolved"
+resolution = "Manually configured GitHub Pages to deploy from Actions."
+raised_on = 2026-02-05T15:00:00Z
+resolved_on = 2026-02-05T15:05:00Z
+
+# =============================================================================
+# ASSUMPTIONS
+# =============================================================================
+# Implicit assumptions about environment, dependencies, and configuration.
+# Status: verified | unverified | violated
+
+[[assumptions]]
+id = "a1"
+description = "Python 3.11+ is required"
+category = "compatibility"
+evidence = [
+  "tomllib import in src/certo/check.py",
+  "pyproject.toml requires-python = '>=3.11,<3.15'",
+]
+should_match = [
+  ".github/workflows/ci.yaml matrix",
+  "pyproject.toml classifiers",
+]
+status = "verified"
+verified_on = 2026-02-05T15:30:00Z
+
+[[assumptions]]
+id = "a2"
+description = "GitHub Pages deploys from Actions, not branch"
+category = "deployment"
+evidence = [".github/workflows/docs.yaml uses actions/deploy-pages"]
+should_match = ["GitHub repo Settings > Pages > Source"]
+status = "verified"
+verified_on = 2026-02-05T15:05:00Z

@@ -128,6 +128,9 @@ mkdocs-serve = "mkdocs serve"
 dev.help = "lint, type-check, and unit tests"
 dev.composite = ["certo", "lint", "types", "test"]
 
+ci.help = "run CI checks (including slow tests)"
+ci.composite = ["dev"]
+
 dev-all.help = "check every supported python version"
 dev-all.shell = """
   ds lint;
