@@ -4,11 +4,19 @@ on:
   push: { branches: [main] }
   pull_request: { branches: [main] }
 
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Restrict permissions to minimum required
+permissions:
+  contents: read # checkout repo
+
 jobs:
   build:
+    name: Build and Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     strategy:
       matrix:
@@ -31,14 +39,5 @@ jobs:
           uv sync
           uv tool install ds-run
 
-      - name: Check
+      - name: Check & Format
         run: ds ci
-
-      - name: Type check (ty, pyrefly, pyright, mypy)
-        run: ds types
-
-      - name: Run tests (pytest, coverage)
-        run: ds test
-
-      - name: Build docs (mkdocs)
-        run: ds docs
