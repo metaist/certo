@@ -446,3 +446,18 @@ def test_main_with_none_argv(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("sys.argv", ["certo", "--version"])
     result = main(None)
     assert result == 0
+
+
+def test_main_check_offline_verbose(capsys: CaptureFixture[str]) -> None:
+    """Test check --offline with -v shows verbose message."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        blueprint = certo_dir / "blueprint.toml"
+        blueprint.write_text('[blueprint]\nname = "test"\n')
+
+        result = main(["-v", "check", "--offline", tmpdir])
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "offline" in captured.out.lower()

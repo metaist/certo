@@ -63,7 +63,19 @@ def cmd_check(args: Namespace, output: Output) -> int:
 
     output.verbose_info(f"Checking blueprint: {blueprint_path}")
 
-    results = check_blueprint(blueprint_path)
+    offline = getattr(args, "offline", False)
+    no_cache = getattr(args, "no_cache", False)
+    model = getattr(args, "model", None)
+
+    if offline:
+        output.verbose_info("Running in offline mode (LLM checks will be skipped)")
+
+    results = check_blueprint(
+        blueprint_path,
+        offline=offline,
+        no_cache=no_cache,
+        model=model,
+    )
 
     # Display results
     passed = 0
@@ -258,6 +270,20 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path.cwd(),
         help="project root (default: current directory)",
+    )
+    check_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="skip LLM-backed checks (no network calls)",
+    )
+    check_parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="ignore cached verification results",
+    )
+    check_parser.add_argument(
+        "--model",
+        help="LLM model to use (overrides CERTO_MODEL env var)",
     )
     check_parser.set_defaults(func=cmd_check)
 

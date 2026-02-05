@@ -284,6 +284,24 @@ and risks drift from source. Ruff/ty use the same approach.
 decided_by = "metaist"
 decided_on = 2026-02-05T17:00:00Z
 
+[[decisions]]
+id = "d18"
+title = "LLM as generic verification fallback"
+status = "confirmed"
+description = """
+LLM-backed verification serves as the most generic fallback strategy for \
+concerns that can't be checked statically. Uses OpenRouter with configurable \
+model selection.
+"""
+alternatives = ["Static checks only", "Custom code for each check type"]
+rationale = """
+LLMs can handle anything expressible in natural language without upfront work \
+to add new check types. More expensive strategies (LLM, human review) are used \
+only when cheaper strategies (static analysis, tests) don't apply.
+"""
+decided_by = "metaist"
+decided_on = 2026-02-05T18:00:00Z
+
 # =============================================================================
 # CONCERNS
 # =============================================================================
@@ -314,7 +332,8 @@ id = "c3"
 category = "functional"
 claim = "Decisions are traceable from blueprint to rationale"
 conditions = ["Each decision has id, title, rationale, decided_by, decided_on"]
-verify_with = ["static"]
+strategy = "llm"
+context = [".certo/blueprint.toml"]
 failure = "warn"
 traces_to = ["d2"]
 
@@ -323,7 +342,8 @@ id = "c4"
 category = "maintainability"
 claim = "Blueprint structure follows narrow-broad-narrow principle"
 conditions = ["Max nesting depth is 2", "Items use ID references not deep nesting"]
-verify_with = ["static", "llm-review"]
+strategy = "llm"
+context = [".certo/blueprint.toml"]
 failure = "warn"
 traces_to = ["d6"]
 
@@ -345,9 +365,19 @@ conditions = [
   "No imports require higher Python than declared",
   "Classifiers match requires-python",
 ]
-verify_with = ["static", "scan"]
+strategy = "static"
+verify_with = ["scan"]
 failure = "block-release"
 traces_to = ["d11"]
+
+[[concerns]]
+id = "c7"
+category = "documentation"
+claim = "docs/cli.md documents all CLI commands and their options"
+strategy = "llm"
+context = ["docs/cli.md", "src/certo/cli.py"]
+failure = "warn"
+traces_to = ["d18"]
 
 # =============================================================================
 # CONTEXTS
