@@ -74,7 +74,6 @@ why = "Developers run checks frequently. Slow checks get disabled or ignored."
 [[claims.checks]]
 id = "k-1fe25f2"
 kind = "shell"
-status = "enabled"
 cmd = "uv run certo check --offline --skip k-1fe25f2 || true"
 timeout = 2
 
@@ -287,6 +286,39 @@ cmd = "uv run certo scan --format json 2>/dev/null | python3 -c \"import sys,jso
 id = "k-bd4bf3c"
 kind = "fact"
 empty = "python.consistency-issues"
+
+[[claims]]
+id = "c-b9896c4"
+text = "Test suite completes in under 10 seconds"
+status = "pending"
+source = "human"
+level = "warn"
+tags = ['performance']
+created = 2026-02-06T11:38:22Z
+updated = 2026-02-06T11:41:37Z
+
+[[claims.checks]]
+id = "k-2127f31"
+kind = "shell"
+status = "disabled"
+cmd = "uv run pytest -n auto -q --tb=no || true"
+timeout = 10
+
+[[claims]]
+id = "c-151faa9"
+text = "ds dev completes in under 60 seconds"
+status = "confirmed"
+source = "human"
+level = "warn"
+tags = ['performance']
+created = 2026-02-06T11:38:43Z
+updated = 2026-02-06T11:39:10Z
+
+[[claims.checks]]
+id = "k-186e142"
+kind = "shell"
+status = "disabled"
+cmd = "ds dev || true"
 
 # =============================================================================
 # ISSUES
