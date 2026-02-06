@@ -9,6 +9,7 @@ from pathlib import Path
 from certo.cli.check import cmd_check
 from certo.cli.claim import cmd_claim
 from certo.cli.context import cmd_context
+from certo.cli.init import cmd_init
 from certo.cli.issue import cmd_issue
 from certo.cli.kb import cmd_kb_update
 from certo.cli.output import Output, OutputFormat
@@ -31,7 +32,7 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         return argv
 
     # Find where the subcommand is
-    subcommands = {"check", "scan", "kb", "status", "claim", "issue", "context"}
+    subcommands = {"init", "check", "scan", "kb", "status", "claim", "issue", "context"}
     cmd_index = None
     for i, arg in enumerate(argv):
         if arg in subcommands:
@@ -115,6 +116,20 @@ def main(argv: list[str] | None = None) -> int:
     _add_global_args(parser)
 
     subparsers = parser.add_subparsers(dest="command")
+
+    # init command
+    init_parser = subparsers.add_parser("init", help="initialize a new certo spec")
+    _add_global_args(init_parser)
+    init_parser.add_argument(
+        "--name",
+        help="project name (default: directory name)",
+    )
+    init_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite existing spec",
+    )
+    init_parser.set_defaults(func=cmd_init)
 
     # status command
     status_parser = subparsers.add_parser("status", help="show spec status")

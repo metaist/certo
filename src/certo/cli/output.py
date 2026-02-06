@@ -31,6 +31,11 @@ class Output:
         if not self.quiet and self.format == OutputFormat.TEXT:
             print(message)
 
+    def success(self, message: str) -> None:
+        """Print success message (normal and verbose mode only)."""
+        if not self.quiet and self.format == OutputFormat.TEXT:
+            print(message)
+
     def verbose_info(self, message: str) -> None:
         """Print verbose message (verbose mode only)."""
         if self.verbose and self.format == OutputFormat.TEXT:

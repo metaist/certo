@@ -174,10 +174,11 @@ text = "Test coverage is at least 98%"
 status = "confirmed"
 source = "human"
 author = "metaist"
-level = "block"
-tags = ["maintainability"]
+level = "skip"
+tags = ["maintainability", "slow"]
 created = 2026-02-05T14:07:00Z
 
+# Skipped: runs full test suite, too slow for quick checks. Verified by CI.
 [[claims.checks]]
 kind = "shell"
 cmd = "uv run pytest --cov=src --cov-report=term 2>&1 | grep TOTAL"

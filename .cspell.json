@@ -164,6 +164,9 @@
     "zipimport",
     "zizmor",
     "zoneinfo",
-    "zstd"
+    "zstd",
+    "myproject",
+    "newname",
+    "testproject"
   ]
 }
