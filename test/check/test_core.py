@@ -297,5 +297,3 @@ def test_check_base_to_toml_raises() -> None:
     check = Check()
     with pytest.raises(NotImplementedError):
         check.to_toml()
-
-

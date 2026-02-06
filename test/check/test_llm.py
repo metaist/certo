@@ -348,14 +348,19 @@ files = ["README.md"]
 
         # Create valid evidence file
         import json
+
         evidence_dir = certo_dir / "evidence"
         evidence_dir.mkdir()
         evidence_file = evidence_dir / "k-test.json"
-        evidence_file.write_text(json.dumps({
-            "passed": True,
-            "message": "Verified by LLM",
-            "reasoning": "The claim is valid"
-        }))
+        evidence_file.write_text(
+            json.dumps(
+                {
+                    "passed": True,
+                    "message": "Verified by LLM",
+                    "reasoning": "The claim is valid",
+                }
+            )
+        )
 
         results = check_spec(spec, offline=True)
 
@@ -366,7 +371,7 @@ files = ["README.md"]
 
 def test_llm_runner_saves_evidence() -> None:
     """Test LLM runner saves evidence to file."""
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import patch
     from certo.check.llm import LLMCheck, LLMRunner
     from certo.check.core import CheckContext
     from certo.spec import Claim
@@ -405,6 +410,7 @@ def test_llm_runner_saves_evidence() -> None:
         evidence_file = certo_dir / "evidence" / "k-test123.json"
         assert evidence_file.exists()
         import json
+
         evidence = json.loads(evidence_file.read_text())
         assert evidence["passed"] is True
 

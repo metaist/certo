@@ -58,6 +58,7 @@ dev = [
   "pytest",
   "ruff",
   "ty",
+  "pytest-xdist>=3.8.0",
 ]
 
 [tool.coverage.report]
@@ -114,6 +115,7 @@ test.help = "run unit tests"
 test.env = { PYTHONPATH = "src" }
 test.shell = """
   pytest \
+    -n auto \
     --doctest-modules \
     --cov=src --cov-branch --cov-report=term-missing \
     '--ignore-glob=_ignore*'

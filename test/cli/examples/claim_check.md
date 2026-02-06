@@ -947,6 +947,7 @@ certo claim check list c-test -q
 **Expected**
 
 ```
+
 ```
 
 ## View check quiet mode
@@ -974,6 +975,7 @@ certo claim check view k-test -q
 **Expected**
 
 ```
+
 ```
 
 ## View url check without command

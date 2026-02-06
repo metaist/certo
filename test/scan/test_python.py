@@ -291,7 +291,8 @@ name = "test"
 requires-python = "<4.0"
 """)
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # Should not have min-version fact
         assert not result.has("python.min-version")
         # But should have requires-python
@@ -311,7 +312,8 @@ classifiers = [
 ]
 """)
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # Should not have classifier-versions fact (no specific versions)
         assert not result.has("python.classifier-versions")
 
@@ -332,7 +334,8 @@ jobs:
       - uses: actions/checkout@v4
 """)
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # Should not have ci-versions fact
         assert not result.has("python.ci-versions")
 
@@ -350,7 +353,8 @@ from .other import something
         (root / "mypackage" / "submodule.py").write_text("")
         (root / "mypackage" / "other.py").write_text("something = 1")
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # Should not crash and should not add import-min-version for relative imports
         # (relative imports don't affect stdlib version requirements)
 
@@ -364,7 +368,8 @@ def test_scan_python_pytest_ini_only() -> None:
 testpaths = tests
 """)
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # pytest.ini exists but no pyproject.toml
         # Currently doesn't detect pytest from pytest.ini alone
         # (only checks pyproject.toml for tool.pytest)
@@ -384,7 +389,8 @@ requires-python = ">=3.11"
 import tomllib  # 3.11+
 """)
 
-        result = ScanResult(); scan_python(root, result)
+        result = ScanResult()
+        scan_python(root, result)
         # import-min-version should be 3.11
         assert result.get_value("python.import-min-version") == "3.11"
         # No consistency issues since requires-python >= import min

@@ -231,7 +231,9 @@ name = "test"
 
         result = FactRunner().run(ctx, claim, check)
         assert not result.passed
-        assert "falsy" in result.message.lower() or "not found" in result.message.lower()
+        assert (
+            "falsy" in result.message.lower() or "not found" in result.message.lower()
+        )
 
 
 def test_fact_check_has_fact_is_falsy_empty_string() -> None:
@@ -242,9 +244,9 @@ def test_fact_check_has_fact_is_falsy_empty_string() -> None:
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
 
-        mock_result = ScanResult(facts=[
-            Fact(key="test.empty", value="", source="mock")
-        ])
+        mock_result = ScanResult(
+            facts=[Fact(key="test.empty", value="", source="mock")]
+        )
 
         with patch("certo.scan.scan_project", return_value=mock_result):
             clear_scan_cache()
@@ -269,9 +271,9 @@ def test_fact_check_empty_passes_when_fact_is_empty() -> None:
         root = Path(tmpdir)
 
         # Fact exists but is empty string
-        mock_result = ScanResult(facts=[
-            Fact(key="test.empty", value="", source="mock")
-        ])
+        mock_result = ScanResult(
+            facts=[Fact(key="test.empty", value="", source="mock")]
+        )
 
         with patch("certo.scan.scan_project", return_value=mock_result):
             clear_scan_cache()

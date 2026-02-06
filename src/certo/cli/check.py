@@ -175,7 +175,9 @@ def _output_claim(
     # For failures without check_id, show the message
     if failed:
         for result in checks:
-            if not result.passed and not result.skipped and not result.check_id:  # pragma: no cover
+            if (
+                not result.passed and not result.skipped and not result.check_id
+            ):  # pragma: no cover
                 print(f"    {result.message}")
 
     # Show individual checks
