@@ -1,4 +1,4 @@
-"""Example-driven tests for certo status command.
+"""Example-driven tests for certo CLI commands.
 
 This module parses markdown files in test/cli/examples/ and runs them as tests.
 Each markdown file contains multiple test scenarios with:
@@ -12,6 +12,7 @@ Each markdown file contains multiple test scenarios with:
 from __future__ import annotations
 
 import re
+import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -82,7 +83,7 @@ def parse_markdown_examples(path: Path) -> list[ExampleCase]:
                     cmd = lines[i].strip()
                     # Parse command into args, replacing 'certo' with nothing
                     # since we call main() directly
-                    args = cmd.split()
+                    args = shlex.split(cmd)
                     if args and args[0] == "certo":
                         args = args[1:]
                     case.command = args
@@ -179,7 +180,7 @@ def case_id(case: ExampleCase) -> str:
 
 
 @pytest.mark.parametrize("case", ALL_CASES, ids=case_id)
-def test_status_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
+def test_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
     """Run a single example test case."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
@@ -191,24 +192,10 @@ def test_status_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
             spec = certo_dir / "spec.toml"
             spec.write_text(case.spec_content)
 
-        # Build command args, appending tmpdir as path for status commands
+        # Build command args, adding --path for all commands
         args = list(case.command)
-        if "status" in args:
-            # Find position after 'status' to insert path
-            # Handle: status, status --claims, status c-xxx
-            status_idx = args.index("status")
-            # Check if there's already a path-like argument or ID after status
-            insert_idx = status_idx + 1
-            while insert_idx < len(args) and args[insert_idx].startswith("-"):
-                insert_idx += 1
-            # If the next arg looks like an ID (starts with c-, i-, x-), insert before it
-            if insert_idx < len(args) and re.match(r"^[cix]-", args[insert_idx]):
-                args.insert(insert_idx, tmpdir)
-            elif insert_idx >= len(args):
-                args.append(tmpdir)
-            else:
-                # There's already something there that's not an ID
-                args.insert(insert_idx, tmpdir)
+        # Add --path as global flag at the end
+        args.extend(["--path", tmpdir])
 
         # Run command
         result = main(args)

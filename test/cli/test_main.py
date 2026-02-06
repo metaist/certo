@@ -91,7 +91,7 @@ def test_main_exception_text(
     monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
-        result = main(["check", tmpdir])
+        result = main(["check", "--path", tmpdir])
         assert result == 2
         captured = capsys.readouterr()
         assert "error" in captured.err.lower()
@@ -108,7 +108,7 @@ def test_main_exception_json(
     monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
-        result = main(["--format", "json", "check", tmpdir])
+        result = main(["--format", "json", "check", "--path", tmpdir])
         assert result == 2
         captured = capsys.readouterr()
         data = json.loads(captured.out)
@@ -167,7 +167,7 @@ def test_main_quiet_before_subcommand(capsys: CaptureFixture[str]) -> None:
         pyproject = root / "pyproject.toml"
         pyproject.write_text('[project]\nrequires-python = ">=3.11"\n')
 
-        result = main(["-q", "scan", tmpdir])
+        result = main(["-q", "scan", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         assert captured.out == ""

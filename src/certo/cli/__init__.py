@@ -7,6 +7,9 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from certo.cli.check import cmd_check
+from certo.cli.claim import cmd_claim
+from certo.cli.context import cmd_context
+from certo.cli.issue import cmd_issue
 from certo.cli.kb import cmd_kb_update
 from certo.cli.output import Output, OutputFormat
 from certo.cli.scan import cmd_scan
@@ -16,7 +19,7 @@ from certo.cli.status import cmd_status
 __all__ = ["Output", "OutputFormat", "main"]
 
 # Global flags that can appear before or after subcommand
-GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format"}
+GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format", "--path"}
 
 
 def _normalize_argv(argv: list[str]) -> list[str]:
@@ -28,7 +31,7 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         return argv
 
     # Find where the subcommand is
-    subcommands = {"check", "scan", "kb", "status"}
+    subcommands = {"check", "scan", "kb", "status", "claim", "issue", "context"}
     cmd_index = None
     for i, arg in enumerate(argv):
         if arg in subcommands:
@@ -48,10 +51,10 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         if arg in GLOBAL_FLAGS:
             global_flags_before.append(arg)
             # Check if this flag takes a value
-            if arg == "--format" and i + 1 < cmd_index:
+            if arg in ("--format", "--path") and i + 1 < cmd_index:
                 i += 1
                 global_flags_before.append(argv[i])
-        elif arg.startswith("--format="):
+        elif arg.startswith("--format=") or arg.startswith("--path="):
             global_flags_before.append(arg)
         else:
             other_args_before.append(arg)
@@ -90,6 +93,12 @@ def _add_global_args(parser: ArgumentParser) -> None:
         default="text",
         help="output format (default: text)",
     )
+    parser.add_argument(
+        "--path",
+        type=Path,
+        default=Path.cwd(),
+        help="project root (default: current directory)",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -107,16 +116,66 @@ def main(argv: list[str] | None = None) -> int:
 
     subparsers = parser.add_subparsers(dest="command")
 
+    # status command
+    status_parser = subparsers.add_parser("status", help="show spec status")
+    _add_global_args(status_parser)
+    status_parser.add_argument(
+        "id",
+        nargs="?",
+        help="specific item ID to show (e.g., c-xxx, i-xxx, x-xxx)",
+    )
+    status_parser.add_argument(
+        "--claims",
+        action="store_true",
+        help="show only claims",
+    )
+    status_parser.add_argument(
+        "--issues",
+        action="store_true",
+        help="show only issues",
+    )
+    status_parser.add_argument(
+        "--contexts",
+        action="store_true",
+        help="show only contexts",
+    )
+    status_parser.set_defaults(func=cmd_status)
+
+    # claim command
+    claim_parser = subparsers.add_parser("claim", help="manage claims")
+    _add_global_args(claim_parser)
+    claim_parser.add_argument("text", nargs="?", help="claim text (to create)")
+    claim_parser.add_argument("--confirm", metavar="ID", help="confirm a pending claim")
+    claim_parser.add_argument("--reject", metavar="ID", help="reject a claim")
+    claim_parser.add_argument(
+        "--level", choices=["block", "warn", "skip"], default="warn"
+    )
+    claim_parser.add_argument("--tags", help="comma-separated tags")
+    claim_parser.add_argument("--why", help="rationale for the claim")
+    claim_parser.add_argument("--closes", help="comma-separated issue IDs to close")
+    claim_parser.add_argument("--author", help="author name")
+    claim_parser.set_defaults(func=cmd_claim)
+
+    # issue command
+    issue_parser = subparsers.add_parser("issue", help="manage issues")
+    _add_global_args(issue_parser)
+    issue_parser.add_argument("text", nargs="?", help="issue text (to create)")
+    issue_parser.add_argument("--close", metavar="ID", help="close an issue")
+    issue_parser.add_argument("--reopen", metavar="ID", help="reopen an issue")
+    issue_parser.add_argument("--reason", help="reason for closing")
+    issue_parser.add_argument("--tags", help="comma-separated tags")
+    issue_parser.set_defaults(func=cmd_issue)
+
+    # context command
+    context_parser = subparsers.add_parser("context", help="manage contexts")
+    _add_global_args(context_parser)
+    context_parser.add_argument("name", nargs="?", help="context name (to create)")
+    context_parser.add_argument("--description", help="context description")
+    context_parser.set_defaults(func=cmd_context)
+
     # check command
     check_parser = subparsers.add_parser("check", help="verify spec against code")
     _add_global_args(check_parser)
-    check_parser.add_argument(
-        "path",
-        nargs="?",
-        type=Path,
-        default=Path.cwd(),
-        help="project root (default: current directory)",
-    )
     check_parser.add_argument(
         "--offline",
         action="store_true",
@@ -138,13 +197,6 @@ def main(argv: list[str] | None = None) -> int:
         "scan", help="discover assumptions and check consistency"
     )
     _add_global_args(scan_parser)
-    scan_parser.add_argument(
-        "path",
-        nargs="?",
-        type=Path,
-        default=Path.cwd(),
-        help="project root (default: current directory)",
-    )
     scan_parser.set_defaults(func=cmd_scan)
 
     # kb command
@@ -169,38 +221,6 @@ def main(argv: list[str] | None = None) -> int:
         help="specific source to update (default: all)",
     )
     kb_update_parser.set_defaults(func=cmd_kb_update)
-
-    # status command
-    status_parser = subparsers.add_parser("status", help="show spec status")
-    _add_global_args(status_parser)
-    status_parser.add_argument(
-        "path",
-        nargs="?",
-        type=Path,
-        default=Path.cwd(),
-        help="project root (default: current directory)",
-    )
-    status_parser.add_argument(
-        "id",
-        nargs="?",
-        help="specific item ID to show (e.g., c-xxx, i-xxx, x-xxx)",
-    )
-    status_parser.add_argument(
-        "--claims",
-        action="store_true",
-        help="show only claims",
-    )
-    status_parser.add_argument(
-        "--issues",
-        action="store_true",
-        help="show only issues",
-    )
-    status_parser.add_argument(
-        "--contexts",
-        action="store_true",
-        help="show only contexts",
-    )
-    status_parser.set_defaults(func=cmd_status)
 
     # Parse
     args = parser.parse_args(argv)

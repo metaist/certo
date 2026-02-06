@@ -21,7 +21,7 @@ def test_main_check_success(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
-        result = main(["check", tmpdir])
+        result = main(["check", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         assert "✓" in captured.out
@@ -36,7 +36,7 @@ def test_main_check_quiet_success(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
-        result = main(["-q", "check", tmpdir])
+        result = main(["-q", "check", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         # Quiet mode: no output on success
@@ -46,7 +46,7 @@ def test_main_check_quiet_success(capsys: CaptureFixture[str]) -> None:
 def test_main_check_quiet_failure(capsys: CaptureFixture[str]) -> None:
     """Test check command with quiet flag on failure."""
     with TemporaryDirectory() as tmpdir:
-        result = main(["-q", "check", tmpdir])
+        result = main(["-q", "check", "--path", tmpdir])
         assert result == 1
         captured = capsys.readouterr()
         # Quiet mode still shows failures
@@ -61,7 +61,7 @@ def test_main_check_verbose(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
-        result = main(["-v", "check", tmpdir])
+        result = main(["-v", "check", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         assert "Strategy:" in captured.out
@@ -75,7 +75,7 @@ def test_main_check_json_success(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
-        result = main(["--format", "json", "check", tmpdir])
+        result = main(["--format", "json", "check", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         data = json.loads(captured.out)
@@ -87,7 +87,7 @@ def test_main_check_json_success(capsys: CaptureFixture[str]) -> None:
 def test_main_check_json_failure(capsys: CaptureFixture[str]) -> None:
     """Test check command with JSON output on failure."""
     with TemporaryDirectory() as tmpdir:
-        result = main(["--format", "json", "check", tmpdir])
+        result = main(["--format", "json", "check", "--path", tmpdir])
         assert result == 1
         captured = capsys.readouterr()
         data = json.loads(captured.out)
@@ -97,7 +97,7 @@ def test_main_check_json_failure(capsys: CaptureFixture[str]) -> None:
 def test_main_check_missing_blueprint(capsys: CaptureFixture[str]) -> None:
     """Test check command with missing blueprint."""
     with TemporaryDirectory() as tmpdir:
-        result = main(["check", tmpdir])
+        result = main(["check", "--path", tmpdir])
         assert result == 1
         captured = capsys.readouterr()
         assert "✗" in captured.out
@@ -112,7 +112,7 @@ def test_main_check_invalid_toml(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text("invalid [[[toml")
 
-        result = main(["check", tmpdir])
+        result = main(["check", "--path", tmpdir])
         assert result == 1
         captured = capsys.readouterr()
         assert "✗" in captured.out
@@ -128,7 +128,7 @@ def test_main_check_offline_verbose(capsys: CaptureFixture[str]) -> None:
         blueprint = certo_dir / "spec.toml"
         blueprint.write_text('[blueprint]\nname = "test"\n')
 
-        result = main(["-v", "check", "--offline", tmpdir])
+        result = main(["-v", "check", "--offline", "--path", tmpdir])
         assert result == 0
         captured = capsys.readouterr()
         assert "offline" in captured.out.lower()

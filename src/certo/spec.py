@@ -3,20 +3,29 @@
 from __future__ import annotations
 
 import hashlib
-import time
 import tomllib
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Self
 
 
-def generate_id(prefix: str) -> str:
-    """Generate a unique ID with the given prefix."""
-    # Use timestamp + random bytes for uniqueness
-    data = f"{time.time_ns()}".encode()
-    hash_bytes = hashlib.sha256(data).hexdigest()[:7]
+def generate_id(prefix: str, text: str) -> str:
+    """Generate a unique ID with the given prefix based on text content."""
+    hash_bytes = hashlib.sha256(text.encode()).hexdigest()[:7]
     return f"{prefix}-{hash_bytes}"
+
+
+def now_utc() -> datetime:
+    """Get current time in UTC."""
+    return datetime.now(timezone.utc)
+
+
+def format_datetime(dt: datetime | None) -> str:
+    """Format datetime for TOML output."""
+    if dt is None:
+        return ""
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @dataclass
@@ -37,6 +46,17 @@ class Modification:
             level=data.get("level", ""),
             topic=data.get("topic", ""),
         )
+
+    def to_toml_inline(self) -> str:
+        """Serialize to inline TOML."""
+        parts = [f'action = "{self.action}"']
+        if self.claim:
+            parts.append(f'claim = "{self.claim}"')
+        if self.level:
+            parts.append(f'level = "{self.level}"')
+        if self.topic:
+            parts.append(f'topic = "{self.topic}"')
+        return "{ " + ", ".join(parts) + " }"
 
 
 @dataclass
@@ -88,6 +108,40 @@ class Claim:
             closes=data.get("closes", []),
         )
 
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[claims]]",
+            f'id = "{self.id}"',
+            f'text = "{self.text}"',
+            f'status = "{self.status}"',
+            f'source = "{self.source}"',
+        ]
+        if self.author:
+            lines.append(f'author = "{self.author}"')
+        lines.append(f'level = "{self.level}"')
+        if self.tags:
+            lines.append(f"tags = {self.tags}")
+        if self.verify:
+            lines.append(f"verify = {self.verify}")
+        if self.files:
+            lines.append(f"files = {self.files}")
+        if self.created:
+            lines.append(f"created = {format_datetime(self.created)}")
+        if self.updated:
+            lines.append(f"updated = {format_datetime(self.updated)}")
+        if self.why:
+            lines.append(f'why = "{self.why}"')
+        if self.considered:
+            lines.append(f"considered = {self.considered}")
+        if self.traces_to:
+            lines.append(f"traces_to = {self.traces_to}")
+        if self.supersedes:
+            lines.append(f'supersedes = "{self.supersedes}"')
+        if self.closes:
+            lines.append(f"closes = {self.closes}")
+        return "\n".join(lines)
+
 
 @dataclass
 class Issue:
@@ -113,6 +167,24 @@ class Issue:
             updated=data.get("updated"),
             closed_reason=data.get("closed_reason", ""),
         )
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[issues]]",
+            f'id = "{self.id}"',
+            f'text = "{self.text}"',
+            f'status = "{self.status}"',
+        ]
+        if self.tags:
+            lines.append(f"tags = {self.tags}")
+        if self.created:
+            lines.append(f"created = {format_datetime(self.created)}")
+        if self.updated:
+            lines.append(f"updated = {format_datetime(self.updated)}")
+        if self.closed_reason:
+            lines.append(f'closed_reason = "{self.closed_reason}"')
+        return "\n".join(lines)
 
 
 @dataclass
@@ -141,6 +213,26 @@ class Context:
                 Modification.parse(m) for m in data.get("modifications", [])
             ],
         )
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[contexts]]",
+            f'id = "{self.id}"',
+            f'name = "{self.name}"',
+        ]
+        if self.description:
+            lines.append(f'description = "{self.description}"')
+        if self.created:
+            lines.append(f"created = {format_datetime(self.created)}")
+        if self.updated:
+            lines.append(f"updated = {format_datetime(self.updated)}")
+        if self.expires:
+            lines.append(f"expires = {format_datetime(self.expires)}")
+        if self.modifications:
+            mods = ", ".join(m.to_toml_inline() for m in self.modifications)
+            lines.append(f"modifications = [{mods}]")
+        return "\n".join(lines)
 
 
 @dataclass
@@ -196,3 +288,53 @@ class Spec:
             if context.id == context_id:
                 return context
         return None
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "# Certo Spec",
+            "# WARNING: This file is managed by certo. Manual edits may be overwritten.",
+            "# Use `certo claim`, `certo issue`, `certo context` to make changes.",
+            "",
+            "[spec]",
+            f'name = "{self.name}"',
+            f"version = {self.version}",
+        ]
+        if self.created:
+            lines.append(f"created = {format_datetime(self.created)}")
+        if self.author:
+            lines.append(f'author = "{self.author}"')
+        lines.append("")
+
+        if self.claims:
+            lines.append("# " + "=" * 77)
+            lines.append("# CLAIMS")
+            lines.append("# " + "=" * 77)
+            lines.append("")
+            for claim in self.claims:
+                lines.append(claim.to_toml())
+                lines.append("")
+
+        if self.issues:
+            lines.append("# " + "=" * 77)
+            lines.append("# ISSUES")
+            lines.append("# " + "=" * 77)
+            lines.append("")
+            for issue in self.issues:
+                lines.append(issue.to_toml())
+                lines.append("")
+
+        if self.contexts:
+            lines.append("# " + "=" * 77)
+            lines.append("# CONTEXTS")
+            lines.append("# " + "=" * 77)
+            lines.append("")
+            for context in self.contexts:
+                lines.append(context.to_toml())
+                lines.append("")
+
+        return "\n".join(lines)
+
+    def save(self, path: Path) -> None:
+        """Save the spec to a TOML file."""
+        path.write_text(self.to_toml())
