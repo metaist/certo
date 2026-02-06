@@ -309,3 +309,18 @@ def test_shell_check_command_exception() -> None:
 
         assert not result.passed
         assert "failed" in result.message.lower()
+
+
+def test_shell_check_not_matches_passes_when_no_match() -> None:
+    """Test shell check passes when not_matches pattern is not found."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        claim = Claim(id="c-test", text="Test", status="confirmed")
+        check = ShellCheck(cmd="echo 'all good'", not_matches=["ERROR", "FAIL"])
+
+        result = ShellRunner().run(ctx, claim, check)
+        assert result.passed

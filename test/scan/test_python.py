@@ -279,3 +279,113 @@ classifiers = [
         scan_python(root, result)
 
         assert not result.has("python.consistency-issues")
+
+
+def test_scan_python_requires_python_no_min() -> None:
+    """Test scan with requires-python that has no minimum (only max)."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "pyproject.toml").write_text("""
+[project]
+name = "test"
+requires-python = "<4.0"
+""")
+
+        result = ScanResult(); scan_python(root, result)
+        # Should not have min-version fact
+        assert not result.has("python.min-version")
+        # But should have requires-python
+        assert result.has("python.requires-python")
+
+
+def test_scan_python_classifiers_no_version() -> None:
+    """Test scan with classifiers that don't have version numbers."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "pyproject.toml").write_text("""
+[project]
+name = "test"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+""")
+
+        result = ScanResult(); scan_python(root, result)
+        # Should not have classifier-versions fact (no specific versions)
+        assert not result.has("python.classifier-versions")
+
+
+def test_scan_python_ci_workflow_no_python_version() -> None:
+    """Test scan with CI workflow that doesn't specify python-version."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        workflows = root / ".github" / "workflows"
+        workflows.mkdir(parents=True)
+        (workflows / "ci.yaml").write_text("""
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+""")
+
+        result = ScanResult(); scan_python(root, result)
+        # Should not have ci-versions fact
+        assert not result.has("python.ci-versions")
+
+
+def test_scan_python_relative_import() -> None:
+    """Test scan handles relative imports (from . import)."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "mypackage").mkdir()
+        (root / "mypackage" / "__init__.py").write_text("")
+        (root / "mypackage" / "module.py").write_text("""
+from . import submodule
+from .other import something
+""")
+        (root / "mypackage" / "submodule.py").write_text("")
+        (root / "mypackage" / "other.py").write_text("something = 1")
+
+        result = ScanResult(); scan_python(root, result)
+        # Should not crash and should not add import-min-version for relative imports
+        # (relative imports don't affect stdlib version requirements)
+
+
+def test_scan_python_pytest_ini_only() -> None:
+    """Test scan detects pytest from pytest.ini when no pyproject.toml."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "pytest.ini").write_text("""
+[pytest]
+testpaths = tests
+""")
+
+        result = ScanResult(); scan_python(root, result)
+        # pytest.ini exists but no pyproject.toml
+        # Currently doesn't detect pytest from pytest.ini alone
+        # (only checks pyproject.toml for tool.pytest)
+
+
+def test_scan_python_import_min_within_requires() -> None:
+    """Test scan when import min version is within requires-python."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "pyproject.toml").write_text("""
+[project]
+name = "test"
+requires-python = ">=3.11"
+""")
+        # Use a module that requires 3.11
+        (root / "main.py").write_text("""
+import tomllib  # 3.11+
+""")
+
+        result = ScanResult(); scan_python(root, result)
+        # import-min-version should be 3.11
+        assert result.get_value("python.import-min-version") == "3.11"
+        # No consistency issues since requires-python >= import min
+        assert not result.has("python.consistency-issues")

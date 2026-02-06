@@ -258,3 +258,53 @@ def test_fact_check_has_fact_is_falsy_empty_string() -> None:
             result = FactRunner().run(ctx, claim, check)
             assert not result.passed
             assert "falsy" in result.message.lower()
+
+
+def test_fact_check_empty_passes_when_fact_is_empty() -> None:
+    """Test fact check with 'empty' passes when fact value is empty."""
+    from unittest.mock import patch
+    from certo.scan import Fact, ScanResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+
+        # Fact exists but is empty string
+        mock_result = ScanResult(facts=[
+            Fact(key="test.empty", value="", source="mock")
+        ])
+
+        with patch("certo.scan.scan_project", return_value=mock_result):
+            clear_scan_cache()
+            ctx = CheckContext(
+                project_root=root,
+                spec_path=root / ".certo" / "spec.toml",
+            )
+            claim = Claim(id="c-test", text="No issues", status="confirmed")
+            check = FactCheck(empty="test.empty")
+
+            result = FactRunner().run(ctx, claim, check)
+            assert result.passed
+
+
+def test_fact_check_empty_passes_when_fact_not_found() -> None:
+    """Test fact check with 'empty' passes when fact doesn't exist."""
+    from unittest.mock import patch
+    from certo.scan import ScanResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+
+        # No facts at all
+        mock_result = ScanResult(facts=[])
+
+        with patch("certo.scan.scan_project", return_value=mock_result):
+            clear_scan_cache()
+            ctx = CheckContext(
+                project_root=root,
+                spec_path=root / ".certo" / "spec.toml",
+            )
+            claim = Claim(id="c-test", text="No issues", status="confirmed")
+            check = FactCheck(empty="test.missing")
+
+            result = FactRunner().run(ctx, claim, check)
+            assert result.passed

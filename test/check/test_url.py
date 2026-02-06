@@ -331,3 +331,32 @@ def test_url_runner_handles_corrupted_cache_meta() -> None:
         result = UrlRunner().run(ctx, claim, check)
         # Should skip because cache is corrupted and we're offline
         assert result.skipped
+
+
+def test_url_runner_fresh_fetch_no_cached_indicator() -> None:
+    """Test URL runner doesn't add cached indicator for fresh fetch."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=certo_dir / "spec.toml",
+            offline=False,
+        )
+        claim = Claim(id="c-test", text="Test", status="confirmed")
+        check = UrlCheck(id="k-test", url="https://example.com", cmd="cat")
+
+        # Mock urlopen for fresh fetch
+        mock_response = MagicMock()
+        mock_response.read.return_value = b'{"status": "ok"}'
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            result = UrlRunner().run(ctx, claim, check)
+
+        assert result.passed
+        # Fresh fetch should not have (cached) in message
+        assert "(cached)" not in result.message or "fetched" in result.message.lower()

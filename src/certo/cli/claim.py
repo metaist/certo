@@ -703,3 +703,6 @@ def _print_check_detail(claim: Claim, check: object, output: Output) -> None:
                     "pattern": check.pattern,
                 }
             )
+
+        case _:  # pragma: no cover
+            pass

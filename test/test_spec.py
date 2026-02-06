@@ -835,3 +835,40 @@ def test_parse_check_fact() -> None:
     data = {"kind": "fact", "has": "uses.uv"}
     check = parse_check(data)
     assert isinstance(check, FactCheck)
+
+
+def test_spec_get_check_iterates_all() -> None:
+    """Test get_check iterates through multiple checks."""
+    from certo.spec import Spec, Claim
+    from certo.check.shell import ShellCheck
+
+    spec = Spec(
+        name="test",
+        version=1,
+        claims=[
+            Claim(
+                id="c-1",
+                text="Claim 1",
+                status="confirmed",
+                checks=[
+                    ShellCheck(id="k-first", cmd="true"),
+                    ShellCheck(id="k-second", cmd="true"),
+                ],
+            ),
+            Claim(
+                id="c-2",
+                text="Claim 2",
+                status="confirmed",
+                checks=[
+                    ShellCheck(id="k-target", cmd="true"),
+                ],
+            ),
+        ],
+    )
+
+    # Should find check in second claim after iterating first
+    result = spec.get_check("k-target")
+    assert result is not None
+    claim, check = result
+    assert claim.id == "c-2"
+    assert check.id == "k-target"

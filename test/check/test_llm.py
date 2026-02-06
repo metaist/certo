@@ -362,3 +362,131 @@ files = ["README.md"]
         assert len(results) == 1
         assert results[0].passed
         assert "(cached)" in results[0].message
+
+
+def test_llm_runner_saves_evidence() -> None:
+    """Test LLM runner saves evidence to file."""
+    from unittest.mock import patch, MagicMock
+    from certo.check.llm import LLMCheck, LLMRunner
+    from certo.check.core import CheckContext
+    from certo.spec import Claim
+    from certo.llm.verify import VerificationResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=certo_dir / "spec.toml",
+            offline=False,
+        )
+        claim = Claim(id="c-test", text="Test claim", status="confirmed")
+        check = LLMCheck(id="k-test123", files=["README.md"])
+
+        # Create the file
+        (root / "README.md").write_text("# Test")
+
+        mock_result = VerificationResult(
+            passed=True,
+            explanation="Verified",
+            model="test-model",
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            cached=False,
+        )
+
+        with patch("certo.llm.verify.verify_concern", return_value=mock_result):
+            result = LLMRunner().run(ctx, claim, check)
+
+        assert result.passed
+        evidence_file = certo_dir / "evidence" / "k-test123.json"
+        assert evidence_file.exists()
+        import json
+        evidence = json.loads(evidence_file.read_text())
+        assert evidence["passed"] is True
+
+
+def test_llm_runner_uses_claim_id_fallback_for_evidence() -> None:
+    """Test LLM runner uses claim.id as evidence filename when check has no ID."""
+    from unittest.mock import patch
+    from certo.check.llm import LLMCheck, LLMRunner
+    from certo.check.core import CheckContext
+    from certo.spec import Claim
+    from certo.llm.verify import VerificationResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=certo_dir / "spec.toml",
+            offline=False,
+        )
+        claim = Claim(id="c-test", text="Test claim", status="confirmed")
+        check = LLMCheck(id="", files=["README.md"])  # No ID - falls back to claim.id
+
+        (root / "README.md").write_text("# Test")
+
+        mock_result = VerificationResult(
+            passed=True,
+            explanation="Verified",
+            model="test-model",
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            cached=False,
+        )
+
+        with patch("certo.llm.verify.verify_concern", return_value=mock_result):
+            result = LLMRunner().run(ctx, claim, check)
+
+        assert result.passed
+        evidence_dir = certo_dir / "evidence"
+        # Evidence saved with claim.id as fallback
+        evidence_file = evidence_dir / "c-test.json"
+        assert evidence_file.exists()
+
+
+def test_llm_runner_cached_message() -> None:
+    """Test LLM runner adds cached indicator to message."""
+    from unittest.mock import patch
+    from certo.check.llm import LLMCheck, LLMRunner
+    from certo.check.core import CheckContext
+    from certo.spec import Claim
+    from certo.llm.verify import VerificationResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=certo_dir / "spec.toml",
+            offline=False,
+        )
+        claim = Claim(id="c-test", text="Test claim", status="confirmed")
+        check = LLMCheck(id="k-test", files=["README.md"])
+
+        (root / "README.md").write_text("# Test")
+
+        mock_result = VerificationResult(
+            passed=True,
+            explanation="Verified",
+            model="test-model",
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            cached=True,  # Cached result
+        )
+
+        with patch("certo.llm.verify.verify_concern", return_value=mock_result):
+            result = LLMRunner().run(ctx, claim, check)
+
+        assert result.passed
+        assert "(cached)" in result.message

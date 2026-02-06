@@ -516,3 +516,30 @@ Checks:  1
 Created:
 Updated:
 ```
+
+## View claim without author
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+level = "warn"
+```
+
+```bash
+certo claim view c-test
+```
+
+**Expected**
+
+```
+ID:      c-test
+Text:    Test claim
+Status:  confirmed
+Level:   warn
+```

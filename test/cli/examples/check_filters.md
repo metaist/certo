@@ -331,3 +331,39 @@ certo check --format json
 "passed": 0
 "failed": 1
 ```
+
+## Check with skipped check not verbose
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-disabled"
+kind = "shell"
+status = "disabled"
+cmd = "echo hello"
+
+[[claims.checks]]
+id = "k-enabled"
+kind = "shell"
+cmd = "true"
+```
+
+```bash
+certo check
+```
+
+**Expected**
+
+```
+✓ [c-test] Test claim
+  ✓ k-enabled [shell]
+Passed: 1
+```

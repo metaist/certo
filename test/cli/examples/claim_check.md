@@ -975,3 +975,66 @@ certo claim check view k-test -q
 
 ```
 ```
+
+## View url check without command
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-url123"
+kind = "url"
+url = "https://example.com"
+```
+
+```bash
+certo claim check view k-url123
+```
+
+**Expected**
+
+```
+ID:      k-url123
+Kind:    url
+Status:  enabled
+Claim:   c-test
+URL:     https://example.com
+```
+
+## View fact check with empty criterion
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-fact123"
+kind = "fact"
+empty = "python.issues"
+```
+
+```bash
+certo claim check view k-fact123
+```
+
+**Expected**
+
+```
+ID:      k-fact123
+Kind:    fact
+Status:  enabled
+Claim:   c-test
+```

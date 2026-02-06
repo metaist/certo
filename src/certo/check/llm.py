@@ -119,7 +119,7 @@ class LLMRunner:
                 model=ctx.model,
             )
 
-            if check_id:
+            if check_id:  # pragma: no branch - always true since fallback to claim.id
                 import json
 
                 evidence_dir = ctx.spec_path.parent / "evidence"
