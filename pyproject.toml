@@ -59,6 +59,7 @@ dev = [
   "ruff",
   "ty",
   "pytest-xdist>=3.8.0",
+  "z3-solver>=4.15.4.0",
 ]
 
 [tool.coverage.report]
