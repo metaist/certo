@@ -22,6 +22,9 @@ __all__ = ["Output", "OutputFormat", "main"]
 # Global flags that can appear before or after subcommand
 GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format", "--path"}
 
+# Cached parser for performance (built once, reused)
+_PARSER: ArgumentParser | None = None
+
 
 def _normalize_argv(argv: list[str]) -> list[str]:
     """Move global flags from before subcommand to after.
@@ -102,13 +105,8 @@ def _add_global_args(parser: ArgumentParser) -> None:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Main entry point."""
-    # Normalize argv to move global flags after subcommand
-    if argv is None:
-        argv = sys.argv[1:]
-    argv = _normalize_argv(list(argv))
-
+def _build_parser() -> ArgumentParser:
+    """Build the argument parser (cached for performance)."""
     parser = ArgumentParser(
         prog="certo",
         description="Turn conversations into verifiable specifications.",
@@ -226,6 +224,26 @@ def main(argv: list[str] | None = None) -> int:
         help="specific source to update (default: all)",
     )
     kb_update_parser.set_defaults(func=cmd_kb_update)
+
+    return parser
+
+
+def _get_parser() -> ArgumentParser:
+    """Get the cached argument parser."""
+    global _PARSER
+    if _PARSER is None:
+        _PARSER = _build_parser()
+    return _PARSER
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Main entry point."""
+    # Normalize argv to move global flags after subcommand
+    if argv is None:
+        argv = sys.argv[1:]
+    argv = _normalize_argv(list(argv))
+
+    parser = _get_parser()
 
     # Parse
     args = parser.parse_args(argv)
