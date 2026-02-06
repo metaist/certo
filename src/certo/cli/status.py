@@ -57,7 +57,7 @@ def cmd_status(args: Namespace, output: Output) -> int:
                 "author": c.author,
                 "level": c.level,
                 "tags": c.tags,
-                "verify": c.verify,
+                "checks": [{"kind": ch.kind} for ch in c.checks],
                 "created": c.created.isoformat() if c.created else None,
             }
             for c in spec.claims
@@ -115,8 +115,7 @@ def _show_item(spec: Spec, item_id: str, output: Output) -> int:
                 "author": claim.author,
                 "level": claim.level,
                 "tags": claim.tags,
-                "verify": claim.verify,
-                "files": claim.files,
+                "checks": [{"kind": ch.kind} for ch in claim.checks],
                 "evidence": claim.evidence,
                 "why": claim.why,
                 "considered": claim.considered,
@@ -222,14 +221,11 @@ def _show_claim_detail(claim: Claim, output: Output) -> None:
         output.info("Considered:")
         for alt in claim.considered:
             output.info(f"  - {alt}")
-    if claim.verify:
+    if claim.checks:
         output.info("")
-        output.info(f"Verify: {', '.join(claim.verify)}")
-    if claim.files:
-        output.info("")
-        output.info("Files:")
-        for f in claim.files:
-            output.info(f"  - {f}")
+        output.info("Checks:")
+        for check in claim.checks:
+            output.info(f"  - {check.kind}")
     if claim.evidence:
         output.info("")
         output.info("Evidence:")

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from certo.check.core import CheckContext, CheckResult
-from certo.spec import Claim
+from certo.spec import Claim, LLMCheck
 
 
-def check_claim_llm(ctx: CheckContext, claim: Claim) -> CheckResult:
+def run_llm_check(ctx: CheckContext, claim: Claim, check: LLMCheck) -> CheckResult:
     """Verify a claim using LLM."""
     from certo.llm.provider import LLMError, NoAPIKeyError
     from certo.llm.verify import (
@@ -25,12 +25,12 @@ def check_claim_llm(ctx: CheckContext, claim: Claim) -> CheckResult:
             strategy="llm",
         )
 
-    if not claim.files:
+    if not check.files:
         return CheckResult(
             claim_id=claim.id,
             claim_text=claim.text,
             passed=False,
-            message="Claim is missing 'files' field (required for LLM verification)",
+            message="LLM check is missing 'files' field",
             strategy="llm",
         )
 
@@ -44,11 +44,14 @@ def check_claim_llm(ctx: CheckContext, claim: Claim) -> CheckResult:
             strategy="llm",
         )
 
+    # Use custom prompt if provided, otherwise use claim text
+    prompt = check.prompt if check.prompt else claim.text
+
     try:
         result = verify_concern(
             concern_id=claim.id,
-            claim=claim.text,
-            context_patterns=claim.files,
+            claim=prompt,
+            context_patterns=check.files,
             project_root=ctx.project_root,
             model=ctx.model,
             no_cache=ctx.no_cache,
@@ -98,7 +101,3 @@ def check_claim_llm(ctx: CheckContext, claim: Claim) -> CheckResult:
             message=f"LLM error: {e}",
             strategy="llm",
         )
-
-
-# Backward compatibility alias
-check_concern_llm = check_claim_llm

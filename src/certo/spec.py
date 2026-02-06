@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 
 def generate_id(prefix: str, text: str) -> str:
@@ -60,6 +60,91 @@ class Modification:
 
 
 @dataclass
+class ShellCheck:
+    """A check that runs a shell command."""
+
+    kind: Literal["shell"] = "shell"
+    cmd: str = ""
+    exit_code: int = 0
+    matches: list[str] = field(default_factory=list)
+    not_matches: list[str] = field(default_factory=list)
+    timeout: int = 60
+
+    @classmethod
+    def parse(cls, data: dict[str, Any]) -> Self:
+        """Parse a shell check from TOML data."""
+        return cls(
+            kind="shell",
+            cmd=data.get("cmd", ""),
+            exit_code=data.get("exit_code", 0),
+            matches=data.get("matches", []),
+            not_matches=data.get("not_matches", []),
+            timeout=data.get("timeout", 60),
+        )
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[claims.checks]]",
+            'kind = "shell"',
+            f'cmd = "{self.cmd}"',
+        ]
+        if self.exit_code != 0:
+            lines.append(f"exit_code = {self.exit_code}")
+        if self.matches:
+            lines.append(f"matches = {self.matches}")
+        if self.not_matches:
+            lines.append(f"not_matches = {self.not_matches}")
+        if self.timeout != 60:
+            lines.append(f"timeout = {self.timeout}")
+        return "\n".join(lines)
+
+
+@dataclass
+class LLMCheck:
+    """A check that uses LLM verification."""
+
+    kind: Literal["llm"] = "llm"
+    files: list[str] = field(default_factory=list)
+    prompt: str | None = None
+
+    @classmethod
+    def parse(cls, data: dict[str, Any]) -> Self:
+        """Parse an LLM check from TOML data."""
+        return cls(
+            kind="llm",
+            files=data.get("files", []),
+            prompt=data.get("prompt"),
+        )
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[claims.checks]]",
+            'kind = "llm"',
+        ]
+        if self.files:
+            lines.append(f"files = {self.files}")
+        if self.prompt:
+            lines.append(f'prompt = "{self.prompt}"')
+        return "\n".join(lines)
+
+
+Check = ShellCheck | LLMCheck
+
+
+def parse_check(data: dict[str, Any]) -> Check:
+    """Parse a check from TOML data, dispatching on kind."""
+    kind = data.get("kind", "")
+    if kind == "shell":
+        return ShellCheck.parse(data)
+    elif kind == "llm":
+        return LLMCheck.parse(data)
+    else:
+        raise ValueError(f"Unknown check kind: {kind}")
+
+
+@dataclass
 class Claim:
     """A statement that can be verified."""
 
@@ -70,10 +155,7 @@ class Claim:
     author: str = ""
     level: str = "warn"  # block | warn | skip
     tags: list[str] = field(default_factory=list)
-    verify: list[str] = field(
-        default_factory=list
-    )  # auto | static | llm | scan | coverage
-    files: list[str] = field(default_factory=list)  # for LLM verification
+    checks: list[Check] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)  # for audit trail
     created: datetime | None = None
     updated: datetime | None = None
@@ -96,8 +178,7 @@ class Claim:
             author=data.get("author", ""),
             level=data.get("level", "warn"),
             tags=data.get("tags", []),
-            verify=data.get("verify", []),
-            files=data.get("files", []),
+            checks=[parse_check(c) for c in data.get("checks", [])],
             evidence=data.get("evidence", []),
             created=data.get("created"),
             updated=data.get("updated"),
@@ -122,10 +203,6 @@ class Claim:
         lines.append(f'level = "{self.level}"')
         if self.tags:
             lines.append(f"tags = {self.tags}")
-        if self.verify:
-            lines.append(f"verify = {self.verify}")
-        if self.files:
-            lines.append(f"files = {self.files}")
         if self.created:
             lines.append(f"created = {format_datetime(self.created)}")
         if self.updated:
@@ -140,6 +217,10 @@ class Claim:
             lines.append(f'supersedes = "{self.supersedes}"')
         if self.closes:
             lines.append(f"closes = {self.closes}")
+        # Add checks as nested tables
+        for check in self.checks:
+            lines.append("")
+            lines.append(check.to_toml())
         return "\n".join(lines)
 
 

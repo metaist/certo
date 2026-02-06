@@ -19,11 +19,14 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["format"]
-verify = ["static"]
-files = [".certo/spec.toml"]
 created = 2026-02-05T14:07:00Z
 why = "TOML is explicit, has no implicit type coercion, no code execution risk"
 considered = ["YAML", "JSON", "KDL", "Markdown+frontmatter"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "test -f .certo/spec.toml && head -1 .certo/spec.toml"
+matches = ["# Certo Spec"]
 
 [[claims]]
 id = "c-caf8ac4"
@@ -33,11 +36,13 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["structure"]
-verify = ["static"]
-files = []
 created = 2026-02-05T14:07:00Z
 why = "Dotted because it's tool-managed, like .git"
 considered = ["Single file", "certo/ (not dotted)", "certo.toml at root"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "test -d .certo"
 
 [[claims]]
 id = "c-b0d1e6d"
@@ -47,11 +52,11 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["format"]
-verify = ["static"]
-files = [".certo/spec.toml"]
 created = 2026-02-05T14:45:00Z
 why = "TOML natively supports datetime with timezone. UTC avoids ambiguity."
 considered = ["Local dates only", "Unix timestamps"]
+
+# No check yet - would need to verify all datetime fields end in Z
 
 [[claims]]
 id = "c-08f4b1f"
@@ -59,11 +64,15 @@ text = "certo check --offline completes in under 2 seconds"
 status = "confirmed"
 source = "human"
 author = "metaist"
-level = "warn"
+level = "skip"
 tags = ["performance"]
-verify = ["benchmark"]
 created = 2026-02-05T14:50:00Z
 why = "Developers run checks frequently. Slow checks get disabled or ignored."
+
+# Skipped: self-referential check causes recursion. See #21 for --skip flag.
+[[claims.checks]]
+kind = "shell"
+cmd = "bash -c 'time certo check --offline 2>&1' | grep -E '^real' | grep -E '0m[01]'"
 
 [[claims]]
 id = "c-e52fcc2"
@@ -73,10 +82,13 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["architecture"]
-verify = ["static"]
 created = 2026-02-05T17:00:00Z
 why = "We don't know enough about what kinds of knowledge we need yet. Bundling avoids premature schema design."
 considered = ["Fetchable to ~/.certo/", "Separate certo-knowledge package"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "test -d src/certo/kb/python"
 
 [[claims]]
 id = "c-14d95c9"
@@ -86,11 +98,13 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["format"]
-verify = ["static"]
-files = ["src/certo/kb/python/meta.toml"]
 created = 2026-02-05T17:00:00Z
 why = "TOML is already our standard"
 considered = ["JSON", "YAML"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "test -f src/certo/kb/python/typeshed/meta.toml"
 
 [[claims]]
 id = "c-b5b9a45"
@@ -100,11 +114,13 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["knowledge"]
-verify = ["static"]
-files = ["src/certo/kb/python/VERSIONS"]
 created = 2026-02-05T17:00:00Z
 why = "Typeshed is already used by pyright, mypy. The VERSIONS file is exactly what we need."
 considered = ["Scrape Python docs", "Maintain our own database"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "test -f src/certo/kb/python/typeshed/VERSIONS"
 
 [[claims]]
 id = "c-32260b0"
@@ -114,11 +130,13 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["transparency"]
-verify = ["static"]
-files = ["src/certo/kb/update.py"]
 created = 2026-02-05T17:00:00Z
 why = "Transparency aligns with certo's philosophy. Anyone can audit or reproduce."
 considered = ["Hidden scripts", "Manual curation"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "grep -q 'github.com/python/typeshed' src/certo/kb/update.py"
 
 [[claims]]
 id = "c-14b5f9e"
@@ -128,11 +146,13 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["verification"]
-verify = ["static"]
-files = ["src/certo/llm/provider.py"]
 created = 2026-02-05T18:00:00Z
 why = "LLMs can handle anything expressible in natural language without upfront work."
 considered = ["Static checks only", "Custom code for each check type"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "grep -q 'openrouter.ai' src/certo/llm/provider.py"
 
 [[claims]]
 id = "c-eb9736a"
@@ -142,10 +162,11 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["maintainability"]
-verify = ["static"]
 created = 2026-02-05T19:00:00Z
 why = "Mirroring keeps navigation simple"
 considered = ["Flat test directory", "Tests alongside source"]
+
+# No check yet - would need to compare directory trees
 
 [[claims]]
 id = "c-9f15ff6"
@@ -155,8 +176,12 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["maintainability"]
-verify = ["coverage"]
 created = 2026-02-05T14:07:00Z
+
+[[claims.checks]]
+kind = "shell"
+cmd = "uv run pytest --cov=src --cov-report=term 2>&1 | grep TOTAL"
+matches = ["(100|99|98)%?"]
 
 [[claims]]
 id = "c-b72253d"
@@ -166,8 +191,9 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["compatibility"]
-verify = ["scan"]
 created = 2026-02-05T14:07:00Z
+
+# No check yet - would use scan results
 
 [[claims]]
 id = "c-8d6ceb6"
@@ -177,9 +203,11 @@ source = "human"
 author = "metaist"
 level = "warn"
 tags = ["documentation"]
-verify = ["llm"]
-files = ["docs/cli.md", "src/certo/cli/__init__.py"]
 created = 2026-02-05T14:07:00Z
+
+[[claims.checks]]
+kind = "llm"
+files = ["docs/cli.md", "src/certo/cli/__init__.py"]
 
 # =============================================================================
 # ISSUES - Closed design decisions and open questions
@@ -268,4 +296,3 @@ description = "While building certo with certo; some claims may not be fully ver
 created = 2026-02-05T14:07:00Z
 expires = 2026-06-01T00:00:00Z
 modifications = []
-

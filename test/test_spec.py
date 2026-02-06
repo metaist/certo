@@ -53,8 +53,7 @@ def test_claim_parse_minimal() -> None:
     assert claim.author == ""
     assert claim.level == "warn"
     assert claim.tags == []
-    assert claim.verify == []
-    assert claim.files == []
+    assert claim.checks == []
     assert claim.evidence == []
     assert claim.why == ""
     assert claim.considered == []
@@ -65,6 +64,8 @@ def test_claim_parse_minimal() -> None:
 
 def test_claim_parse_full() -> None:
     """Test parsing a claim with all fields."""
+    from certo.spec import LLMCheck, ShellCheck
+
     dt = datetime(2026, 2, 5, 12, 0, 0, tzinfo=timezone.utc)
     data = {
         "id": "c-abc1234",
@@ -74,8 +75,10 @@ def test_claim_parse_full() -> None:
         "author": "metaist",
         "level": "block",
         "tags": ["testing"],
-        "verify": ["static", "llm"],
-        "files": ["README.md"],
+        "checks": [
+            {"kind": "shell", "cmd": "echo test"},
+            {"kind": "llm", "files": ["README.md"]},
+        ],
         "evidence": ["pyproject.toml:5"],
         "created": dt,
         "updated": dt,
@@ -93,8 +96,11 @@ def test_claim_parse_full() -> None:
     assert claim.author == "metaist"
     assert claim.level == "block"
     assert claim.tags == ["testing"]
-    assert claim.verify == ["static", "llm"]
-    assert claim.files == ["README.md"]
+    assert len(claim.checks) == 2
+    assert isinstance(claim.checks[0], ShellCheck)
+    assert claim.checks[0].cmd == "echo test"
+    assert isinstance(claim.checks[1], LLMCheck)
+    assert claim.checks[1].files == ["README.md"]
     assert claim.evidence == ["pyproject.toml:5"]
     assert claim.created == dt
     assert claim.updated == dt
@@ -417,6 +423,8 @@ def test_spec_save_and_load() -> None:
 
 def test_claim_to_toml_all_fields() -> None:
     """Test claim TOML serialization with all optional fields."""
+    from certo.spec import LLMCheck, ShellCheck
+
     dt = datetime(2026, 2, 5, 12, 0, tzinfo=timezone.utc)
     claim = Claim(
         id="c-abc1234",
@@ -426,8 +434,10 @@ def test_claim_to_toml_all_fields() -> None:
         author="tester",
         level="block",
         tags=["foo"],
-        verify=["static", "llm"],
-        files=["README.md"],
+        checks=[
+            ShellCheck(cmd="echo test", matches=["test"]),
+            LLMCheck(files=["README.md"]),
+        ],
         evidence=["proof.txt"],
         created=dt,
         updated=dt,
@@ -438,7 +448,10 @@ def test_claim_to_toml_all_fields() -> None:
         closes=["i-xxx"],
     )
     result = claim.to_toml()
-    assert "verify = ['static', 'llm']" in result
+    assert "[[claims.checks]]" in result
+    assert 'kind = "shell"' in result
+    assert 'cmd = "echo test"' in result
+    assert 'kind = "llm"' in result
     assert "files = ['README.md']" in result
     assert "considered = ['alt1', 'alt2']" in result
     assert "traces_to = ['c-parent']" in result
@@ -492,3 +505,147 @@ def test_spec_to_toml_with_created() -> None:
     result = spec.to_toml()
     assert "created = 2026-02-05T12:00:00Z" in result
     assert 'author = "tester"' in result
+
+
+def test_shell_check_parse() -> None:
+    """Test parsing a shell check."""
+    from certo.spec import ShellCheck
+
+    data = {
+        "kind": "shell",
+        "cmd": "echo test",
+        "exit_code": 1,
+        "matches": ["test"],
+        "not_matches": ["error"],
+        "timeout": 30,
+    }
+    check = ShellCheck.parse(data)
+    assert check.kind == "shell"
+    assert check.cmd == "echo test"
+    assert check.exit_code == 1
+    assert check.matches == ["test"]
+    assert check.not_matches == ["error"]
+    assert check.timeout == 30
+
+
+def test_shell_check_parse_defaults() -> None:
+    """Test parsing a shell check with defaults."""
+    from certo.spec import ShellCheck
+
+    data = {"kind": "shell"}
+    check = ShellCheck.parse(data)
+    assert check.cmd == ""
+    assert check.exit_code == 0
+    assert check.matches == []
+    assert check.not_matches == []
+    assert check.timeout == 60
+
+
+def test_shell_check_to_toml() -> None:
+    """Test shell check TOML serialization."""
+    from certo.spec import ShellCheck
+
+    check = ShellCheck(
+        cmd="echo test",
+        exit_code=1,
+        matches=["test"],
+        not_matches=["error"],
+        timeout=30,
+    )
+    result = check.to_toml()
+    assert "[[claims.checks]]" in result
+    assert 'kind = "shell"' in result
+    assert 'cmd = "echo test"' in result
+    assert "exit_code = 1" in result
+    assert "matches = ['test']" in result
+    assert "not_matches = ['error']" in result
+    assert "timeout = 30" in result
+
+
+def test_shell_check_to_toml_defaults() -> None:
+    """Test shell check TOML serialization with defaults."""
+    from certo.spec import ShellCheck
+
+    check = ShellCheck(cmd="echo test")
+    result = check.to_toml()
+    assert "exit_code" not in result
+    assert "matches" not in result
+    assert "not_matches" not in result
+    assert "timeout" not in result
+
+
+def test_llm_check_parse() -> None:
+    """Test parsing an LLM check."""
+    from certo.spec import LLMCheck
+
+    data = {
+        "kind": "llm",
+        "files": ["README.md", "src/*.py"],
+        "prompt": "Check for X",
+    }
+    check = LLMCheck.parse(data)
+    assert check.kind == "llm"
+    assert check.files == ["README.md", "src/*.py"]
+    assert check.prompt == "Check for X"
+
+
+def test_llm_check_parse_defaults() -> None:
+    """Test parsing an LLM check with defaults."""
+    from certo.spec import LLMCheck
+
+    data = {"kind": "llm"}
+    check = LLMCheck.parse(data)
+    assert check.files == []
+    assert check.prompt is None
+
+
+def test_llm_check_to_toml() -> None:
+    """Test LLM check TOML serialization."""
+    from certo.spec import LLMCheck
+
+    check = LLMCheck(files=["README.md"], prompt="Check X")
+    result = check.to_toml()
+    assert "[[claims.checks]]" in result
+    assert 'kind = "llm"' in result
+    assert "files = ['README.md']" in result
+    assert 'prompt = "Check X"' in result
+
+
+def test_llm_check_to_toml_defaults() -> None:
+    """Test LLM check TOML serialization with defaults."""
+    from certo.spec import LLMCheck
+
+    check = LLMCheck()
+    result = check.to_toml()
+    assert "files" not in result
+    assert "prompt" not in result
+
+
+def test_parse_check_shell() -> None:
+    """Test parse_check dispatches to ShellCheck."""
+    from certo.spec import ShellCheck, parse_check
+
+    data = {"kind": "shell", "cmd": "echo test"}
+    check = parse_check(data)
+    assert isinstance(check, ShellCheck)
+    assert check.cmd == "echo test"
+
+
+def test_parse_check_llm() -> None:
+    """Test parse_check dispatches to LLMCheck."""
+    from certo.spec import LLMCheck, parse_check
+
+    data = {"kind": "llm", "files": ["README.md"]}
+    check = parse_check(data)
+    assert isinstance(check, LLMCheck)
+    assert check.files == ["README.md"]
+
+
+def test_parse_check_unknown() -> None:
+    """Test parse_check raises on unknown kind."""
+    from certo.spec import parse_check
+    import pytest
+
+    data = {"kind": "unknown"}
+    with pytest.raises(ValueError, match="Unknown check kind"):
+        parse_check(data)

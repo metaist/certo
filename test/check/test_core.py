@@ -29,8 +29,8 @@ def test_check_spec_missing() -> None:
     assert not results[0].passed
 
 
-def test_check_spec_skips_static_claims() -> None:
-    """Test that static claims without handlers are skipped."""
+def test_check_spec_claims_without_checks_are_skipped() -> None:
+    """Test that claims without checks are marked as skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -42,20 +42,22 @@ name = "test"
 version = 1
 
 [[claims]]
-id = "c-static"
-text = "Some static check"
+id = "c-no-checks"
+text = "Claim with no checks"
 status = "confirmed"
-verify = ["static"]
 """)
 
         results = check_spec(spec)
-        # Should only have builtin (TOML valid), not the static claim
-        assert len(results) == 1
+        assert len(results) == 2
         assert results[0].claim_id == "builtin-spec-valid"
+        assert results[1].claim_id == "c-no-checks"
+        assert results[1].passed  # Not a failure, just skipped
+        assert "skipped" in results[1].message.lower()
+        assert results[1].strategy == "none"
 
 
-def test_check_spec_auto_strategy_with_files() -> None:
-    """Test auto strategy with files uses LLM."""
+def test_check_spec_shell_check() -> None:
+    """Test shell check runs command."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -67,45 +69,51 @@ name = "test"
 version = 1
 
 [[claims]]
-id = "c-test"
+id = "c-shell"
+text = "Echo works"
+status = "confirmed"
+
+[[claims.checks]]
+kind = "shell"
+cmd = "echo hello"
+matches = ["hello"]
+""")
+
+        results = check_spec(spec)
+        assert len(results) == 2
+        assert results[1].claim_id == "c-shell"
+        assert results[1].passed
+        assert results[1].strategy == "shell"
+
+
+def test_check_spec_llm_check_offline() -> None:
+    """Test LLM check is skipped in offline mode."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-llm"
 text = "Test claim"
 status = "confirmed"
-verify = ["auto"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
 
-        # Auto with files should try LLM, but offline so skipped
         results = check_spec(spec, offline=True)
         assert len(results) == 2
-        assert results[1].claim_id == "c-test"
+        assert results[1].claim_id == "c-llm"
+        assert results[1].passed  # Skipped is not a failure
         assert "skipped" in results[1].message.lower()
-
-
-def test_check_spec_auto_strategy_without_files() -> None:
-    """Test auto strategy without files is skipped."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
-version = 1
-
-[[claims]]
-id = "c-auto-no-files"
-text = "Test claim without files"
-status = "confirmed"
-verify = ["auto"]
-""")
-
-        # Auto without files should be silently skipped
-        results = check_spec(spec)
-        # Should only have builtin (TOML valid), not the auto claim
-        assert len(results) == 1
-        assert results[0].claim_id == "builtin-spec-valid"
 
 
 def test_check_spec_skips_rejected_claims() -> None:
@@ -124,10 +132,11 @@ version = 1
 id = "c-rejected"
 text = "Rejected claim"
 status = "rejected"
-verify = ["llm"]
-files = ["README.md"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "false"
 """)
-        (root / "README.md").write_text("# Test")
 
         results = check_spec(spec)
         # Should only have builtin, not the rejected claim
@@ -152,10 +161,11 @@ id = "c-skipped"
 text = "Skipped claim"
 status = "confirmed"
 level = "skip"
-verify = ["llm"]
-files = ["README.md"]
+
+[[claims.checks]]
+kind = "shell"
+cmd = "false"
 """)
-        (root / "README.md").write_text("# Test")
 
         results = check_spec(spec)
         # Should only have builtin, not the skipped claim

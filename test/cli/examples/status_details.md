@@ -15,12 +15,18 @@ source = "human"
 author = "metaist"
 level = "block"
 tags = ["testing"]
-verify = ["static", "llm"]
-files = ["README.md"]
 why = "Because reasons"
 considered = ["alt1", "alt2"]
 closes = ["i-xxx"]
 created = 2026-02-05T12:00:00Z
+
+[[claims.checks]]
+kind = "shell"
+cmd = "echo test"
+
+[[claims.checks]]
+kind = "llm"
+files = ["README.md"]
 ```
 
 ```bash
@@ -39,9 +45,9 @@ Why: Because reasons
 Considered:
   - alt1
   - alt2
-Verify: static, llm
-Files:
-  - README.md
+Checks:
+  - shell
+  - llm
 Closes: i-xxx
 ```
 

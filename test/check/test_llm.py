@@ -26,7 +26,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         # Create the context file
@@ -56,7 +58,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["nonexistent.md"]
 """)
 
@@ -87,7 +91,9 @@ version = 1
 [[claims]]
 id = "c-test"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
@@ -100,7 +106,7 @@ files = ["README.md"]
 
 
 def test_check_spec_llm_missing_files_field() -> None:
-    """Test that claims without files field fail."""
+    """Test that LLM checks without files field fail."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -115,7 +121,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 """)
 
         results = check_spec(spec, offline=True)
@@ -141,7 +149,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
@@ -175,7 +185,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["large.txt"]
 """)
         # Create a file larger than the limit
@@ -206,7 +218,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")
@@ -239,7 +253,9 @@ version = 1
 id = "c-test"
 text = "Test claim"
 status = "confirmed"
-verify = ["llm"]
+
+[[claims.checks]]
+kind = "llm"
 files = ["README.md"]
 """)
         (root / "README.md").write_text("# Test")

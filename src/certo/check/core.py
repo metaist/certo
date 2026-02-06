@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from certo.spec import Spec
+from certo.spec import LLMCheck, ShellCheck, Spec
 
 
 @dataclass
@@ -30,6 +30,11 @@ class CheckContext:
     no_cache: bool = False
     model: str | None = None
 
+    @property
+    def root(self) -> Path:
+        """Alias for project_root."""
+        return self.project_root
+
 
 def check_spec(
     spec_path: Path,
@@ -39,8 +44,8 @@ def check_spec(
     model: str | None = None,
 ) -> list[CheckResult]:
     """Run all spec checks and return results."""
-    from certo.check.llm import check_claim_llm
-    from certo.check.scan import check_claim_scan
+    from certo.check.llm import run_llm_check
+    from certo.check.shell import run_shell_check
     from certo.check.static import check_spec_exists, check_spec_valid_toml
 
     project_root = spec_path.parent.parent  # .certo/spec.toml -> project root
@@ -75,23 +80,27 @@ def check_spec(
         if claim.level == "skip":
             continue
 
-        # Determine verification strategy
-        strategies = claim.verify if claim.verify else ["auto"]
-
-        if "scan" in strategies:
-            result = check_claim_scan(ctx, claim)
-            results.append(result)
-        elif "llm" in strategies:
-            result = check_claim_llm(ctx, claim)
-            results.append(result)
-        elif "static" in strategies:
-            # No generic static handler yet, skip
+        # No checks defined = skipped
+        if not claim.checks:
+            results.append(
+                CheckResult(
+                    claim_id=claim.id,
+                    claim_text=claim.text,
+                    passed=True,  # Not a failure, just no checks
+                    message="Skipped: no checks defined",
+                    strategy="none",
+                )
+            )
             continue
-        elif "auto" in strategies and claim.files:
-            # Auto with files - try LLM
-            result = check_claim_llm(ctx, claim)
-            results.append(result)
-        # else: auto without files - skip (no way to verify yet)
+
+        # Run each check
+        for check in claim.checks:
+            if isinstance(check, ShellCheck):
+                result = run_shell_check(ctx, claim, check)
+                results.append(result)
+            elif isinstance(check, LLMCheck):
+                result = run_llm_check(ctx, claim, check)
+                results.append(result)
 
     return results
 
