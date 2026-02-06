@@ -16,6 +16,35 @@ certo check -q        # quiet after subcommand
 
 ## Commands
 
+### `certo status`
+
+Show the current state of the spec.
+
+```bash
+certo status [path] [id] [options]
+```
+
+**Arguments:**
+
+- `path` - Project root (default: current directory)
+- `id` - Specific item ID to show (e.g., c-abc1234, i-abc1234, x-abc1234)
+
+**Options:**
+
+- `--claims` - Show only claims
+- `--issues` - Show only issues
+- `--contexts` - Show only contexts
+
+**Examples:**
+
+```bash
+certo status                       # Show all
+certo status --claims              # Show only claims
+certo status . c-e50e9d4           # Show specific claim
+certo status -v                    # Verbose output
+certo status --format json         # JSON output
+```
+
 ### `certo check`
 
 Verify the spec against code.
@@ -39,39 +68,6 @@ certo check [path] [options]
 - `0` - All checks passed
 - `1` - One or more checks failed
 - `2` - Error (e.g., spec not found)
-
-### `certo spec`
-
-View and manage the specification. Running `certo spec` without a subcommand displays help.
-
-#### `certo spec show`
-
-Display spec contents.
-
-```bash
-certo spec show [path] [id] [options]
-```
-
-**Arguments:**
-
-- `path` - Project root (default: current directory)
-- `id` - Specific item ID to show (e.g., d1, c3, ctx1)
-
-**Options:**
-
-- `--decisions` - Show only decisions
-- `--concerns` - Show only concerns
-- `--contexts` - Show only contexts
-
-**Examples:**
-
-```bash
-certo spec show                    # Show all
-certo spec show --decisions        # Show only decisions
-certo spec show . d5               # Show decision d5
-certo spec show -v                 # Verbose output
-certo spec show --format json      # JSON output
-```
 
 ### `certo scan`
 
@@ -110,5 +106,5 @@ certo kb update [source]
 
 ## Environment Variables
 
-- `CERTO_MODEL` - Default LLM model for all tasks (default: `anthropic/claude-sonnet-4`)
+- `CERTO_MODEL` - Default LLM model for verification (default: `anthropic/claude-sonnet-4`)
 - `OPENROUTER_API_KEY` - API key for OpenRouter (required for LLM checks)
