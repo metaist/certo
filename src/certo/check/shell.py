@@ -55,11 +55,9 @@ def run_shell_check(ctx: CheckContext, claim: Claim, check: ShellCheck) -> Check
             claim_id=claim.id,
             claim_text=claim.text,
             passed=False,
-            message=(
-                f"Expected exit code {check.exit_code}, "
-                f"got {result.returncode}\n{output}"
-            ),
+            message=(f"Expected exit code {check.exit_code}, got {result.returncode}"),
             strategy="shell",
+            output=output,
         )
 
     # Check matches (regex patterns that must appear)
@@ -69,8 +67,9 @@ def run_shell_check(ctx: CheckContext, claim: Claim, check: ShellCheck) -> Check
                 claim_id=claim.id,
                 claim_text=claim.text,
                 passed=False,
-                message=f"Pattern not found: {pattern}\n{output}",
+                message=f"Pattern not found: {pattern}",
                 strategy="shell",
+                output=output,
             )
 
     # Check not_matches (regex patterns that must NOT appear)
@@ -80,8 +79,9 @@ def run_shell_check(ctx: CheckContext, claim: Claim, check: ShellCheck) -> Check
                 claim_id=claim.id,
                 claim_text=claim.text,
                 passed=False,
-                message=f"Forbidden pattern found: {pattern}\n{output}",
+                message=f"Forbidden pattern found: {pattern}",
                 strategy="shell",
+                output=output,
             )
 
     return CheckResult(
@@ -90,4 +90,5 @@ def run_shell_check(ctx: CheckContext, claim: Claim, check: ShellCheck) -> Check
         passed=True,
         message="Shell check passed",
         strategy="shell",
+        output=output,
     )

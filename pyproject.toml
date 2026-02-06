@@ -126,7 +126,7 @@ mkdocs-serve = "mkdocs serve"
 
 # Common
 dev.help = "lint, type-check, and unit tests"
-dev.composite = ["certo", "lint", "types", "test"]
+dev.composite = ["lint", "types", "test", "certo"]
 
 ci.help = "run CI checks (yes slow, no llm)"
 ci.composite = ["dev"]

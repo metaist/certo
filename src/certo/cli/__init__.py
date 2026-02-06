@@ -205,6 +205,19 @@ def main(argv: list[str] | None = None) -> int:
         "--model",
         help="LLM model to use (overrides CERTO_MODEL env var)",
     )
+    check_parser.add_argument(
+        "--only",
+        help="run only specific claims/checks (comma-separated IDs)",
+    )
+    check_parser.add_argument(
+        "--skip",
+        help="skip specific claims/checks (comma-separated IDs)",
+    )
+    check_parser.add_argument(
+        "--output",
+        metavar="PATH",
+        help="write detailed results to file (use - for stdout)",
+    )
     check_parser.set_defaults(func=cmd_check)
 
     # scan command

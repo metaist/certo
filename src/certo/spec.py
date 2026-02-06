@@ -64,6 +64,7 @@ class ShellCheck:
     """A check that runs a shell command."""
 
     kind: Literal["shell"] = "shell"
+    id: str = ""
     cmd: str = ""
     exit_code: int = 0
     matches: list[str] = field(default_factory=list)
@@ -73,20 +74,26 @@ class ShellCheck:
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a shell check from TOML data."""
-        return cls(
+        check = cls(
             kind="shell",
+            id=data.get("id", ""),
             cmd=data.get("cmd", ""),
             exit_code=data.get("exit_code", 0),
             matches=data.get("matches", []),
             not_matches=data.get("not_matches", []),
             timeout=data.get("timeout", 60),
         )
+        # Auto-generate ID if not provided
+        if not check.id and check.cmd:
+            check.id = generate_id("k", f"shell:{check.cmd}")
+        return check
 
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
             "[[claims.checks]]",
             'kind = "shell"',
+            f'id = "{self.id}"',
             f'cmd = "{self.cmd}"',
         ]
         if self.exit_code != 0:
@@ -105,23 +112,30 @@ class LLMCheck:
     """A check that uses LLM verification."""
 
     kind: Literal["llm"] = "llm"
+    id: str = ""
     files: list[str] = field(default_factory=list)
     prompt: str | None = None
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse an LLM check from TOML data."""
-        return cls(
+        check = cls(
             kind="llm",
+            id=data.get("id", ""),
             files=data.get("files", []),
             prompt=data.get("prompt"),
         )
+        # Auto-generate ID if not provided
+        if not check.id and check.files:
+            check.id = generate_id("k", f"llm:{','.join(check.files)}")
+        return check
 
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
             "[[claims.checks]]",
             'kind = "llm"',
+            f'id = "{self.id}"',
         ]
         if self.files:
             lines.append(f"files = {self.files}")

@@ -649,3 +649,55 @@ def test_parse_check_unknown() -> None:
     data = {"kind": "unknown"}
     with pytest.raises(ValueError, match="Unknown check kind"):
         parse_check(data)
+
+
+def test_shell_check_parse_with_id() -> None:
+    """Test parsing a shell check with explicit ID."""
+    from certo.spec import ShellCheck
+
+    data = {
+        "kind": "shell",
+        "id": "k-custom-id",
+        "cmd": "echo test",
+    }
+    check = ShellCheck.parse(data)
+    assert check.id == "k-custom-id"
+
+
+def test_shell_check_auto_generates_id() -> None:
+    """Test that shell check auto-generates ID from cmd."""
+    from certo.spec import ShellCheck
+
+    data = {
+        "kind": "shell",
+        "cmd": "echo hello",
+    }
+    check = ShellCheck.parse(data)
+    assert check.id.startswith("k-")
+    assert len(check.id) > 2
+
+
+def test_llm_check_parse_with_id() -> None:
+    """Test parsing an LLM check with explicit ID."""
+    from certo.spec import LLMCheck
+
+    data = {
+        "kind": "llm",
+        "id": "k-llm-custom",
+        "files": ["README.md"],
+    }
+    check = LLMCheck.parse(data)
+    assert check.id == "k-llm-custom"
+
+
+def test_llm_check_auto_generates_id() -> None:
+    """Test that LLM check auto-generates ID from files."""
+    from certo.spec import LLMCheck
+
+    data = {
+        "kind": "llm",
+        "files": ["src/*.py"],
+    }
+    check = LLMCheck.parse(data)
+    assert check.id.startswith("k-")
+    assert len(check.id) > 2

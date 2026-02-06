@@ -171,3 +171,105 @@ cmd = "false"
         # Should only have builtin, not the skipped claim
         assert len(results) == 1
         assert results[0].claim_id == "builtin-spec-valid"
+
+
+def test_check_spec_skip_by_check_id() -> None:
+    """Test skipping specific check by ID."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+kind = "shell"
+id = "k-skip-this"
+cmd = "exit 1"
+
+[[claims.checks]]
+kind = "shell"
+id = "k-run-this"
+cmd = "echo hello"
+""")
+
+        results = check_spec(spec, skip={"k-skip-this"})
+        # Should have builtin + one shell check (the one that wasn't skipped)
+        shell_results = [r for r in results if r.strategy == "shell"]
+        assert len(shell_results) == 1
+        assert shell_results[0].check_id == "k-run-this"
+        assert shell_results[0].passed
+
+
+def test_check_spec_only_by_check_id() -> None:
+    """Test running only specific check by ID."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+kind = "shell"
+id = "k-only-this"
+cmd = "echo hello"
+
+[[claims.checks]]
+kind = "shell"
+id = "k-not-this"
+cmd = "exit 1"
+""")
+
+        results = check_spec(spec, only={"k-only-this"})
+        shell_results = [r for r in results if r.strategy == "shell"]
+        assert len(shell_results) == 1
+        assert shell_results[0].check_id == "k-only-this"
+        assert shell_results[0].passed
+
+
+def test_check_spec_skip_builtin() -> None:
+    """Test skipping the builtin spec check."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+kind = "shell"
+cmd = "echo hello"
+""")
+
+        results = check_spec(spec, skip={"builtin-spec-valid"})
+        # Should not have builtin result
+        builtin_results = [r for r in results if r.claim_id == "builtin-spec-valid"]
+        assert len(builtin_results) == 0
+        # But should still have the shell check
+        shell_results = [r for r in results if r.strategy == "shell"]
+        assert len(shell_results) == 1
