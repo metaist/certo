@@ -14,6 +14,7 @@ from certo.check.core import (
     CheckContext,
     CheckResult,
     Evidence,
+    ResultEvidence,
     Runner,
     generate_id,
 )
@@ -139,8 +140,11 @@ def check_spec(
         result.check_id = check_id
         results.append(result)
 
-        # TODO: Store evidence for verification
-        # evidence_map[check_id] = result.evidence
+    # Build evidence map from check results
+    evidence_map: dict[str, Evidence] = {}
+    for result in results:
+        if result.check_id and not result.skipped:
+            evidence_map[result.check_id] = result.to_evidence()
 
     # Verify claims against evidence
     for claim in ctx.spec.claims:
@@ -207,15 +211,14 @@ def check_spec(
             )
             continue
 
-        # TODO: Verify claim against evidence_map
-        # verify_result = verify_claim(claim.verify, evidence_map)
-        # For now, mark as passed (will implement verification later)
+        # Verify claim against evidence
+        verify_result = verify_claim(claim.verify, evidence_map)
         results.append(
             CheckResult(
                 claim_id=claim.id,
                 claim_text=claim.text,
-                passed=True,
-                message="verified",
+                passed=verify_result.passed,
+                message=verify_result.message or "verified",
                 kind="verify",
             )
         )
@@ -229,6 +232,7 @@ __all__ = [
     "CheckContext",
     "CheckResult",
     "Evidence",
+    "ResultEvidence",
     "Runner",
     "generate_id",
     # Check types

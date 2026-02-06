@@ -1,12 +1,90 @@
 # Certo Spec
 # WARNING: This file is managed by certo. Manual edits may be overwritten.
-# Use `certo claim`, `certo issue`, `certo context` to make changes.
+# Use `certo claim`, `certo issue` to make changes.
 
 [spec]
 name = "certo"
 version = 1
 created = 2026-02-05T14:07:00Z
 author = "metaist"
+
+# =============================================================================
+# CHECKS
+# =============================================================================
+
+[[checks]]
+id = "k-spec-exists"
+kind = "shell"
+cmd = "test -f .certo/spec.toml && head -1 .certo/spec.toml"
+matches = ['# Certo Spec']
+
+[[checks]]
+id = "k-certo-dir"
+kind = "shell"
+cmd = "test -d .certo"
+
+[[checks]]
+id = "k-check-offline"
+kind = "shell"
+cmd = "uv run certo check --offline --skip k-check-offline || true"
+timeout = 2
+
+[[checks]]
+id = "k-kb-dir"
+kind = "shell"
+cmd = "test -d src/certo/kb/python"
+
+[[checks]]
+id = "k-meta-toml"
+kind = "shell"
+cmd = "test -f src/certo/kb/python/typeshed/meta.toml"
+
+[[checks]]
+id = "k-versions-file"
+kind = "shell"
+cmd = "test -f src/certo/kb/python/typeshed/VERSIONS"
+
+[[checks]]
+id = "k-kb-update-source"
+kind = "shell"
+cmd = "grep -q 'github.com/python/typeshed' src/certo/kb/update.py"
+
+[[checks]]
+id = "k-openrouter"
+kind = "shell"
+cmd = "grep -q 'openrouter.ai' src/certo/llm/provider.py"
+
+[[checks]]
+id = "k-test-mirrors-src"
+kind = "shell"
+cmd = "for d in $(find src/certo -type d); do py_count=$(find \"$d\" -maxdepth 1 -name \"*.py\" ! -name \"__init__.py\" 2>/dev/null | wc -l); if [ \"$py_count\" -gt 0 ]; then test_dir=$(echo \"$d\" | sed \"s|src/certo|test|\"); [ -d \"$test_dir\" ] || exit 1; fi; done"
+
+[[checks]]
+id = "k-coverage"
+kind = "shell"
+cmd = "uv run coverage report --format=total | python3 -c \"import sys; cov=int(sys.stdin.read().strip()); sys.exit(0 if cov >= 98 else 1)\""
+
+[[checks]]
+id = "k-ci-versions"
+kind = "fact"
+has = "python.ci-versions"
+
+[[checks]]
+id = "k-cli-docs"
+kind = "llm"
+files = ['docs/cli.md', 'src/certo/cli/__init__.py']
+prompt = "Verify that docs/cli.md documents all CLI commands defined in src/certo/cli/__init__.py"
+
+[[checks]]
+id = "k-eol-python"
+kind = "url"
+url = "https://endoflife.date/api/python.json"
+cmd = "OURS=$(grep \"Programming Language :: Python :: 3\\.\" pyproject.toml | grep -oP \"3\\.\\d+\" | jq -R -s -c \"split(\\\"\\\\n\\\") | map(select(. != \\\"\\\"))\"); jq -e --argjson ours \"$OURS\" \"[.[] | select(.eol > (now | strftime(\\\"%Y-%m-%d\\\")))] | map(.cycle) | . as \\$active | \\$ours | all(. as \\$v | \\$active | contains([\\$v]))\""
+
+[[checks]]
+id = "k-version-consistency"
+kind = "fact"
+empty = "python.consistency-issues"
 
 # =============================================================================
 # CLAIMS
@@ -24,11 +102,8 @@ created = 2026-02-05T14:07:00Z
 why = "TOML is explicit, has no implicit type coercion, no code execution risk"
 considered = ['YAML', 'JSON', 'KDL', 'Markdown+frontmatter']
 
-[[claims.checks]]
-id = "k-ab8118d"
-kind = "shell"
-cmd = "test -f .certo/spec.toml && head -1 .certo/spec.toml"
-matches = ['# Certo Spec']
+[claims.verify]
+"k-spec-exists.passed" = { eq = true }
 
 [[claims]]
 id = "c-caf8ac4"
@@ -42,10 +117,8 @@ created = 2026-02-05T14:07:00Z
 why = "Dotted because it's tool-managed, like .git"
 considered = ['Single file', 'certo/ (not dotted)', 'certo.toml at root']
 
-[[claims.checks]]
-id = "k-267b1e0"
-kind = "shell"
-cmd = "test -d .certo"
+[claims.verify]
+"k-certo-dir.passed" = { eq = true }
 
 [[claims]]
 id = "c-b0d1e6d"
@@ -71,11 +144,8 @@ created = 2026-02-05T14:50:00Z
 updated = 2026-02-06T06:10:14Z
 why = "Developers run checks frequently. Slow checks get disabled or ignored."
 
-[[claims.checks]]
-id = "k-1fe25f2"
-kind = "shell"
-cmd = "uv run certo check --offline --skip k-1fe25f2 || true"
-timeout = 2
+[claims.verify]
+"k-check-offline.passed" = { eq = true }
 
 [[claims]]
 id = "c-e52fcc2"
@@ -89,10 +159,8 @@ created = 2026-02-05T17:00:00Z
 why = "We don't know enough about what kinds of knowledge we need yet. Bundling avoids premature schema design."
 considered = ['Fetchable to ~/.certo/', 'Separate certo-knowledge package']
 
-[[claims.checks]]
-id = "k-94862d2"
-kind = "shell"
-cmd = "test -d src/certo/kb/python"
+[claims.verify]
+"k-kb-dir.passed" = { eq = true }
 
 [[claims]]
 id = "c-14d95c9"
@@ -106,10 +174,8 @@ created = 2026-02-05T17:00:00Z
 why = "TOML is already our standard"
 considered = ['JSON', 'YAML']
 
-[[claims.checks]]
-id = "k-bd37378"
-kind = "shell"
-cmd = "test -f src/certo/kb/python/typeshed/meta.toml"
+[claims.verify]
+"k-meta-toml.passed" = { eq = true }
 
 [[claims]]
 id = "c-b5b9a45"
@@ -123,10 +189,8 @@ created = 2026-02-05T17:00:00Z
 why = "Typeshed is already used by pyright, mypy. The VERSIONS file is exactly what we need."
 considered = ['Scrape Python docs', 'Maintain our own database']
 
-[[claims.checks]]
-id = "k-2b8a9cf"
-kind = "shell"
-cmd = "test -f src/certo/kb/python/typeshed/VERSIONS"
+[claims.verify]
+"k-versions-file.passed" = { eq = true }
 
 [[claims]]
 id = "c-32260b0"
@@ -140,10 +204,8 @@ created = 2026-02-05T17:00:00Z
 why = "Transparency aligns with certo's philosophy. Anyone can audit or reproduce."
 considered = ['Hidden scripts', 'Manual curation']
 
-[[claims.checks]]
-id = "k-8c604d0"
-kind = "shell"
-cmd = "grep -q 'github.com/python/typeshed' src/certo/kb/update.py"
+[claims.verify]
+"k-kb-update-source.passed" = { eq = true }
 
 [[claims]]
 id = "c-14b5f9e"
@@ -157,10 +219,8 @@ created = 2026-02-05T18:00:00Z
 why = "LLMs can handle anything expressible in natural language without upfront work."
 considered = ['Static checks only', 'Custom code for each check type']
 
-[[claims.checks]]
-id = "k-1ad936d"
-kind = "shell"
-cmd = "grep -q 'openrouter.ai' src/certo/llm/provider.py"
+[claims.verify]
+"k-openrouter.passed" = { eq = true }
 
 [[claims]]
 id = "c-eb9736a"
@@ -175,10 +235,8 @@ updated = 2026-02-06T04:56:46Z
 why = "Mirroring keeps navigation simple"
 considered = ['Flat test directory', 'Tests alongside source']
 
-[[claims.checks]]
-id = "k-be6b643"
-kind = "shell"
-cmd = "for d in $(find src/certo -type d); do py_count=$(find \"$d\" -maxdepth 1 -name \"*.py\" ! -name \"__init__.py\" 2>/dev/null | wc -l); if [ \"$py_count\" -gt 0 ]; then test_dir=$(echo \"$d\" | sed \"s|src/certo|test|\"); [ -d \"$test_dir\" ] || exit 1; fi; done"
+[claims.verify]
+"k-test-mirrors-src.passed" = { eq = true }
 
 [[claims]]
 id = "c-9f15ff6"
@@ -191,17 +249,8 @@ tags = ['maintainability']
 created = 2026-02-05T14:07:00Z
 updated = 2026-02-06T06:03:59Z
 
-[[claims.checks]]
-id = "k-f788502"
-kind = "shell"
-status = "disabled"
-cmd = "uv run pytest --cov=src --cov-report=term 2>&1 | grep TOTAL"
-matches = ['(100|99|98)%?']
-
-[[claims.checks]]
-id = "k-324722a"
-kind = "shell"
-cmd = "uv run coverage report --format=total | python3 -c \"import sys; cov=int(sys.stdin.read().strip()); sys.exit(0 if cov >= 98 else 1)\""
+[claims.verify]
+"k-coverage.passed" = { eq = true }
 
 [[claims]]
 id = "c-b72253d"
@@ -214,17 +263,6 @@ tags = ['compatibility']
 created = 2026-02-05T14:07:00Z
 updated = 2026-02-06T04:59:19Z
 
-[[claims.checks]]
-id = "k-9cd2648"
-kind = "shell"
-status = "disabled"
-cmd = "test \"$(certo scan --format json 2>/dev/null | python3 -c \"import sys,json; f={x['key']:x['value'] for x in json.load(sys.stdin)['facts']}; print('yes' if f.get('python.ci-versions')==f.get('python.classifier-versions') else 'no')\")\" = yes"
-
-[[claims.checks]]
-id = "k-8e03e2f"
-kind = "fact"
-has = "python.ci-versions"
-
 [[claims]]
 id = "c-8d6ceb6"
 text = "docs/cli.md documents all CLI commands"
@@ -234,11 +272,7 @@ author = "metaist"
 level = "warn"
 tags = ['documentation']
 created = 2026-02-05T14:07:00Z
-
-[[claims.checks]]
-id = "k-8210334"
-kind = "llm"
-files = ['docs/cli.md', 'src/certo/cli/__init__.py']
+# verify requires LLM check which is skipped offline
 
 [[claims]]
 id = "c-d75a4b4"
@@ -252,17 +286,8 @@ created = 2026-02-06T04:59:24Z
 updated = 2026-02-06T06:07:25Z
 why = "Supporting EOL Python versions is a security risk"
 
-[[claims.checks]]
-id = "k-f799659"
-kind = "shell"
-status = "disabled"
-cmd = "min=$(grep -oP \"requires-python\\s*=\\s*\\\">=\\K[0-9.]+\" pyproject.toml); python3 -c \"import sys; sys.exit(0 if tuple(map(int, \\\"$min\\\".split(\\\".\\\"))) >= (3,10) else 1)\""
-
-[[claims.checks]]
-id = "k-5050626"
-kind = "url"
-url = "https://endoflife.date/api/python.json"
-cmd = "OURS=$(grep \"Programming Language :: Python :: 3\\.\" pyproject.toml | grep -oP \"3\\.\\d+\" | jq -R -s -c \"split(\\\"\\\\n\\\") | map(select(. != \\\"\\\"))\"); jq -e --argjson ours \"$OURS\" \"[.[] | select(.eol > (now | strftime(\\\"%Y-%m-%d\\\")))] | map(.cycle) | . as \\$active | \\$ours | all(. as \\$v | \\$active | contains([\\$v]))\""
+[claims.verify]
+"k-eol-python.passed" = { eq = true }
 
 [[claims]]
 id = "c-8358075"
@@ -276,16 +301,8 @@ created = 2026-02-06T04:59:28Z
 updated = 2026-02-06T05:59:39Z
 why = "Inconsistent version declarations cause confusion and missed test coverage"
 
-[[claims.checks]]
-id = "k-263fd12"
-kind = "shell"
-status = "disabled"
-cmd = "uv run certo scan --format json 2>/dev/null | python3 -c \"import sys,json; f={x[\\\"key\\\"]:x[\\\"value\\\"] for x in json.load(sys.stdin)[\\\"facts\\\"]}; issues=f.get(\\\"python.consistency-issues\\\",[]); sys.exit(0 if not issues else 1)\""
-
-[[claims.checks]]
-id = "k-bd4bf3c"
-kind = "fact"
-empty = "python.consistency-issues"
+[claims.verify]
+"k-version-consistency.passed" = { eq = true }
 
 [[claims]]
 id = "c-b9896c4"
@@ -297,13 +314,6 @@ tags = ['performance']
 created = 2026-02-06T11:38:22Z
 updated = 2026-02-06T11:41:37Z
 
-[[claims.checks]]
-id = "k-2127f31"
-kind = "shell"
-status = "disabled"
-cmd = "uv run pytest -n auto -q --tb=no || true"
-timeout = 10
-
 [[claims]]
 id = "c-151faa9"
 text = "ds dev completes in under 60 seconds"
@@ -313,12 +323,6 @@ level = "warn"
 tags = ['performance']
 created = 2026-02-06T11:38:43Z
 updated = 2026-02-06T11:39:10Z
-
-[[claims.checks]]
-id = "k-186e142"
-kind = "shell"
-status = "disabled"
-cmd = "ds dev || true"
 
 # =============================================================================
 # ISSUES
@@ -395,14 +399,3 @@ status = "closed"
 tags = ['format']
 created = 2026-02-05T20:00:00Z
 closed_reason = "Three types: claims (verifiable statements), issues (questions/decisions), contexts (where rules differ). Everything else is metadata."
-
-# =============================================================================
-# CONTEXTS
-# =============================================================================
-
-[[contexts]]
-id = "x-333c04d"
-name = "bootstrap"
-description = "While building certo with certo; some claims may not be fully verified yet"
-created = 2026-02-05T14:07:00Z
-expires = 2026-06-01T00:00:00Z

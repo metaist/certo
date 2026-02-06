@@ -78,6 +78,40 @@ class CheckResult:
     skipped: bool = False  # Was this check skipped?
     skip_reason: str = ""  # Why was it skipped?
 
+    def to_evidence(self) -> "ResultEvidence":
+        """Convert to Evidence for verification."""
+        return ResultEvidence(
+            check_id=self.check_id,
+            kind=self.kind,
+            passed=self.passed,
+            message=self.message,
+            output=self.output,
+            skipped=self.skipped,
+            skip_reason=self.skip_reason,
+        )
+
+
+@dataclass
+class ResultEvidence(Evidence):
+    """Evidence created from a CheckResult for verification."""
+
+    kind: str = "result"
+    passed: bool = False
+    message: str = ""
+    output: str = ""
+    skipped: bool = False
+    skip_reason: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for selector traversal."""
+        d = super().to_dict()
+        d["passed"] = self.passed
+        d["message"] = self.message
+        d["output"] = self.output
+        d["skipped"] = self.skipped
+        d["skip_reason"] = self.skip_reason
+        return d
+
 
 @dataclass
 class CheckContext:
