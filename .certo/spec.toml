@@ -202,7 +202,7 @@ matches = ['(100|99|98)%?']
 [[claims.checks]]
 id = "k-324722a"
 kind = "shell"
-cmd = "coverage report --format=total | python3 -c \"import sys; cov=int(sys.stdin.read().strip()); sys.exit(0 if cov >= 98 else 1)\""
+cmd = "uv run coverage report --format=total | python3 -c \"import sys; cov=int(sys.stdin.read().strip()); sys.exit(0 if cov >= 98 else 1)\""
 
 [[claims]]
 id = "c-b72253d"

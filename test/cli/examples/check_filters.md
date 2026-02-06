@@ -140,3 +140,163 @@ Passed: 1
 c-one
 c-two
 ```
+
+## Check verbose shows skipped checks
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-disabled"
+kind = "shell"
+status = "disabled"
+cmd = "echo hello"
+```
+
+```bash
+certo check -v
+```
+
+**Expected**
+
+```
+k-disabled
+disabled
+```
+
+## Check quiet hides passed
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "true"
+
+[[claims]]
+id = "c-fail"
+text = "Failing claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-fail"
+kind = "shell"
+cmd = "false"
+```
+
+```bash
+certo check -q
+```
+
+**Exit Code:** 1
+
+**Expected**
+
+```
+✗
+Failed: 1
+```
+
+## Check with skipped claim shows reason in verbose
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+level = "skip"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "false"
+```
+
+```bash
+certo check -v
+```
+
+**Expected**
+
+```
+⊘
+level=skip
+```
+
+## Check json format
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "true"
+```
+
+```bash
+certo check --format json
+```
+
+**Expected**
+
+```
+"passed": 1
+"failed": 0
+```
+
+## Check verbose with failure
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "false"
+```
+
+```bash
+certo check -v
+```
+
+**Exit Code:** 1
+
+**Expected**
+
+```
+k-test [shell] Expected exit code 0, got 1
+```

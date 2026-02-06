@@ -189,3 +189,23 @@ def test_fact_check_no_criteria() -> None:
         result = FactRunner().run(ctx, claim, check)
         assert not result.passed
         assert "no criteria" in result.message
+
+
+def test_fact_check_empty_fails_when_not_empty() -> None:
+    """Test fact check with 'empty' when fact is not empty."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        # Create uv.lock so uses.uv is truthy
+        (root / "uv.lock").write_text("")
+
+        clear_scan_cache()
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        claim = Claim(id="c-test", text="No uv", status="confirmed")
+        check = FactCheck(empty="uses.uv")
+
+        result = FactRunner().run(ctx, claim, check)
+        assert not result.passed
+        assert "not empty" in result.message.lower()

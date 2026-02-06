@@ -278,3 +278,22 @@ cmd = "echo hello"
         # But should still have the shell check
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
+
+
+def test_check_base_parse_raises() -> None:
+    """Test that Check.parse raises NotImplementedError."""
+    import pytest
+    from certo.check.core import Check
+
+    with pytest.raises(NotImplementedError):
+        Check.parse({})
+
+
+def test_check_base_to_toml_raises() -> None:
+    """Test that Check.to_toml raises NotImplementedError."""
+    import pytest
+    from certo.check.core import Check
+
+    check = Check()
+    with pytest.raises(NotImplementedError):
+        check.to_toml()

@@ -279,3 +279,42 @@ files = ["README.md"]
         assert results[0].claim_id == "c-test"
         assert results[0].passed
         assert "(cached)" in results[0].message
+
+
+def test_check_spec_llm_offline_invalid_cache() -> None:
+    """Test that invalid cached evidence is ignored."""
+    from certo.check import check_spec
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        spec = certo_dir / "spec.toml"
+        spec.write_text("""
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+kind = "llm"
+id = "k-test"
+files = ["README.md"]
+""")
+        (root / "README.md").write_text("# Test")
+
+        # Create invalid evidence file
+        evidence_dir = certo_dir / "evidence"
+        evidence_dir.mkdir()
+        evidence_file = evidence_dir / "k-test.json"
+        evidence_file.write_text("not valid json {{{")
+
+        results = check_spec(spec, offline=True)
+
+        assert len(results) == 1
+        assert results[0].skipped  # Falls through to skip
+        assert "offline" in results[0].skip_reason.lower()
