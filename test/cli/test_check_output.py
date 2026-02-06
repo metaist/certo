@@ -24,12 +24,8 @@ def test_check_output_to_file(capsys: CaptureFixture[str]) -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-test"
 kind = "shell"
 cmd = "echo hello world"
 """)
@@ -61,12 +57,8 @@ def test_check_output_to_stdout(capsys: CaptureFixture[str]) -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-test"
 kind = "shell"
 cmd = "echo hello"
 """)
@@ -101,14 +93,9 @@ def test_check_output_includes_check_id(capsys: CaptureFixture[str]) -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
-kind = "shell"
+[[checks]]
 id = "k-custom-id"
+kind = "shell"
 cmd = "echo hello"
 """)
 
@@ -132,12 +119,7 @@ def test_check_output_auto_generates_check_id(capsys: CaptureFixture[str]) -> No
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 kind = "shell"
 cmd = "echo hello"
 """)

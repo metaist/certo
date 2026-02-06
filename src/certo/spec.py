@@ -7,10 +7,10 @@ import tomllib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import Any, Self
 
-if TYPE_CHECKING:
-    from certo.check.core import Check
+from certo.check.core import Check
+from certo.check.verify import Verify
 
 
 def generate_id(prefix: str, text: str) -> str:
@@ -32,37 +32,6 @@ def format_datetime(dt: datetime | None) -> str:
 
 
 @dataclass
-class Modification:
-    """A modification to a claim within a context."""
-
-    action: str  # relax | promote | exempt
-    claim: str = ""  # specific claim ID
-    level: str = ""  # target all claims at this level
-    topic: str = ""  # target all claims with this tag
-
-    @classmethod
-    def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a modification from TOML data."""
-        return cls(
-            action=data.get("action", ""),
-            claim=data.get("claim", ""),
-            level=data.get("level", ""),
-            topic=data.get("topic", ""),
-        )
-
-    def to_toml_inline(self) -> str:
-        """Serialize to inline TOML."""
-        parts = [f'action = "{self.action}"']
-        if self.claim:
-            parts.append(f'claim = "{self.claim}"')
-        if self.level:
-            parts.append(f'level = "{self.level}"')
-        if self.topic:
-            parts.append(f'topic = "{self.topic}"')
-        return "{ " + ", ".join(parts) + " }"
-
-
-@dataclass
 class Claim:
     """A statement that can be verified."""
 
@@ -73,7 +42,7 @@ class Claim:
     author: str = ""
     level: str = "warn"  # block | warn | skip
     tags: list[str] = field(default_factory=list)
-    checks: list[Check] = field(default_factory=list)
+    verify: Verify | None = None  # Verify conditions on evidence
     evidence: list[str] = field(default_factory=list)  # for audit trail
     created: datetime | None = None
     updated: datetime | None = None
@@ -88,7 +57,8 @@ class Claim:
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a claim from TOML data."""
-        from certo.check import parse_check
+        verify_data = data.get("verify")
+        verify = Verify.parse(verify_data) if verify_data else None
 
         return cls(
             id=data.get("id", ""),
@@ -98,7 +68,7 @@ class Claim:
             author=data.get("author", ""),
             level=data.get("level", "warn"),
             tags=data.get("tags", []),
-            checks=[parse_check(c) for c in data.get("checks", [])],
+            verify=verify,
             evidence=data.get("evidence", []),
             created=data.get("created"),
             updated=data.get("updated"),
@@ -123,6 +93,8 @@ class Claim:
         lines.append(f'level = "{self.level}"')
         if self.tags:
             lines.append(f"tags = {self.tags}")
+        if self.verify:
+            lines.append(f"verify = {self.verify.to_dict()}")
         if self.created:
             lines.append(f"created = {format_datetime(self.created)}")
         if self.updated:
@@ -137,10 +109,6 @@ class Claim:
             lines.append(f'supersedes = "{self.supersedes}"')
         if self.closes:
             lines.append(f"closes = {self.closes}")
-        # Add checks as nested tables
-        for check in self.checks:
-            lines.append("")
-            lines.append(check.to_toml())
         return "\n".join(lines)
 
 
@@ -189,58 +157,6 @@ class Issue:
 
 
 @dataclass
-class Context:
-    """Where different rules apply (exemptions, overrides)."""
-
-    id: str
-    name: str
-    description: str = ""
-    enabled: bool = True
-    created: datetime | None = None
-    updated: datetime | None = None
-    expires: datetime | None = None
-    modifications: list[Modification] = field(default_factory=list)
-
-    @classmethod
-    def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a context from TOML data."""
-        return cls(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            description=data.get("description", ""),
-            enabled=data.get("enabled", True),
-            created=data.get("created"),
-            updated=data.get("updated"),
-            expires=data.get("expires"),
-            modifications=[
-                Modification.parse(m) for m in data.get("modifications", [])
-            ],
-        )
-
-    def to_toml(self) -> str:
-        """Serialize to TOML."""
-        lines = [
-            "[[contexts]]",
-            f'id = "{self.id}"',
-            f'name = "{self.name}"',
-        ]
-        if self.description:
-            lines.append(f'description = "{self.description}"')
-        if not self.enabled:
-            lines.append("enabled = false")
-        if self.created:
-            lines.append(f"created = {format_datetime(self.created)}")
-        if self.updated:
-            lines.append(f"updated = {format_datetime(self.updated)}")
-        if self.expires:
-            lines.append(f"expires = {format_datetime(self.expires)}")
-        if self.modifications:
-            mods = ", ".join(m.to_toml_inline() for m in self.modifications)
-            lines.append(f"modifications = [{mods}]")
-        return "\n".join(lines)
-
-
-@dataclass
 class Spec:
     """A specification for a project."""
 
@@ -248,22 +164,24 @@ class Spec:
     version: int = 1  # schema version
     created: datetime | None = None
     author: str = ""
+    checks: list[Check] = field(default_factory=list)
     claims: list[Claim] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
-    contexts: list[Context] = field(default_factory=list)
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a spec from TOML data."""
+        from certo.check import parse_check
+
         meta = data.get("spec", {})
         return cls(
             name=meta.get("name", ""),
             version=meta.get("version", 1),
             created=meta.get("created"),
             author=meta.get("author", ""),
+            checks=[parse_check(c) for c in data.get("checks", [])],
             claims=[Claim.parse(c) for c in data.get("claims", [])],
             issues=[Issue.parse(i) for i in data.get("issues", [])],
-            contexts=[Context.parse(c) for c in data.get("contexts", [])],
         )
 
     @classmethod
@@ -287,19 +205,11 @@ class Spec:
                 return issue
         return None
 
-    def get_context(self, context_id: str) -> Context | None:
-        """Get a context by ID."""
-        for context in self.contexts:
-            if context.id == context_id:
-                return context
-        return None
-
-    def get_check(self, check_id: str) -> tuple[Claim, Check] | None:
-        """Get a check by ID, returning (claim, check) tuple."""
-        for claim in self.claims:
-            for check in claim.checks:
-                if check.id == check_id:
-                    return (claim, check)
+    def get_check(self, check_id: str) -> Check | None:
+        """Get a check by ID."""
+        for check in self.checks:
+            if check.id == check_id:
+                return check
         return None
 
     def to_toml(self) -> str:
@@ -307,7 +217,7 @@ class Spec:
         lines = [
             "# Certo Spec",
             "# WARNING: This file is managed by certo. Manual edits may be overwritten.",
-            "# Use `certo claim`, `certo issue`, `certo context` to make changes.",
+            "# Use `certo claim`, `certo issue`, `certo check` to make changes.",
             "",
             "[spec]",
             f'name = "{self.name}"',
@@ -318,6 +228,15 @@ class Spec:
         if self.author:
             lines.append(f'author = "{self.author}"')
         lines.append("")
+
+        if self.checks:
+            lines.append("# " + "=" * 77)
+            lines.append("# CHECKS")
+            lines.append("# " + "=" * 77)
+            lines.append("")
+            for check in self.checks:
+                lines.append(check.to_toml())
+                lines.append("")
 
         if self.claims:
             lines.append("# " + "=" * 77)
@@ -335,15 +254,6 @@ class Spec:
             lines.append("")
             for issue in self.issues:
                 lines.append(issue.to_toml())
-                lines.append("")
-
-        if self.contexts:
-            lines.append("# " + "=" * 77)
-            lines.append("# CONTEXTS")
-            lines.append("# " + "=" * 77)
-            lines.append("")
-            for context in self.contexts:
-                lines.append(context.to_toml())
                 lines.append("")
 
         return "\n".join(lines)

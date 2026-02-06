@@ -66,7 +66,7 @@ Issues:
 Claims:
 ```
 
-## Show only contexts with --contexts
+## Show only checks with --checks
 
 ```toml
 [spec]
@@ -77,20 +77,21 @@ version = 1
 id = "c-abc1234"
 text = "Test claim"
 
-[[contexts]]
-id = "x-abc1234"
-name = "Test context"
+[[checks]]
+id = "k-abc1234"
+kind = "shell"
+cmd = "echo test"
 ```
 
 ```bash
-certo status --contexts
+certo status --checks
 ```
 
 **Expected**
 
 ```
-Contexts:
-  x-abc1234  Test context
+Checks:
+  ● [k-abc1234] shell
 ```
 
 **Not Expected**

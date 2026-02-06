@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from certo.check.shell import ShellCheck
-from certo.spec import Claim, Context, Issue, Spec
+from certo.spec import Claim, Issue, Spec
 
 
 def test_spec_parse_minimal() -> None:
@@ -18,9 +18,9 @@ def test_spec_parse_minimal() -> None:
     assert spec.version == 1
     assert spec.created is None
     assert spec.author == ""
+    assert spec.checks == []
     assert spec.claims == []
     assert spec.issues == []
-    assert spec.contexts == []
 
 
 def test_spec_parse_full() -> None:
@@ -33,21 +33,21 @@ def test_spec_parse_full() -> None:
             "created": dt,
             "author": "metaist",
         },
+        "checks": [{"kind": "shell", "id": "k-test", "cmd": "echo test"}],
         "claims": [{"id": "c-abc1234", "text": "Claim 1"}],
         "issues": [{"id": "i-abc1234", "text": "Issue 1"}],
-        "contexts": [{"id": "x-abc1234", "name": "Context 1"}],
     }
     spec = Spec.parse(data)
     assert spec.name == "test"
     assert spec.version == 2
     assert spec.created == dt
     assert spec.author == "metaist"
+    assert len(spec.checks) == 1
+    assert spec.checks[0].id == "k-test"
     assert len(spec.claims) == 1
     assert spec.claims[0].id == "c-abc1234"
     assert len(spec.issues) == 1
     assert spec.issues[0].id == "i-abc1234"
-    assert len(spec.contexts) == 1
-    assert spec.contexts[0].id == "x-abc1234"
 
 
 def test_spec_load() -> None:
@@ -58,6 +58,11 @@ def test_spec_load() -> None:
 [spec]
 name = "test"
 version = 1
+
+[[checks]]
+kind = "shell"
+id = "k-test"
+cmd = "echo test"
 
 [[claims]]
 id = "c-abc1234"
@@ -70,6 +75,7 @@ text = "Test issue"
         spec = Spec.load(path)
         assert spec.name == "test"
         assert spec.version == 1
+        assert len(spec.checks) == 1
         assert len(spec.claims) == 1
         assert len(spec.issues) == 1
 
@@ -108,55 +114,38 @@ def test_spec_get_issue() -> None:
     assert spec.get_issue("i-notfound") is None
 
 
-def test_spec_get_context() -> None:
-    """Test getting a context by ID."""
-    data = {
-        "spec": {"name": "test"},
-        "contexts": [
-            {"id": "x-abc1234", "name": "Context 1"},
-            {"id": "x-def5678", "name": "Context 2"},
-        ],
-    }
-    spec = Spec.parse(data)
-    x1 = spec.get_context("x-abc1234")
-    assert x1 is not None
-    assert x1.name == "Context 1"
-    assert spec.get_context("x-def5678") is not None
-    assert spec.get_context("x-notfound") is None
-
-
-def test_spec_get_check_iterates_all() -> None:
-    """Test get_check iterates through multiple checks."""
+def test_spec_get_check() -> None:
+    """Test getting a check by ID."""
     spec = Spec(
         name="test",
         version=1,
-        claims=[
-            Claim(
-                id="c-1",
-                text="Claim 1",
-                status="confirmed",
-                checks=[
-                    ShellCheck(id="k-first", cmd="true"),
-                    ShellCheck(id="k-second", cmd="true"),
-                ],
-            ),
-            Claim(
-                id="c-2",
-                text="Claim 2",
-                status="confirmed",
-                checks=[
-                    ShellCheck(id="k-target", cmd="true"),
-                ],
-            ),
+        checks=[
+            ShellCheck(id="k-first", cmd="true"),
+            ShellCheck(id="k-second", cmd="true"),
         ],
     )
 
-    # Should find check in second claim after iterating first
-    result = spec.get_check("k-target")
-    assert result is not None
-    claim, check = result
-    assert claim.id == "c-2"
-    assert check.id == "k-target"
+    check = spec.get_check("k-second")
+    assert check is not None
+    assert check.id == "k-second"
+
+    assert spec.get_check("k-nonexistent") is None
+
+
+def test_spec_to_toml_with_checks() -> None:
+    """Test spec serialization includes checks."""
+    spec = Spec(
+        name="test",
+        version=1,
+        checks=[
+            ShellCheck(id="k-test", cmd="echo hello"),
+        ],
+    )
+    result = spec.to_toml()
+    assert "# CHECKS" in result
+    assert "[[checks]]" in result
+    assert 'id = "k-test"' in result
+    assert 'cmd = "echo hello"' in result
 
 
 def test_spec_to_toml() -> None:
@@ -167,7 +156,6 @@ def test_spec_to_toml() -> None:
         author="tester",
         claims=[Claim(id="c-abc", text="Test")],
         issues=[Issue(id="i-abc", text="Question?")],
-        contexts=[Context(id="x-abc", name="dev")],
     )
     result = spec.to_toml()
     assert "# Certo Spec" in result
@@ -176,7 +164,6 @@ def test_spec_to_toml() -> None:
     assert 'name = "test"' in result
     assert "# CLAIMS" in result
     assert "# ISSUES" in result
-    assert "# CONTEXTS" in result
 
 
 def test_spec_to_toml_with_created() -> None:
@@ -198,6 +185,7 @@ def test_spec_save_and_load() -> None:
     spec = Spec(
         name="test",
         version=1,
+        checks=[ShellCheck(id="k-test", cmd="echo test")],
         claims=[Claim(id="c-abc", text="Test claim", status="confirmed")],
         issues=[Issue(id="i-abc", text="Question?")],
     )
@@ -210,6 +198,8 @@ def test_spec_save_and_load() -> None:
         loaded = Spec.load(path)
         assert loaded.name == "test"
         assert loaded.version == 1
+        assert len(loaded.checks) == 1
+        assert loaded.checks[0].id == "k-test"
         assert len(loaded.claims) == 1
         assert loaded.claims[0].id == "c-abc"
         assert loaded.claims[0].text == "Test claim"

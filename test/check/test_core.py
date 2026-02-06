@@ -18,7 +18,7 @@ def test_check_spec_integration() -> None:
         spec.write_text('[spec]\nname = "test"\nversion = 1\n')
 
         results = check_spec(spec)
-        # Empty spec = no claims = no results
+        # Empty spec = no checks, no claims = no results
         assert len(results) == 0
 
 
@@ -30,8 +30,8 @@ def test_check_spec_missing() -> None:
         check_spec(Path("/nonexistent/.certo/spec.toml"))
 
 
-def test_check_spec_claims_without_checks_are_skipped() -> None:
-    """Test that claims without checks are marked as skipped."""
+def test_check_spec_claims_without_verify_are_skipped() -> None:
+    """Test that claims without verify are marked as skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -43,17 +43,17 @@ name = "test"
 version = 1
 
 [[claims]]
-id = "c-no-checks"
-text = "Claim with no checks"
+id = "c-no-verify"
+text = "Claim without verify"
 status = "confirmed"
 """)
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-no-checks"
+        assert results[0].claim_id == "c-no-verify"
         assert results[0].passed  # Not a failure, just skipped
         assert results[0].skipped
-        assert results[0].skip_reason == "no checks defined"
+        assert results[0].skip_reason == "no verify defined"
         assert results[0].kind == "none"
 
 
@@ -69,12 +69,8 @@ def test_check_spec_shell_check() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-shell"
-text = "Echo works"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-shell"
 kind = "shell"
 cmd = "echo hello"
 matches = ["hello"]
@@ -82,7 +78,7 @@ matches = ["hello"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-shell"
+        assert results[0].check_id == "k-shell"
         assert results[0].passed
         assert results[0].kind == "shell"
 
@@ -99,20 +95,17 @@ def test_check_spec_llm_check_offline() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-llm"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-llm"
 kind = "llm"
 files = ["README.md"]
+prompt = "Verify this file"
 """)
         (root / "README.md").write_text("# Test")
 
         results = check_spec(spec, offline=True)
         assert len(results) == 1
-        assert results[0].claim_id == "c-llm"
+        assert results[0].check_id == "k-llm"
         assert results[0].passed  # Skipped is not a failure
         assert "skipped" in results[0].message.lower()
 
@@ -133,10 +126,6 @@ version = 1
 id = "c-rejected"
 text = "Rejected claim"
 status = "rejected"
-
-[[claims.checks]]
-kind = "shell"
-cmd = "false"
 """)
 
         results = check_spec(spec)
@@ -164,10 +153,6 @@ id = "c-skipped"
 text = "Skipped claim"
 status = "confirmed"
 level = "skip"
-
-[[claims.checks]]
-kind = "shell"
-cmd = "false"
 """)
 
         results = check_spec(spec)
@@ -190,24 +175,18 @@ def test_check_spec_skip_by_check_id() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
-kind = "shell"
+[[checks]]
 id = "k-skip-this"
+kind = "shell"
 cmd = "exit 1"
 
-[[claims.checks]]
-kind = "shell"
+[[checks]]
 id = "k-run-this"
+kind = "shell"
 cmd = "echo hello"
 """)
 
         results = check_spec(spec, skip={"k-skip-this"})
-        # Should have builtin + one shell check (the one that wasn't skipped)
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
         assert shell_results[0].check_id == "k-run-this"
@@ -226,19 +205,14 @@ def test_check_spec_only_by_check_id() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
-kind = "shell"
+[[checks]]
 id = "k-only-this"
+kind = "shell"
 cmd = "echo hello"
 
-[[claims.checks]]
-kind = "shell"
+[[checks]]
 id = "k-not-this"
+kind = "shell"
 cmd = "exit 1"
 """)
 
@@ -249,8 +223,8 @@ cmd = "exit 1"
         assert shell_results[0].passed
 
 
-def test_check_spec_skip_builtin() -> None:
-    """Test skipping the builtin spec check."""
+def test_check_spec_disabled_check() -> None:
+    """Test that disabled checks are skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         certo_dir = root / ".certo"
@@ -261,23 +235,18 @@ def test_check_spec_skip_builtin() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-disabled"
 kind = "shell"
-cmd = "echo hello"
+status = "disabled"
+cmd = "exit 1"
 """)
 
-        results = check_spec(spec, skip={"builtin-spec-valid"})
-        # Should not have builtin result
-        builtin_results = [r for r in results if r.claim_id == "builtin-spec-valid"]
-        assert len(builtin_results) == 0
-        # But should still have the shell check
-        shell_results = [r for r in results if r.kind == "shell"]
-        assert len(shell_results) == 1
+        results = check_spec(spec)
+        assert len(results) == 1
+        assert results[0].check_id == "k-disabled"
+        assert results[0].skipped
+        assert results[0].skip_reason == "check disabled"
 
 
 def test_check_base_parse_raises() -> None:
@@ -297,3 +266,14 @@ def test_check_base_to_toml_raises() -> None:
     check = Check()
     with pytest.raises(NotImplementedError):
         check.to_toml()
+
+
+def test_check_content_hash() -> None:
+    """Test Check.content_hash generates deterministic hash."""
+    from certo.check.core import Check
+
+    check = Check(kind="shell", id="k-test")
+    hash1 = check.content_hash()
+    hash2 = check.content_hash()
+    assert hash1 == hash2
+    assert hash1.startswith("h-")

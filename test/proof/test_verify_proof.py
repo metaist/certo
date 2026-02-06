@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from z3 import And, Bool, Bools, ForAll, Implies, Int, Ints, Not, Or, Solver
 
-from conftest import assert_proof, prove
+from .conftest import assert_proof, prove
 
 DEPS = ["src/certo/check/verify.py"]
 

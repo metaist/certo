@@ -4,33 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from certo.spec import Claim, Modification
-
-
-def test_modification_parse() -> None:
-    """Test parsing a modification."""
-    data = {"action": "relax", "claim": "c-xxx"}
-    mod = Modification.parse(data)
-    assert mod.action == "relax"
-    assert mod.claim == "c-xxx"
-    assert mod.level == ""
-    assert mod.topic == ""
-
-
-def test_modification_to_toml_inline() -> None:
-    """Test modification inline TOML serialization."""
-    mod = Modification(action="relax", claim="c-xxx")
-    result = mod.to_toml_inline()
-    assert 'action = "relax"' in result
-    assert 'claim = "c-xxx"' in result
-
-    mod2 = Modification(action="promote", level="warn")
-    result2 = mod2.to_toml_inline()
-    assert 'level = "warn"' in result2
-
-    mod3 = Modification(action="promote", topic="security")
-    result3 = mod3.to_toml_inline()
-    assert 'topic = "security"' in result3
+from certo.spec import Claim
 
 
 def test_claim_parse_minimal() -> None:
@@ -44,7 +18,7 @@ def test_claim_parse_minimal() -> None:
     assert claim.author == ""
     assert claim.level == "warn"
     assert claim.tags == []
-    assert claim.checks == []
+    assert claim.verify is None
     assert claim.evidence == []
     assert claim.why == ""
     assert claim.considered == []
@@ -55,8 +29,6 @@ def test_claim_parse_minimal() -> None:
 
 def test_claim_parse_full() -> None:
     """Test parsing a claim with all fields."""
-    from certo.check import LLMCheck, ShellCheck
-
     dt = datetime(2026, 2, 5, 12, 0, 0, tzinfo=timezone.utc)
     data = {
         "id": "c-abc1234",
@@ -66,10 +38,7 @@ def test_claim_parse_full() -> None:
         "author": "metaist",
         "level": "block",
         "tags": ["testing"],
-        "checks": [
-            {"kind": "shell", "cmd": "echo test"},
-            {"kind": "llm", "files": ["README.md"]},
-        ],
+        "verify": {"k-pytest.exit_code": {"eq": 0}},
         "evidence": ["pyproject.toml:5"],
         "created": dt,
         "updated": dt,
@@ -87,11 +56,8 @@ def test_claim_parse_full() -> None:
     assert claim.author == "metaist"
     assert claim.level == "block"
     assert claim.tags == ["testing"]
-    assert len(claim.checks) == 2
-    assert isinstance(claim.checks[0], ShellCheck)
-    assert claim.checks[0].cmd == "echo test"
-    assert isinstance(claim.checks[1], LLMCheck)
-    assert claim.checks[1].files == ["README.md"]
+    assert claim.verify is not None
+    assert claim.verify.rules == {"k-pytest.exit_code": {"eq": 0}}
     assert claim.evidence == ["pyproject.toml:5"]
     assert claim.created == dt
     assert claim.updated == dt
@@ -126,7 +92,7 @@ def test_claim_to_toml() -> None:
 
 def test_claim_to_toml_all_fields() -> None:
     """Test claim TOML serialization with all optional fields."""
-    from certo.check import LLMCheck, ShellCheck
+    from certo.check.verify import Verify
 
     dt = datetime(2026, 2, 5, 12, 0, tzinfo=timezone.utc)
     claim = Claim(
@@ -137,10 +103,7 @@ def test_claim_to_toml_all_fields() -> None:
         author="tester",
         level="block",
         tags=["foo"],
-        checks=[
-            ShellCheck(cmd="echo test", matches=["test"]),
-            LLMCheck(files=["README.md"]),
-        ],
+        verify=Verify.parse({"k-pytest.exit_code": {"eq": 0}}),
         evidence=["proof.txt"],
         created=dt,
         updated=dt,
@@ -151,14 +114,37 @@ def test_claim_to_toml_all_fields() -> None:
         closes=["i-xxx"],
     )
     result = claim.to_toml()
-    assert "[[claims.checks]]" in result
-    assert 'kind = "shell"' in result
-    assert 'cmd = "echo test"' in result
-    assert 'kind = "llm"' in result
-    assert "files = ['README.md']" in result
+    assert "verify = " in result
+    assert "k-pytest.exit_code" in result
     assert "considered = ['alt1', 'alt2']" in result
     assert "traces_to = ['c-parent']" in result
     assert 'supersedes = "c-old"' in result
     assert "closes = ['i-xxx']" in result
     assert "created = 2026-02-05T12:00:00Z" in result
     assert "updated = 2026-02-05T12:00:00Z" in result
+
+
+def test_claim_parse_with_verify() -> None:
+    """Test parsing a claim with verify field."""
+    data = {
+        "id": "c-abc1234",
+        "text": "Test claim",
+        "verify": {"k-pytest.exit_code": {"eq": 0}},
+    }
+    claim = Claim.parse(data)
+    assert claim.verify is not None
+    assert claim.verify.rules == {"k-pytest.exit_code": {"eq": 0}}
+
+
+def test_claim_to_toml_with_verify() -> None:
+    """Test claim TOML serialization with verify field."""
+    from certo.check.verify import Verify
+
+    claim = Claim(
+        id="c-abc1234",
+        text="Test claim",
+        verify=Verify.parse({"k-pytest.exit_code": {"eq": 0}}),
+    )
+    result = claim.to_toml()
+    assert "verify = " in result
+    assert "k-pytest.exit_code" in result

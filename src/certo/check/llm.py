@@ -36,7 +36,7 @@ class LLMCheck(Check):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[claims.checks]]",
+            "[[checks]]",
             f'id = "{self.id}"',
             'kind = "llm"',
         ]
@@ -54,24 +54,34 @@ class LLMRunner:
     """Runner for LLM-based checks."""
 
     def run(self, ctx: CheckContext, claim: Any, check: Any) -> CheckResult:
-        """Verify a claim using LLM."""
+        """Verify using LLM.
+
+        If claim is provided, verifies claim.text against files.
+        If claim is None (top-level check), uses check.prompt or skips.
+        """
         from certo.llm.provider import LLMError, NoAPIKeyError
         from certo.llm.verify import FileMissingError, FileTooLargeError, verify_concern
 
-        if not claim.text:
+        claim_id = claim.id if claim else ""
+        claim_text = claim.text if claim else ""
+        check_id = getattr(check, "id", "") or claim_id
+
+        # Determine what to verify
+        text_to_verify = claim_text or getattr(check, "prompt", "")
+        if not text_to_verify:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
-                message="Claim has no text to verify",
+                message="LLM check has no claim text or prompt to verify",
                 kind="llm",
             )
 
         files = getattr(check, "files", [])
         if not files:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message="LLM check has no files specified",
                 kind="llm",
@@ -79,7 +89,6 @@ class LLMRunner:
 
         if ctx.offline:
             evidence_dir = ctx.spec_path.parent / "evidence"
-            check_id = getattr(check, "id", "")
             evidence_file = evidence_dir / f"{check_id}.json" if check_id else None
 
             if evidence_file and evidence_file.exists():
@@ -89,8 +98,8 @@ class LLMRunner:
                     evidence = json.loads(evidence_file.read_text())
                     msg = evidence.get("message", "cached result")
                     return CheckResult(
-                        claim_id=claim.id,
-                        claim_text=claim.text,
+                        claim_id=claim_id,
+                        claim_text=claim_text,
                         passed=evidence.get("passed", False),
                         message=f"{msg} (cached)",
                         kind="llm",
@@ -100,8 +109,8 @@ class LLMRunner:
                     pass
 
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=True,
                 message="skipped (offline mode)",
                 kind="llm",
@@ -110,17 +119,16 @@ class LLMRunner:
             )
 
         try:
-            check_id = getattr(check, "id", "") or claim.id
             result = verify_concern(
                 concern_id=check_id,
-                claim=claim.text,
+                claim=text_to_verify,
                 context_patterns=files,
                 project_root=ctx.project_root,
                 no_cache=ctx.no_cache,
                 model=ctx.model,
             )
 
-            if check_id:  # pragma: no branch - always true since fallback to claim.id
+            if check_id:  # pragma: no branch - always true since we set it above
                 import json
 
                 evidence_dir = ctx.spec_path.parent / "evidence"
@@ -143,8 +151,8 @@ class LLMRunner:
                 message = f"{message} (cached)"
 
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=result.passed,
                 message=message,
                 kind="llm",
@@ -153,8 +161,8 @@ class LLMRunner:
 
         except NoAPIKeyError:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=True,
                 message="skipped (no API key)",
                 kind="llm",
@@ -163,24 +171,24 @@ class LLMRunner:
             )
         except FileMissingError as e:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"File not found: {e}",
                 kind="llm",
             )
         except FileTooLargeError as e:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"File too large: {e}",
                 kind="llm",
             )
         except LLMError as e:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"LLM error: {e}",
                 kind="llm",

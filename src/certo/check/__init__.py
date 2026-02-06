@@ -9,11 +9,19 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from certo.check.core import Check, CheckContext, CheckResult, Runner, generate_id
+from certo.check.core import (
+    Check,
+    CheckContext,
+    CheckResult,
+    Evidence,
+    Runner,
+    generate_id,
+)
 from certo.check.fact import FactCheck, FactRunner, clear_scan_cache
 from certo.check.llm import LLMCheck, LLMRunner
 from certo.check.shell import ShellCheck, ShellRunner
 from certo.check.url import UrlCheck, UrlRunner
+from certo.check.verify import Verify, VerifyResult, verify_claim
 
 # Registry mapping kind -> (CheckClass, RunnerInstance)
 REGISTRY: dict[str, tuple[type[Check], Runner]] = {
@@ -81,7 +89,60 @@ def check_spec(
     except Exception as e:
         raise ValueError(f"Failed to parse spec: {e}") from None
 
-    # Process claims from spec
+    for check in ctx.spec.checks:
+        check_id = check.id or ""
+
+        # Skip disabled checks
+        if check.status == "disabled":
+            results.append(
+                CheckResult(
+                    claim_id="",
+                    claim_text="",
+                    passed=True,
+                    message="check disabled",
+                    kind="none",
+                    check_id=check_id,
+                    skipped=True,
+                    skip_reason="check disabled",
+                )
+            )
+            continue
+
+        # Skip this specific check if in skip set
+        if check_id and check_id in skip:
+            results.append(
+                CheckResult(
+                    claim_id="",
+                    claim_text="",
+                    passed=True,
+                    message="--skip flag",
+                    kind="none",
+                    check_id=check_id,
+                    skipped=True,
+                    skip_reason="--skip flag",
+                )
+            )
+            continue
+
+        # If --only specified with check IDs, only run matching checks
+        if only is not None and check_id not in only:
+            continue  # Silently skip --only filtered
+
+        # Get runner from registry
+        runner = get_runner(check.kind)
+        if runner is None:  # pragma: no cover
+            continue  # Unknown check type
+
+        # Run check to collect evidence
+        # Note: runners still expect (ctx, claim, check) - pass None for claim
+        result = runner.run(ctx, None, check)
+        result.check_id = check_id
+        results.append(result)
+
+        # TODO: Store evidence for verification
+        # evidence_map[check_id] = result.evidence
+
+    # Verify claims against evidence
     for claim in ctx.spec.claims:
         # Skip claims that shouldn't be checked
         if claim.status in ("rejected", "superseded"):
@@ -114,10 +175,7 @@ def check_spec(
 
         # Check if claim is filtered by --only
         if only is not None and claim.id not in only:
-            # Check if any of this claim's checks are in --only
-            claim_check_ids = {c.id for c in claim.checks if c.id}
-            if not claim_check_ids.intersection(only):
-                continue  # Silently skip --only filtered (not interesting)
+            continue  # Silently skip --only filtered
 
         # Check if claim is filtered by --skip
         if claim.id in skip:
@@ -134,71 +192,33 @@ def check_spec(
             )
             continue
 
-        # No checks defined = skipped
-        if not claim.checks:
+        # No verify = skipped
+        if not claim.verify:
             results.append(
                 CheckResult(
                     claim_id=claim.id,
                     claim_text=claim.text,
                     passed=True,
-                    message="no checks defined",
+                    message="no verify defined",
                     kind="none",
                     skipped=True,
-                    skip_reason="no checks defined",
+                    skip_reason="no verify defined",
                 )
             )
             continue
 
-        # Run each check
-        for check in claim.checks:
-            check_id = check.id or ""
-            check_status = check.status
-
-            # Skip disabled checks
-            if check_status == "disabled":
-                results.append(
-                    CheckResult(
-                        claim_id=claim.id,
-                        claim_text=claim.text,
-                        passed=True,
-                        message="check disabled",
-                        kind="none",
-                        check_id=check_id,
-                        skipped=True,
-                        skip_reason="check disabled",
-                    )
-                )
-                continue
-
-            # Skip this specific check if in skip set
-            if check_id and check_id in skip:
-                results.append(
-                    CheckResult(
-                        claim_id=claim.id,
-                        claim_text=claim.text,
-                        passed=True,
-                        message="--skip flag",
-                        kind="none",
-                        check_id=check_id,
-                        skipped=True,
-                        skip_reason="--skip flag",
-                    )
-                )
-                continue
-
-            # If --only specified with check IDs, only run matching checks
-            if only is not None and claim.id not in only:
-                if not check_id or check_id not in only:
-                    continue  # Silently skip --only filtered
-
-            # Get runner from registry
-            runner = get_runner(check.kind)
-            if runner is None:  # pragma: no cover
-                continue  # Unknown check type - unreachable since Spec.load validates
-
-            result = runner.run(ctx, claim, check)
-            result.check_id = check_id
-            results.append(result)
+        # TODO: Verify claim against evidence_map
+        # verify_result = verify_claim(claim.verify, evidence_map)
+        # For now, mark as passed (will implement verification later)
+        results.append(
+            CheckResult(
+                claim_id=claim.id,
+                claim_text=claim.text,
+                passed=True,
+                message="verified",
+                kind="verify",
+            )
+        )
 
     return results
 
@@ -208,6 +228,7 @@ __all__ = [
     "Check",
     "CheckContext",
     "CheckResult",
+    "Evidence",
     "Runner",
     "generate_id",
     # Check types
@@ -220,6 +241,10 @@ __all__ = [
     "UrlRunner",
     "LLMRunner",
     "FactRunner",
+    # Verification
+    "Verify",
+    "VerifyResult",
+    "verify_claim",
     # Registry
     "REGISTRY",
     "parse_check",

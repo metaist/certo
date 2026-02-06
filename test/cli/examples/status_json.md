@@ -1,6 +1,6 @@
 # status - JSON Output
 
-## JSON output for all
+## JSON output for claims
 
 ```toml
 [spec]
@@ -10,23 +10,18 @@ version = 1
 [[claims]]
 id = "c-abc1234"
 text = "Test claim"
-
-[[issues]]
-id = "i-abc1234"
-text = "Test issue"
+status = "confirmed"
 ```
 
 ```bash
-certo --format json status
+certo status --format json
 ```
 
 **Expected**
 
 ```
 "claims"
-"issues"
 "c-abc1234"
-"i-abc1234"
 ```
 
 ## JSON output for specific claim
@@ -43,63 +38,36 @@ status = "confirmed"
 ```
 
 ```bash
-certo --format json status c-abc1234
+certo status c-abc1234 --format json
 ```
 
 **Expected**
 
 ```
 "id": "c-abc1234"
-"text": "Test claim"
 "status": "confirmed"
 ```
 
-## JSON output for specific issue
+## JSON output for specific check
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[issues]]
-id = "i-abc1234"
-text = "Test issue"
-status = "open"
+[[checks]]
+id = "k-abc1234"
+kind = "shell"
+cmd = "echo test"
 ```
 
 ```bash
-certo --format json status i-abc1234
+certo status k-abc1234 --format json
 ```
 
 **Expected**
 
 ```
-"id": "i-abc1234"
-"text": "Test issue"
-"status": "open"
-```
-
-## JSON output for specific context
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[contexts]]
-id = "x-abc1234"
-name = "Test context"
-description = "A description"
-```
-
-```bash
-certo --format json status x-abc1234
-```
-
-**Expected**
-
-```
-"id": "x-abc1234"
-"name": "Test context"
-"description": "A description"
+"id": "k-abc1234"
+"kind": "shell"
 ```

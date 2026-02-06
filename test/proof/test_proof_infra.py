@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 from z3 import Int, Not, Solver
 
-from conftest import (
+from . import conftest
+from .conftest import (
     ProofCache,
     ProofDependency,
     ProofFailed,
@@ -138,7 +139,7 @@ class TestCacheFunctions:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Point cache to temp dir
-        monkeypatch.setattr("conftest.PROOF_CACHE_DIR", tmp_path)
+        monkeypatch.setattr(conftest, "PROOF_CACHE_DIR", tmp_path)
 
         deps = ProofDependency(files=[])
         result = ProofResult(
@@ -158,7 +159,7 @@ class TestCacheFunctions:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Cache invalidation when dependencies change."""
-        monkeypatch.setattr("conftest.PROOF_CACHE_DIR", tmp_path)
+        monkeypatch.setattr(conftest, "PROOF_CACHE_DIR", tmp_path)
 
         # Save with one set of deps
         deps1 = ProofDependency(files=[])
@@ -209,7 +210,7 @@ class TestProve:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that prove() saves to cache when use_cache=True."""
-        monkeypatch.setattr("conftest.PROOF_CACHE_DIR", tmp_path)
+        monkeypatch.setattr(conftest, "PROOF_CACHE_DIR", tmp_path)
 
         x = Int("x")
         s = Solver()

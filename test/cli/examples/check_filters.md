@@ -1,159 +1,124 @@
 # certo check --only and --skip
 
-## Skip a claim by ID
+## Skip a check by ID
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-skip-me"
-text = "This should be skipped"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-skip-me"
 kind = "shell"
 cmd = "exit 1"
 
-[[claims]]
-id = "c-run-me"
-text = "This should run"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-run-me"
 kind = "shell"
 cmd = "echo hello"
 ```
 
 ```bash
-certo check --skip c-skip-me
+certo check --skip k-skip-me
 ```
 
 **Expected**
 
 ```
-✓
+✓ k-run-me
 Passed: 1
 ```
 
 **Not Expected**
 
 ```
-c-skip-me
+k-skip-me
 ```
 
-## Run only specific claim
+## Run only specific check
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-only-this"
-text = "Only run this"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-only-this"
 kind = "shell"
 cmd = "echo hello"
 
-[[claims]]
-id = "c-not-this"
-text = "Do not run this"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-not-this"
 kind = "shell"
 cmd = "exit 1"
 ```
 
 ```bash
-certo check --only c-only-this
+certo check --only k-only-this
 ```
 
 **Expected**
 
 ```
-✓
-c-only-this
+✓ k-only-this
 Passed: 1
 ```
 
 **Not Expected**
 
 ```
-c-not-this
+k-not-this
 ```
 
-## Skip multiple claims
+## Skip multiple checks
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-one"
-text = "Claim one"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-one"
 kind = "shell"
 cmd = "exit 1"
 
-[[claims]]
-id = "c-two"
-text = "Claim two"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-two"
 kind = "shell"
 cmd = "exit 1"
 
-[[claims]]
-id = "c-three"
-text = "Claim three"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-three"
 kind = "shell"
 cmd = "echo ok"
 ```
 
 ```bash
-certo check --skip c-one,c-two
+certo check --skip k-one,k-two
 ```
 
 **Expected**
 
 ```
-✓
-c-three
+✓ k-three
 Passed: 1
 ```
 
 **Not Expected**
 
 ```
-c-one
-c-two
+k-one
+k-two
 ```
 
-## Check verbose shows skipped checks
+## Check verbose shows disabled checks
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
@@ -178,22 +143,12 @@ disabled
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
-id = "k-test"
+[[checks]]
+id = "k-pass"
 kind = "shell"
 cmd = "true"
 
-[[claims]]
-id = "c-fail"
-text = "Failing claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-fail"
 kind = "shell"
 cmd = "false"
@@ -212,36 +167,6 @@ certo check -q
 Failed: 1
 ```
 
-## Check with skipped claim shows reason in verbose
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-level = "skip"
-
-[[claims.checks]]
-id = "k-test"
-kind = "shell"
-cmd = "false"
-```
-
-```bash
-certo check -v
-```
-
-**Expected**
-
-```
-⊘
-level=skip
-```
-
 ## Check json format
 
 ```toml
@@ -249,12 +174,7 @@ level=skip
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-test"
 kind = "shell"
 cmd = "true"
@@ -278,12 +198,7 @@ certo check --format json
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-test"
 kind = "shell"
 cmd = "false"
@@ -308,12 +223,7 @@ k-test [shell] Expected exit code 0, got 1
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-test"
 kind = "shell"
 cmd = "false"
@@ -332,25 +242,20 @@ certo check --format json
 "failed": 1
 ```
 
-## Check with skipped check not verbose
+## Check with disabled check not verbose
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-test"
-text = "Test claim"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
 cmd = "echo hello"
 
-[[claims.checks]]
+[[checks]]
 id = "k-enabled"
 kind = "shell"
 cmd = "true"
@@ -363,7 +268,6 @@ certo check
 **Expected**
 
 ```
-✓ [c-test] Test claim
-  ✓ k-enabled [shell]
+✓ k-enabled
 Passed: 1
 ```

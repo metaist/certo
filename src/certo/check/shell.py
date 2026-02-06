@@ -44,7 +44,7 @@ class ShellCheck(Check):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[claims.checks]]",
+            "[[checks]]",
             f'id = "{self.id}"',
             'kind = "shell"',
         ]
@@ -80,11 +80,14 @@ class ShellRunner:
         stdin: str | None = None,
     ) -> CheckResult:
         """Run a shell command with optional stdin."""
+        claim_id = claim.id if claim else ""
+        claim_text = claim.text if claim else ""
+
         cmd = getattr(check, "cmd", "")
         if not cmd:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message="Shell check has no command",
                 kind=self.kind_name,
@@ -107,16 +110,16 @@ class ShellRunner:
             )
         except subprocess.TimeoutExpired:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"Command timed out after {timeout}s",
                 kind=self.kind_name,
             )
         except Exception as e:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"Command failed: {e}",
                 kind=self.kind_name,
@@ -126,8 +129,8 @@ class ShellRunner:
 
         if result.returncode != exit_code:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim_id,
+                claim_text=claim_text,
                 passed=False,
                 message=f"Expected exit code {exit_code}, got {result.returncode}",
                 kind=self.kind_name,
@@ -137,8 +140,8 @@ class ShellRunner:
         for pattern in matches:
             if not re.search(pattern, output):
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim_id,
+                    claim_text=claim_text,
                     passed=False,
                     message=f"Pattern not found: {pattern}",
                     kind=self.kind_name,
@@ -148,8 +151,8 @@ class ShellRunner:
         for pattern in not_matches:
             if re.search(pattern, output):
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim_id,
+                    claim_text=claim_text,
                     passed=False,
                     message=f"Forbidden pattern found: {pattern}",
                     kind=self.kind_name,
@@ -157,8 +160,8 @@ class ShellRunner:
                 )
 
         return CheckResult(
-            claim_id=claim.id,
-            claim_text=claim.text,
+            claim_id=claim_id,
+            claim_text=claim_text,
             passed=True,
             message=f"{self.kind_name.title()} check passed",
             kind=self.kind_name,

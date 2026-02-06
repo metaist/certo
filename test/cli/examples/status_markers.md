@@ -1,6 +1,6 @@
-# status - Status and Level Markers
+# status - Status Markers
 
-## Claim status markers
+## Claims show status markers
 
 ```toml
 [spec]
@@ -11,11 +11,6 @@ version = 1
 id = "c-pending"
 text = "Pending claim"
 status = "pending"
-
-[[claims]]
-id = "c-confirmed"
-text = "Confirmed claim"
-status = "confirmed"
 
 [[claims]]
 id = "c-superseded"
@@ -35,13 +30,13 @@ certo status --claims
 **Expected**
 
 ```
+Claims:
   c-pending  Pending claim [pending]
-  c-confirmed  Confirmed claim
   c-superseded  Superseded claim [superseded]
   c-rejected  Rejected claim [rejected]
 ```
 
-## Claim level markers
+## Claims show level markers
 
 ```toml
 [spec]
@@ -49,22 +44,22 @@ name = "test"
 version = 1
 
 [[claims]]
-id = "c-warn"
-text = "Warn claim"
-status = "confirmed"
-level = "warn"
-
-[[claims]]
 id = "c-block"
-text = "Block claim"
+text = "Blocking claim"
 status = "confirmed"
 level = "block"
 
 [[claims]]
 id = "c-skip"
-text = "Skip claim"
+text = "Skipped claim"
 status = "confirmed"
 level = "skip"
+
+[[claims]]
+id = "c-warn"
+text = "Warning claim"
+status = "confirmed"
+level = "warn"
 ```
 
 ```bash
@@ -74,12 +69,13 @@ certo status --claims
 **Expected**
 
 ```
-  c-warn  Warn claim
-  c-block  Block claim *
-  c-skip  Skip claim -
+Claims:
+  c-block  Blocking claim *
+  c-skip  Skipped claim -
+  c-warn  Warning claim
 ```
 
-## Issue status markers
+## Issues show closed status
 
 ```toml
 [spec]
@@ -104,43 +100,7 @@ certo status --issues
 **Expected**
 
 ```
+Issues:
   i-open  Open issue
   i-closed  Closed issue [closed]
-```
-
-## All sections with separating newlines
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[claims]]
-id = "c-abc1234"
-text = "Test claim"
-
-[[issues]]
-id = "i-abc1234"
-text = "Test issue"
-
-[[contexts]]
-id = "x-abc1234"
-name = "Test context"
-```
-
-```bash
-certo status
-```
-
-**Expected**
-
-```
-Claims:
-  c-abc1234  Test claim
-
-Issues:
-  i-abc1234  Test issue
-
-Contexts:
-  x-abc1234  Test context
 ```

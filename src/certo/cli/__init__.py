@@ -8,7 +8,6 @@ from pathlib import Path
 
 from certo.cli.check import cmd_check
 from certo.cli.claim import add_claim_parser
-from certo.cli.context import add_context_parser
 from certo.cli.init import cmd_init
 from certo.cli.issue import add_issue_parser
 from certo.cli.kb import cmd_kb_update
@@ -35,7 +34,7 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         return argv
 
     # Find where the subcommand is
-    subcommands = {"init", "check", "scan", "kb", "status", "claim", "issue", "context"}
+    subcommands = {"init", "check", "scan", "kb", "status", "claim", "issue"}
     cmd_index = None
     for i, arg in enumerate(argv):
         if arg in subcommands:
@@ -148,9 +147,9 @@ def _build_parser() -> ArgumentParser:
         help="show only issues",
     )
     status_parser.add_argument(
-        "--contexts",
+        "--checks",
         action="store_true",
-        help="show only contexts",
+        help="show only checks",
     )
     status_parser.set_defaults(func=cmd_status)
 
@@ -159,9 +158,6 @@ def _build_parser() -> ArgumentParser:
 
     # issue command (noun-verb pattern with subcommands)
     add_issue_parser(subparsers, _add_global_args)
-
-    # context command (noun-verb pattern with subcommands)
-    add_context_parser(subparsers, _add_global_args)
 
     # check command
     check_parser = subparsers.add_parser("check", help="verify spec against code")

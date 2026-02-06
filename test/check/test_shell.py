@@ -23,12 +23,8 @@ def test_shell_check_passes() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-echo"
-text = "Echo works"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-echo"
 kind = "shell"
 cmd = "echo hello world"
 matches = ["hello", "world"]
@@ -36,7 +32,7 @@ matches = ["hello", "world"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-echo"
+        assert results[0].check_id == "k-echo"
         assert results[0].passed
         assert results[0].kind == "shell"
 
@@ -53,12 +49,8 @@ def test_shell_check_exit_code_fail() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-fail"
-text = "This should fail"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-fail"
 kind = "shell"
 cmd = "exit 1"
 exit_code = 0
@@ -66,7 +58,7 @@ exit_code = 0
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-fail"
+        assert results[0].check_id == "k-fail"
         assert not results[0].passed
         assert "exit code" in results[0].message.lower()
 
@@ -83,12 +75,8 @@ def test_shell_check_expected_exit_code() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-exit1"
-text = "Should exit 1"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-exit1"
 kind = "shell"
 cmd = "exit 1"
 exit_code = 1
@@ -96,7 +84,7 @@ exit_code = 1
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-exit1"
+        assert results[0].check_id == "k-exit1"
         assert results[0].passed
 
 
@@ -112,12 +100,8 @@ def test_shell_check_matches_fail() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-match"
-text = "Pattern matching"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-match"
 kind = "shell"
 cmd = "echo hello"
 matches = ["goodbye"]
@@ -125,7 +109,7 @@ matches = ["goodbye"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-match"
+        assert results[0].check_id == "k-match"
         assert not results[0].passed
         assert "pattern not found" in results[0].message.lower()
 
@@ -142,12 +126,8 @@ def test_shell_check_not_matches_fail() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-not-match"
-text = "No error messages"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-not-match"
 kind = "shell"
 cmd = "echo ERROR something went wrong"
 not_matches = ["ERROR"]
@@ -155,7 +135,7 @@ not_matches = ["ERROR"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-not-match"
+        assert results[0].check_id == "k-not-match"
         assert not results[0].passed
         assert "forbidden pattern found" in results[0].message.lower()
 
@@ -172,12 +152,8 @@ def test_shell_check_regex_matches() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-regex"
-text = "Regex matching"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-regex"
 kind = "shell"
 cmd = "echo version 1.2.3"
 matches = ["version \\d+\\.\\d+\\.\\d+"]
@@ -185,7 +161,7 @@ matches = ["version \\d+\\.\\d+\\.\\d+"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-regex"
+        assert results[0].check_id == "k-regex"
         assert results[0].passed
 
 
@@ -201,18 +177,14 @@ def test_shell_check_no_cmd() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-no-cmd"
-text = "No command"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-no-cmd"
 kind = "shell"
 """)
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-no-cmd"
+        assert results[0].check_id == "k-no-cmd"
         assert not results[0].passed
         assert "no command" in results[0].message.lower()
 
@@ -229,12 +201,8 @@ def test_shell_check_timeout() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-timeout"
-text = "Should timeout"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-timeout"
 kind = "shell"
 cmd = "sleep 10"
 timeout = 1
@@ -242,7 +210,7 @@ timeout = 1
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-timeout"
+        assert results[0].check_id == "k-timeout"
         assert not results[0].passed
         assert "timed out" in results[0].message.lower()
 
@@ -259,24 +227,20 @@ def test_shell_check_cwd() -> None:
 name = "test"
 version = 1
 
-[[claims]]
-id = "c-cwd"
-text = "Runs in project root"
-status = "confirmed"
-
-[[claims.checks]]
+[[checks]]
+id = "k-cwd"
 kind = "shell"
 cmd = "test -d .certo"
 """)
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-cwd"
+        assert results[0].check_id == "k-cwd"
         assert results[0].passed
 
 
-def test_shell_check_not_matches_fails() -> None:
-    """Test shell check fails when not_matches pattern is found."""
+def test_shell_runner_not_matches_fails() -> None:
+    """Test shell runner fails when not_matches pattern is found."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         ctx = CheckContext(
@@ -291,8 +255,8 @@ def test_shell_check_not_matches_fails() -> None:
         assert "forbidden" in result.message.lower()
 
 
-def test_shell_check_command_exception() -> None:
-    """Test shell check handles unexpected exceptions."""
+def test_shell_runner_command_exception() -> None:
+    """Test shell runner handles unexpected exceptions."""
     from unittest.mock import patch
 
     with TemporaryDirectory() as tmpdir:
@@ -311,8 +275,8 @@ def test_shell_check_command_exception() -> None:
         assert "failed" in result.message.lower()
 
 
-def test_shell_check_not_matches_passes_when_no_match() -> None:
-    """Test shell check passes when not_matches pattern is not found."""
+def test_shell_runner_not_matches_passes_when_no_match() -> None:
+    """Test shell runner passes when not_matches pattern is not found."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         ctx = CheckContext(
@@ -324,3 +288,19 @@ def test_shell_check_not_matches_passes_when_no_match() -> None:
 
         result = ShellRunner().run(ctx, claim, check)
         assert result.passed
+
+
+def test_shell_runner_with_claim_none() -> None:
+    """Test shell runner handles claim=None (top-level check)."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        check = ShellCheck(id="k-test", cmd="echo hello")
+
+        result = ShellRunner().run(ctx, None, check)
+        assert result.passed
+        assert result.claim_id == ""
+        assert result.claim_text == ""

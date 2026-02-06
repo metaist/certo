@@ -48,7 +48,7 @@ class FactCheck(Check):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[claims.checks]]",
+            "[[checks]]",
             f'id = "{self.id}"',
             'kind = "fact"',
         ]
@@ -94,8 +94,8 @@ class FactRunner:
 
         if not has and not empty and not equals and not matches:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim.id if claim else "",
+                claim_text=claim.text if claim else "",
                 passed=False,
                 message="Fact check has no criteria (has, empty, equals, or matches)",
                 kind="fact",
@@ -108,8 +108,8 @@ class FactRunner:
             fact = scan_result.get(empty)
             if fact is not None and fact.value:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact is not empty: {empty}={fact.value!r}",
                     kind="fact",
@@ -120,16 +120,16 @@ class FactRunner:
             fact = scan_result.get(has)
             if fact is None:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact not found: {has}",
                     kind="fact",
                 )
             if not fact.value:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact is falsy: {has}={fact.value!r}",
                     kind="fact",
@@ -140,16 +140,16 @@ class FactRunner:
             fact = scan_result.get(equals)
             if fact is None:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact not found: {equals}",
                     kind="fact",
                 )
             if str(fact.value) != value:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact mismatch: {equals}={fact.value!r}, expected {value!r}",
                     kind="fact",
@@ -160,24 +160,24 @@ class FactRunner:
             fact = scan_result.get(matches)
             if fact is None:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact not found: {matches}",
                     kind="fact",
                 )
             if not re.search(pattern, str(fact.value)):
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Fact doesn't match: {matches}={fact.value!r}, pattern={pattern!r}",
                     kind="fact",
                 )
 
         return CheckResult(
-            claim_id=claim.id,
-            claim_text=claim.text,
+            claim_id=claim.id if claim else "",
+            claim_text=claim.text if claim else "",
             passed=True,
             message="Fact check passed",
             kind="fact",

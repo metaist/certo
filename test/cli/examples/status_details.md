@@ -19,14 +19,6 @@ why = "Because reasons"
 considered = ["alt1", "alt2"]
 closes = ["i-xxx"]
 created = 2026-02-05T12:00:00Z
-
-[[claims.checks]]
-kind = "shell"
-cmd = "echo test"
-
-[[claims.checks]]
-kind = "llm"
-files = ["README.md"]
 ```
 
 ```bash
@@ -45,9 +37,6 @@ Why: Because reasons
 Considered:
   - alt1
   - alt2
-Checks:
-  - shell
-  - llm
 Closes: i-xxx
 ```
 
@@ -143,62 +132,30 @@ Tags:
 Closed reason:
 ```
 
-## Show context detail
+## Show check detail
 
 ```toml
 [spec]
 name = "test"
 version = 1
 
-[[contexts]]
-id = "x-abc1234"
-name = "Test context"
-description = "Full context description"
-expires = 2026-12-31T00:00:00Z
-modifications = [{ action = "relax", claim = "c-xxx" }]
+[[checks]]
+id = "k-abc1234"
+kind = "shell"
+cmd = "echo hello"
 ```
 
 ```bash
-certo status x-abc1234
+certo status k-abc1234
 ```
 
 **Expected**
 
 ```
-x-abc1234: Test context
-Full context description
-Expires: 2026-12-31
-Modifications:
-  - c-xxx: relax
-```
-
-## Show context detail - minimal
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[contexts]]
-id = "x-abc1234"
-name = "Minimal context"
-```
-
-```bash
-certo status x-abc1234
-```
-
-**Expected**
-
-```
-x-abc1234: Minimal context
-```
-
-**Not Expected**
-
-```
-Expires:
-Modifications:
+ID:     k-abc1234
+Kind:   shell
+Status: enabled
+Cmd:    echo hello
 ```
 
 ## Missing claim
@@ -241,7 +198,7 @@ certo status i-notfound
 not found
 ```
 
-## Missing context
+## Missing check
 
 ```toml
 [spec]
@@ -250,7 +207,7 @@ version = 1
 ```
 
 ```bash
-certo status x-notfound
+certo status k-notfound
 ```
 
 **Exit Code:** 1
@@ -279,4 +236,112 @@ certo status z-unknown
 
 ```
 unknown
+```
+
+## Show URL check detail
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[checks]]
+id = "k-url"
+kind = "url"
+url = "https://example.com"
+cmd = "echo test"
+```
+
+```bash
+certo status k-url
+```
+
+**Expected**
+
+```
+ID:     k-url
+Kind:   url
+Status: enabled
+URL:    https://example.com
+Cmd:    echo test
+```
+
+## Show LLM check detail
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[checks]]
+id = "k-llm"
+kind = "llm"
+files = ["README.md"]
+prompt = "Check it"
+```
+
+```bash
+certo status k-llm
+```
+
+**Expected**
+
+```
+ID:     k-llm
+Kind:   llm
+Files:  ['README.md']
+Prompt: Check it
+```
+
+## Show fact check detail
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[checks]]
+id = "k-fact"
+kind = "fact"
+has = "python.version"
+```
+
+```bash
+certo status k-fact
+```
+
+**Expected**
+
+```
+ID:     k-fact
+Kind:   fact
+Has:    python.version
+```
+
+## Show shell check with matches
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[checks]]
+id = "k-shell"
+kind = "shell"
+cmd = "echo hello"
+exit_code = 0
+matches = ["hello"]
+```
+
+```bash
+certo status k-shell
+```
+
+**Expected**
+
+```
+ID:     k-shell
+Kind:   shell
+Cmd:    echo hello
+Match:  ['hello']
 ```

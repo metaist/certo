@@ -11,7 +11,7 @@ def test_get_item_type() -> None:
     assert _get_item_type("c-xyz") == "claim"
     assert _get_item_type("i-abc1234") == "issue"
     assert _get_item_type("i-xyz") == "issue"
-    assert _get_item_type("x-abc1234") == "context"
-    assert _get_item_type("x-xyz") == "context"
+    assert _get_item_type("k-abc1234") == "check"
+    assert _get_item_type("k-xyz") == "check"
     assert _get_item_type("d1") is None
     assert _get_item_type("unknown") is None

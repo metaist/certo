@@ -103,6 +103,7 @@ class Check:
     kind: str = ""
     id: str = ""
     status: str = "enabled"  # "enabled" | "disabled"
+    cache_key: list[str] | None = None  # File globs for cache invalidation
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
@@ -113,10 +114,15 @@ class Check:
         """Serialize to TOML. Override in subclasses."""
         raise NotImplementedError
 
+    def content_hash(self) -> str:
+        """Generate hash of check definition for cache invalidation."""
+        # Subclasses should override to include their specific fields
+        return generate_id("h", f"{self.kind}:{self.id}")
+
 
 class Runner(Protocol):
     """Protocol for check runners."""
 
-    def run(self, ctx: CheckContext, claim: Claim, check: Any) -> CheckResult:
+    def run(self, ctx: CheckContext, claim: Claim | None, check: Any) -> CheckResult:
         """Run the check and return a result."""
         ...  # pragma: no cover

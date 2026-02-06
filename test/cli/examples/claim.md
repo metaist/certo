@@ -15,7 +15,7 @@ certo claim add "Test claim"
 **Expected**
 
 ```
-Created claim:
+Added claim:
 ```
 
 ## Create a claim with options
@@ -33,7 +33,7 @@ certo claim add "Test claim" --level block --tags foo,bar --why "Because reasons
 **Expected**
 
 ```
-Created claim:
+Added claim:
 ```
 
 ## Create claim with no spec
@@ -492,10 +492,6 @@ tags = ["foo", "bar"]
 why = "Because reasons"
 created = 2024-01-01T00:00:00Z
 updated = 2024-01-02T00:00:00Z
-
-[[claims.checks]]
-kind = "shell"
-cmd = "echo test"
 ```
 
 ```bash
@@ -512,7 +508,7 @@ Level:   block
 Author:  tester
 Tags:    foo, bar
 Why:     Because reasons
-Checks:  1
+
 Created:
 Updated:
 ```

@@ -42,7 +42,7 @@ class UrlCheck(ShellCheck):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[claims.checks]]",
+            "[[checks]]",
             f'id = "{self.id}"',
             'kind = "url"',
         ]
@@ -76,8 +76,8 @@ class UrlRunner(ShellRunner):
         url = getattr(check, "url", "")
         if not url:
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim.id if claim else "",
+                claim_text=claim.text if claim else "",
                 passed=False,
                 message="URL check has no url",
                 kind="url",
@@ -108,8 +108,8 @@ class UrlRunner(ShellRunner):
         if content is None:
             if ctx.offline:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=True,
                     message="skipped (offline, no cache)",
                     kind="url",
@@ -130,8 +130,8 @@ class UrlRunner(ShellRunner):
                 content = fetched
             except Exception as e:
                 return CheckResult(
-                    claim_id=claim.id,
-                    claim_text=claim.text,
+                    claim_id=claim.id if claim else "",
+                    claim_text=claim.text if claim else "",
                     passed=False,
                     message=f"Failed to fetch URL: {e}",
                     kind="url",
@@ -147,8 +147,8 @@ class UrlRunner(ShellRunner):
             if from_cache:
                 msg += " (cached)"
             return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
+                claim_id=claim.id if claim else "",
+                claim_text=claim.text if claim else "",
                 passed=True,
                 message=msg,
                 kind="url",
