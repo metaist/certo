@@ -6,6 +6,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from certo.check import check_spec
+from certo.check.core import CheckContext
+from certo.check.shell import ShellCheck, ShellRunner
+from certo.spec import Claim
 
 
 def test_shell_check_passes() -> None:
@@ -270,3 +273,39 @@ cmd = "test -d .certo"
         assert len(results) == 1
         assert results[0].claim_id == "c-cwd"
         assert results[0].passed
+
+
+def test_shell_check_not_matches_fails() -> None:
+    """Test shell check fails when not_matches pattern is found."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        claim = Claim(id="c-test", text="Test", status="confirmed")
+        check = ShellCheck(cmd="echo 'ERROR: something bad'", not_matches=["ERROR"])
+
+        result = ShellRunner().run(ctx, claim, check)
+        assert not result.passed
+        assert "forbidden" in result.message.lower()
+
+
+def test_shell_check_command_exception() -> None:
+    """Test shell check handles unexpected exceptions."""
+    from unittest.mock import patch
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        claim = Claim(id="c-test", text="Test", status="confirmed")
+        check = ShellCheck(cmd="echo hello")
+
+        with patch("subprocess.run", side_effect=OSError("mock error")):
+            result = ShellRunner().run(ctx, claim, check)
+
+        assert not result.passed
+        assert "failed" in result.message.lower()

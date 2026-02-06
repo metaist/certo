@@ -649,7 +649,7 @@ kind = "url"
 url = "https://example.com"
 cache_ttl = 3600
 cmd = "jq ."
-exit_code = 0
+exit_code = 1
 matches = ["ok"]
 not_matches = ["error"]
 timeout = 30
@@ -669,6 +669,7 @@ Claim:   c-test
 URL:     https://example.com
 TTL:     3600s
 Command: jq .
+Exit:    1
 Matches: ['ok']
 Not:     ['error']
 Timeout: 30s
@@ -844,4 +845,133 @@ certo claim check off k-test
 
 ```
 No spec found
+```
+
+## View check not found
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+```
+
+```bash
+certo claim check view k-notfound
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+not found
+```
+
+## Enable check not found
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+```
+
+```bash
+certo claim check on k-notfound
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+not found
+```
+
+## Disable check not found
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+```
+
+```bash
+certo claim check off k-notfound
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+not found
+```
+
+## List checks quiet mode
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "true"
+```
+
+```bash
+certo claim check list c-test -q
+```
+
+**Expected**
+
+```
+```
+
+## View check quiet mode
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "true"
+```
+
+```bash
+certo claim check view k-test -q
+```
+
+**Expected**
+
+```
 ```

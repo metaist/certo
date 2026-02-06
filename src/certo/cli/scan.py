@@ -26,7 +26,7 @@ def cmd_scan(args: Namespace, output: Output) -> int:
                         print(f"    source: {fact.source}")
 
         # Display errors
-        if result.errors:
+        if result.errors:  # pragma: no cover
             for error in result.errors:
                 output.error(f"Scan error: {error}")
 

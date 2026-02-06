@@ -506,3 +506,28 @@ x-def5678
 ```
 x-abc1234
 ```
+
+## View context with updated field
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[contexts]]
+id = "x-test"
+scope = "*.py"
+status = "active"
+created = 2025-01-01T00:00:00Z
+updated = 2025-01-02T00:00:00Z
+```
+
+```bash
+certo context view x-test
+```
+
+**Expected**
+
+```
+Updated:     2025-01-02
+```

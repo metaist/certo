@@ -299,3 +299,35 @@ def test_url_check_to_toml_all_options() -> None:
     assert "matches = ['ok']" in toml
     assert "not_matches = ['error']" in toml
     assert "timeout = 30" in toml
+
+
+def test_url_runner_handles_corrupted_cache_meta() -> None:
+    """Test URL runner handles corrupted cache metadata."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        certo_dir = root / ".certo"
+        certo_dir.mkdir()
+        cache_dir = certo_dir / "cache" / "url"
+        cache_dir.mkdir(parents=True)
+
+        # Create cache with corrupted meta
+        import hashlib
+
+        url = "https://example.com/test.json"
+        url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
+        cache_file = cache_dir / f"{url_hash}.txt"
+        cache_meta = cache_dir / f"{url_hash}.meta"
+        cache_file.write_text('{"status": "ok"}')
+        cache_meta.write_text("not a valid timestamp\n{url}")  # Corrupted
+
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=certo_dir / "spec.toml",
+            offline=True,
+        )
+        claim = Claim(id="c-test", text="Test", status="confirmed")
+        check = UrlCheck(id="k-test", url=url)
+
+        result = UrlRunner().run(ctx, claim, check)
+        # Should skip because cache is corrupted and we're offline
+        assert result.skipped

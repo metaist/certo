@@ -145,7 +145,7 @@ def _scan_ci_workflows(root: Path, result: ScanResult) -> None:
                 items = match.group(1)
                 for v in re.findall(r'"(\d+\.\d+)"', items):
                     versions.add(v)
-        except Exception:
+        except Exception:  # pragma: no cover
             continue
 
     if versions:

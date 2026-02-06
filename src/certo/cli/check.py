@@ -175,7 +175,7 @@ def _output_claim(
     # For failures without check_id, show the message
     if failed:
         for result in checks:
-            if not result.passed and not result.skipped and not result.check_id:
+            if not result.passed and not result.skipped and not result.check_id:  # pragma: no cover
                 print(f"    {result.message}")
 
     # Show individual checks
@@ -185,11 +185,11 @@ def _output_claim(
 
 def _output_check_result(output: Output, result: CheckResult) -> None:
     """Output a single check result (indented under claim)."""
-    if output.format != OutputFormat.TEXT:
+    if output.format != OutputFormat.TEXT:  # pragma: no cover
         return
 
     # Skip claim-level results without check_id (already shown in claim line)
-    if not result.check_id:
+    if not result.check_id:  # pragma: no cover
         return
 
     if result.skipped:

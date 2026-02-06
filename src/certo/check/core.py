@@ -73,4 +73,4 @@ class Runner(Protocol):
 
     def run(self, ctx: CheckContext, claim: Claim, check: Any) -> CheckResult:
         """Run the check and return a result."""
-        ...
+        ...  # pragma: no cover

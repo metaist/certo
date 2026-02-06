@@ -152,3 +152,28 @@ def test_scan_project_with_imports() -> None:
         assert result.has("python.import-min-version")
         # tomllib requires Python 3.11+
         assert result.get_value("python.import-min-version") == "3.11"
+
+
+def test_scan_result_has_returns_true_for_list_fact() -> None:
+    """Test ScanResult.has returns True for non-empty list fact."""
+    result = ScanResult(facts=[])
+    result.facts.append(Fact(key="test.list", value=["a", "b"], source="test"))
+
+    assert result.has("test.list")
+
+
+def test_scan_result_has_returns_false_for_empty_list_fact() -> None:
+    """Test ScanResult.has returns False for empty list fact."""
+    result = ScanResult(facts=[])
+    result.facts.append(Fact(key="test.list", value=[], source="test"))
+
+    assert not result.has("test.list")
+
+
+def test_scan_result_has_returns_true_for_other_fact_types() -> None:
+    """Test ScanResult.has returns True for non-bool/str/list fact values."""
+    result = ScanResult(facts=[])
+    # Use a dict as a non-standard fact value type
+    result.facts.append(Fact(key="test.dict", value={"key": "value"}, source="test"))  # type: ignore
+
+    assert result.has("test.dict")

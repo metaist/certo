@@ -453,7 +453,7 @@ def cmd_claim_check_add(args: Namespace, output: Output) -> int:
             url_check.id = generate_id("k", f"url:{url_check.url}")
             check = url_check
 
-        case _:
+        case _:  # pragma: no cover
             output.error(f"Unknown check kind: {args.kind}")
             return 1
 

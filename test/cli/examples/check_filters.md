@@ -300,3 +300,34 @@ certo check -v
 ```
 k-test [shell] Expected exit code 0, got 1
 ```
+
+## Check json format with failure
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[claims]]
+id = "c-test"
+text = "Test claim"
+status = "confirmed"
+
+[[claims.checks]]
+id = "k-test"
+kind = "shell"
+cmd = "false"
+```
+
+```bash
+certo check --format json
+```
+
+**Exit Code:** 1
+
+**Expected**
+
+```
+"passed": 0
+"failed": 1
+```

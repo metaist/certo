@@ -209,3 +209,52 @@ def test_fact_check_empty_fails_when_not_empty() -> None:
         result = FactRunner().run(ctx, claim, check)
         assert not result.passed
         assert "not empty" in result.message.lower()
+
+
+def test_fact_check_has_fact_is_falsy() -> None:
+    """Test fact check with 'has' when fact exists but is falsy."""
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        # Create pyproject.toml without requires-python (so it's falsy)
+        (root / "pyproject.toml").write_text("""
+[project]
+name = "test"
+""")
+
+        clear_scan_cache()
+        ctx = CheckContext(
+            project_root=root,
+            spec_path=root / ".certo" / "spec.toml",
+        )
+        claim = Claim(id="c-test", text="Has requires-python", status="confirmed")
+        check = FactCheck(has="python.requires-python")
+
+        result = FactRunner().run(ctx, claim, check)
+        assert not result.passed
+        assert "falsy" in result.message.lower() or "not found" in result.message.lower()
+
+
+def test_fact_check_has_fact_is_falsy_empty_string() -> None:
+    """Test fact check with 'has' when fact value is empty string."""
+    from unittest.mock import patch
+    from certo.scan import Fact, ScanResult
+
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+
+        mock_result = ScanResult(facts=[
+            Fact(key="test.empty", value="", source="mock")
+        ])
+
+        with patch("certo.scan.scan_project", return_value=mock_result):
+            clear_scan_cache()
+            ctx = CheckContext(
+                project_root=root,
+                spec_path=root / ".certo" / "spec.toml",
+            )
+            claim = Claim(id="c-test", text="Has test", status="confirmed")
+            check = FactCheck(has="test.empty")
+
+            result = FactRunner().run(ctx, claim, check)
+            assert not result.passed
+            assert "falsy" in result.message.lower()

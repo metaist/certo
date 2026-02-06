@@ -193,8 +193,8 @@ def check_spec(
 
             # Get runner from registry
             runner = get_runner(check.kind)
-            if runner is None:
-                continue  # Unknown check type
+            if runner is None:  # pragma: no cover
+                continue  # Unknown check type - unreachable since Spec.load validates
 
             result = runner.run(ctx, claim, check)
             result.check_id = check_id
