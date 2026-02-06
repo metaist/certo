@@ -32,10 +32,10 @@ matches = ["hello", "world"]
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-echo"
-        assert results[1].passed
-        assert results[1].strategy == "shell"
+        assert len(results) == 1
+        assert results[0].claim_id == "c-echo"
+        assert results[0].passed
+        assert results[0].kind == "shell"
 
 
 def test_shell_check_exit_code_fail() -> None:
@@ -62,10 +62,10 @@ exit_code = 0
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-fail"
-        assert not results[1].passed
-        assert "exit code" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-fail"
+        assert not results[0].passed
+        assert "exit code" in results[0].message.lower()
 
 
 def test_shell_check_expected_exit_code() -> None:
@@ -92,9 +92,9 @@ exit_code = 1
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-exit1"
-        assert results[1].passed
+        assert len(results) == 1
+        assert results[0].claim_id == "c-exit1"
+        assert results[0].passed
 
 
 def test_shell_check_matches_fail() -> None:
@@ -121,10 +121,10 @@ matches = ["goodbye"]
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-match"
-        assert not results[1].passed
-        assert "pattern not found" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-match"
+        assert not results[0].passed
+        assert "pattern not found" in results[0].message.lower()
 
 
 def test_shell_check_not_matches_fail() -> None:
@@ -151,10 +151,10 @@ not_matches = ["ERROR"]
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-not-match"
-        assert not results[1].passed
-        assert "forbidden pattern found" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-not-match"
+        assert not results[0].passed
+        assert "forbidden pattern found" in results[0].message.lower()
 
 
 def test_shell_check_regex_matches() -> None:
@@ -181,9 +181,9 @@ matches = ["version \\d+\\.\\d+\\.\\d+"]
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-regex"
-        assert results[1].passed
+        assert len(results) == 1
+        assert results[0].claim_id == "c-regex"
+        assert results[0].passed
 
 
 def test_shell_check_no_cmd() -> None:
@@ -208,10 +208,10 @@ kind = "shell"
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-no-cmd"
-        assert not results[1].passed
-        assert "no command" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-no-cmd"
+        assert not results[0].passed
+        assert "no command" in results[0].message.lower()
 
 
 def test_shell_check_timeout() -> None:
@@ -238,10 +238,10 @@ timeout = 1
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-timeout"
-        assert not results[1].passed
-        assert "timed out" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-timeout"
+        assert not results[0].passed
+        assert "timed out" in results[0].message.lower()
 
 
 def test_shell_check_cwd() -> None:
@@ -267,6 +267,6 @@ cmd = "test -d .certo"
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-cwd"
-        assert results[1].passed
+        assert len(results) == 1
+        assert results[0].claim_id == "c-cwd"
+        assert results[0].passed

@@ -1,94 +1,165 @@
-"""Shell command verification checks."""
+"""Shell command check - config and runner."""
 
 from __future__ import annotations
 
 import re
 import subprocess
+from dataclasses import dataclass, field
+from typing import Any, Self
 
-from certo.check.core import CheckContext, CheckResult
-from certo.spec import Claim, ShellCheck
+from certo.check.core import Check, CheckContext, CheckResult, generate_id
 
 
-def run_shell_check(ctx: CheckContext, claim: Claim, check: ShellCheck) -> CheckResult:
-    """Run a shell command and verify the result."""
-    if not check.cmd:
+@dataclass
+class ShellCheck(Check):
+    """A check that runs a shell command."""
+
+    kind: str = "shell"
+    id: str = ""
+    status: str = "enabled"
+    cmd: str = ""
+    exit_code: int = 0
+    matches: list[str] = field(default_factory=list)
+    not_matches: list[str] = field(default_factory=list)
+    timeout: int = 60
+
+    @classmethod
+    def parse(cls, data: dict[str, Any]) -> Self:
+        """Parse a shell check from TOML data."""
+        check = cls(
+            kind="shell",
+            id=data.get("id", ""),
+            status=data.get("status", "enabled"),
+            cmd=data.get("cmd", ""),
+            exit_code=data.get("exit_code", 0),
+            matches=data.get("matches", []),
+            not_matches=data.get("not_matches", []),
+            timeout=data.get("timeout", 60),
+        )
+        if not check.id and check.cmd:
+            check.id = generate_id("k", f"shell:{check.cmd}")
+        return check
+
+    def to_toml(self) -> str:
+        """Serialize to TOML."""
+        lines = [
+            "[[claims.checks]]",
+            f'id = "{self.id}"',
+            'kind = "shell"',
+        ]
+        if self.status != "enabled":
+            lines.append(f'status = "{self.status}"')
+        escaped_cmd = self.cmd.replace("\\", "\\\\").replace('"', '\\"')
+        lines.append(f'cmd = "{escaped_cmd}"')
+        if self.exit_code != 0:
+            lines.append(f"exit_code = {self.exit_code}")
+        if self.matches:
+            lines.append(f"matches = {self.matches}")
+        if self.not_matches:
+            lines.append(f"not_matches = {self.not_matches}")
+        if self.timeout != 60:
+            lines.append(f"timeout = {self.timeout}")
+        return "\n".join(lines)
+
+
+class ShellRunner:
+    """Runner for shell command checks."""
+
+    kind_name = "shell"
+
+    def run(self, ctx: CheckContext, claim: Any, check: Any) -> CheckResult:
+        """Run a shell command and verify the result."""
+        return self.run_with_stdin(ctx, claim, check, stdin=None)
+
+    def run_with_stdin(
+        self,
+        ctx: CheckContext,
+        claim: Any,
+        check: Any,
+        stdin: str | None = None,
+    ) -> CheckResult:
+        """Run a shell command with optional stdin."""
+        cmd = getattr(check, "cmd", "")
+        if not cmd:
+            return CheckResult(
+                claim_id=claim.id,
+                claim_text=claim.text,
+                passed=False,
+                message="Shell check has no command",
+                kind=self.kind_name,
+            )
+
+        timeout = getattr(check, "timeout", 60)
+        exit_code = getattr(check, "exit_code", 0)
+        matches = getattr(check, "matches", [])
+        not_matches = getattr(check, "not_matches", [])
+
+        try:
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=ctx.root,
+                input=stdin,
+            )
+        except subprocess.TimeoutExpired:
+            return CheckResult(
+                claim_id=claim.id,
+                claim_text=claim.text,
+                passed=False,
+                message=f"Command timed out after {timeout}s",
+                kind=self.kind_name,
+            )
+        except Exception as e:
+            return CheckResult(
+                claim_id=claim.id,
+                claim_text=claim.text,
+                passed=False,
+                message=f"Command failed: {e}",
+                kind=self.kind_name,
+            )
+
+        output = result.stdout + result.stderr
+
+        if result.returncode != exit_code:
+            return CheckResult(
+                claim_id=claim.id,
+                claim_text=claim.text,
+                passed=False,
+                message=f"Expected exit code {exit_code}, got {result.returncode}",
+                kind=self.kind_name,
+                output=output,
+            )
+
+        for pattern in matches:
+            if not re.search(pattern, output):
+                return CheckResult(
+                    claim_id=claim.id,
+                    claim_text=claim.text,
+                    passed=False,
+                    message=f"Pattern not found: {pattern}",
+                    kind=self.kind_name,
+                    output=output,
+                )
+
+        for pattern in not_matches:
+            if re.search(pattern, output):
+                return CheckResult(
+                    claim_id=claim.id,
+                    claim_text=claim.text,
+                    passed=False,
+                    message=f"Forbidden pattern found: {pattern}",
+                    kind=self.kind_name,
+                    output=output,
+                )
+
         return CheckResult(
             claim_id=claim.id,
             claim_text=claim.text,
-            passed=False,
-            message="Shell check has no command",
-            strategy="shell",
-        )
-
-    try:
-        result = subprocess.run(
-            check.cmd,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=check.timeout,
-            cwd=ctx.root,
-        )
-    except subprocess.TimeoutExpired:
-        return CheckResult(
-            claim_id=claim.id,
-            claim_text=claim.text,
-            passed=False,
-            message=f"Command timed out after {check.timeout}s",
-            strategy="shell",
-        )
-    except Exception as e:
-        return CheckResult(
-            claim_id=claim.id,
-            claim_text=claim.text,
-            passed=False,
-            message=f"Command failed: {e}",
-            strategy="shell",
-        )
-
-    # Combine stdout and stderr
-    output = result.stdout + result.stderr
-
-    # Check exit code
-    if result.returncode != check.exit_code:
-        return CheckResult(
-            claim_id=claim.id,
-            claim_text=claim.text,
-            passed=False,
-            message=(f"Expected exit code {check.exit_code}, got {result.returncode}"),
-            strategy="shell",
+            passed=True,
+            message=f"{self.kind_name.title()} check passed",
+            kind=self.kind_name,
             output=output,
         )
-
-    # Check matches (regex patterns that must appear)
-    for pattern in check.matches:
-        if not re.search(pattern, output):
-            return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
-                passed=False,
-                message=f"Pattern not found: {pattern}",
-                strategy="shell",
-                output=output,
-            )
-
-    # Check not_matches (regex patterns that must NOT appear)
-    for pattern in check.not_matches:
-        if re.search(pattern, output):
-            return CheckResult(
-                claim_id=claim.id,
-                claim_text=claim.text,
-                passed=False,
-                message=f"Forbidden pattern found: {pattern}",
-                strategy="shell",
-                output=output,
-            )
-
-    return CheckResult(
-        claim_id=claim.id,
-        claim_text=claim.text,
-        passed=True,
-        message="Shell check passed",
-        strategy="shell",
-        output=output,
-    )

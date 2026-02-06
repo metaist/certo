@@ -34,7 +34,7 @@ certo check --skip c-skip-me
 
 ```
 ✓
-Passed: 2
+Passed: 1
 ```
 
 **Not Expected**
@@ -131,7 +131,7 @@ certo check --skip c-one,c-two
 ```
 ✓
 c-three
-Passed: 2
+Passed: 1
 ```
 
 **Not Expected**

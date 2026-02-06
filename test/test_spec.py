@@ -64,7 +64,7 @@ def test_claim_parse_minimal() -> None:
 
 def test_claim_parse_full() -> None:
     """Test parsing a claim with all fields."""
-    from certo.spec import LLMCheck, ShellCheck
+    from certo.check import LLMCheck, ShellCheck
 
     dt = datetime(2026, 2, 5, 12, 0, 0, tzinfo=timezone.utc)
     data = {
@@ -423,7 +423,7 @@ def test_spec_save_and_load() -> None:
 
 def test_claim_to_toml_all_fields() -> None:
     """Test claim TOML serialization with all optional fields."""
-    from certo.spec import LLMCheck, ShellCheck
+    from certo.check import LLMCheck, ShellCheck
 
     dt = datetime(2026, 2, 5, 12, 0, tzinfo=timezone.utc)
     claim = Claim(
@@ -509,7 +509,7 @@ def test_spec_to_toml_with_created() -> None:
 
 def test_shell_check_parse() -> None:
     """Test parsing a shell check."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     data = {
         "kind": "shell",
@@ -530,7 +530,7 @@ def test_shell_check_parse() -> None:
 
 def test_shell_check_parse_defaults() -> None:
     """Test parsing a shell check with defaults."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     data = {"kind": "shell"}
     check = ShellCheck.parse(data)
@@ -543,7 +543,7 @@ def test_shell_check_parse_defaults() -> None:
 
 def test_shell_check_to_toml() -> None:
     """Test shell check TOML serialization."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     check = ShellCheck(
         cmd="echo test",
@@ -564,7 +564,7 @@ def test_shell_check_to_toml() -> None:
 
 def test_shell_check_to_toml_defaults() -> None:
     """Test shell check TOML serialization with defaults."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     check = ShellCheck(cmd="echo test")
     result = check.to_toml()
@@ -576,7 +576,7 @@ def test_shell_check_to_toml_defaults() -> None:
 
 def test_llm_check_parse() -> None:
     """Test parsing an LLM check."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     data = {
         "kind": "llm",
@@ -591,7 +591,7 @@ def test_llm_check_parse() -> None:
 
 def test_llm_check_parse_defaults() -> None:
     """Test parsing an LLM check with defaults."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     data = {"kind": "llm"}
     check = LLMCheck.parse(data)
@@ -601,7 +601,7 @@ def test_llm_check_parse_defaults() -> None:
 
 def test_llm_check_to_toml() -> None:
     """Test LLM check TOML serialization."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     check = LLMCheck(files=["README.md"], prompt="Check X")
     result = check.to_toml()
@@ -613,7 +613,7 @@ def test_llm_check_to_toml() -> None:
 
 def test_llm_check_to_toml_defaults() -> None:
     """Test LLM check TOML serialization with defaults."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     check = LLMCheck()
     result = check.to_toml()
@@ -623,7 +623,7 @@ def test_llm_check_to_toml_defaults() -> None:
 
 def test_parse_check_shell() -> None:
     """Test parse_check dispatches to ShellCheck."""
-    from certo.spec import ShellCheck, parse_check
+    from certo.check import ShellCheck, parse_check
 
     data = {"kind": "shell", "cmd": "echo test"}
     check = parse_check(data)
@@ -633,7 +633,7 @@ def test_parse_check_shell() -> None:
 
 def test_parse_check_llm() -> None:
     """Test parse_check dispatches to LLMCheck."""
-    from certo.spec import LLMCheck, parse_check
+    from certo.check import LLMCheck, parse_check
 
     data = {"kind": "llm", "files": ["README.md"]}
     check = parse_check(data)
@@ -643,7 +643,7 @@ def test_parse_check_llm() -> None:
 
 def test_parse_check_unknown() -> None:
     """Test parse_check raises on unknown kind."""
-    from certo.spec import parse_check
+    from certo.check import parse_check
     import pytest
 
     data = {"kind": "unknown"}
@@ -653,7 +653,7 @@ def test_parse_check_unknown() -> None:
 
 def test_shell_check_parse_with_id() -> None:
     """Test parsing a shell check with explicit ID."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     data = {
         "kind": "shell",
@@ -666,7 +666,7 @@ def test_shell_check_parse_with_id() -> None:
 
 def test_shell_check_auto_generates_id() -> None:
     """Test that shell check auto-generates ID from cmd."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     data = {
         "kind": "shell",
@@ -679,7 +679,7 @@ def test_shell_check_auto_generates_id() -> None:
 
 def test_llm_check_parse_with_id() -> None:
     """Test parsing an LLM check with explicit ID."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     data = {
         "kind": "llm",
@@ -692,7 +692,7 @@ def test_llm_check_parse_with_id() -> None:
 
 def test_llm_check_auto_generates_id() -> None:
     """Test that LLM check auto-generates ID from files."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     data = {
         "kind": "llm",
@@ -705,7 +705,7 @@ def test_llm_check_auto_generates_id() -> None:
 
 def test_shell_check_disabled_to_toml() -> None:
     """Test serializing a disabled shell check to TOML."""
-    from certo.spec import ShellCheck
+    from certo.check import ShellCheck
 
     check = ShellCheck(
         id="k-test",
@@ -718,7 +718,7 @@ def test_shell_check_disabled_to_toml() -> None:
 
 def test_llm_check_disabled_to_toml() -> None:
     """Test serializing a disabled LLM check to TOML."""
-    from certo.spec import LLMCheck
+    from certo.check import LLMCheck
 
     check = LLMCheck(
         id="k-test",
@@ -727,3 +727,111 @@ def test_llm_check_disabled_to_toml() -> None:
     )
     toml = check.to_toml()
     assert 'status = "disabled"' in toml
+
+
+def test_fact_check_parse() -> None:
+    """Test parsing a fact check."""
+    from certo.check import FactCheck
+
+    data = {
+        "kind": "fact",
+        "has": "uses.uv",
+    }
+    check = FactCheck.parse(data)
+    assert check.kind == "fact"
+    assert check.has == "uses.uv"
+    assert check.id.startswith("k-")
+
+
+def test_fact_check_parse_equals() -> None:
+    """Test parsing a fact check with equals."""
+    from certo.check import FactCheck
+
+    data = {
+        "kind": "fact",
+        "id": "k-custom",
+        "equals": "python.min-version",
+        "value": "3.11",
+    }
+    check = FactCheck.parse(data)
+    assert check.id == "k-custom"
+    assert check.equals == "python.min-version"
+    assert check.value == "3.11"
+
+
+def test_fact_check_parse_matches() -> None:
+    """Test parsing a fact check with matches."""
+    from certo.check import FactCheck
+
+    data = {
+        "kind": "fact",
+        "matches": "python.requires-python",
+        "pattern": r">=3\.\d+",
+    }
+    check = FactCheck.parse(data)
+    assert check.matches == "python.requires-python"
+    assert check.pattern == r">=3\.\d+"
+
+
+def test_fact_check_to_toml() -> None:
+    """Test serializing a fact check to TOML."""
+    from certo.check import FactCheck
+
+    check = FactCheck(
+        id="k-test",
+        has="uses.uv",
+    )
+    toml = check.to_toml()
+    assert 'kind = "fact"' in toml
+    assert 'id = "k-test"' in toml
+    assert 'has = "uses.uv"' in toml
+
+
+def test_fact_check_to_toml_disabled() -> None:
+    """Test serializing a disabled fact check."""
+    from certo.check import FactCheck
+
+    check = FactCheck(
+        id="k-test",
+        status="disabled",
+        has="uses.uv",
+    )
+    toml = check.to_toml()
+    assert 'status = "disabled"' in toml
+
+
+def test_fact_check_to_toml_equals() -> None:
+    """Test serializing a fact check with equals."""
+    from certo.check import FactCheck
+
+    check = FactCheck(
+        id="k-test",
+        equals="python.min-version",
+        value="3.11",
+    )
+    toml = check.to_toml()
+    assert 'equals = "python.min-version"' in toml
+    assert 'value = "3.11"' in toml
+
+
+def test_fact_check_to_toml_matches() -> None:
+    """Test serializing a fact check with matches."""
+    from certo.check import FactCheck
+
+    check = FactCheck(
+        id="k-test",
+        matches="python.requires-python",
+        pattern=r">=3\.\d+",
+    )
+    toml = check.to_toml()
+    assert 'matches = "python.requires-python"' in toml
+    assert 'pattern = ">=3' in toml
+
+
+def test_parse_check_fact() -> None:
+    """Test parse_check with fact kind."""
+    from certo.check import FactCheck, parse_check
+
+    data = {"kind": "fact", "has": "uses.uv"}
+    check = parse_check(data)
+    assert isinstance(check, FactCheck)

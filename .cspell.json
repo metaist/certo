@@ -167,6 +167,8 @@
     "zstd",
     "myproject",
     "newname",
-    "testproject"
+    "testproject",
+    "testpaths",
+    "dedupe"
   ]
 }

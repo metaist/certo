@@ -9,67 +9,46 @@ from certo.scan import scan_project
 
 
 def cmd_scan(args: Namespace, output: Output) -> int:
-    """Scan project for assumptions and consistency issues."""
+    """Scan project for facts."""
     output.verbose_info(f"Scanning project: {args.path}")
 
     result = scan_project(args.path)
 
-    # Display assumptions
-    if result.assumptions:
-        output.info("Discovered assumptions:")
-        for assumption in result.assumptions:
-            status_icon = "✓" if assumption.status == "verified" else "?"
-            output.info(f"  [{status_icon}] {assumption.description}")
-            if output.verbose:
-                for ev in assumption.evidence:
-                    output.verbose_info(f"      Evidence: {ev}")
-                for match in assumption.should_match:
-                    output.verbose_info(f"      Should match: {match}")
+    # Display facts (text mode only)
+    if output.format == OutputFormat.TEXT:
+        if result.facts:
+            if not output.quiet:
+                print("Discovered facts:")
+            for fact in result.facts:
+                if not output.quiet:
+                    print(f"  {fact.key} = {fact.value}")
+                    if output.verbose:
+                        print(f"    source: {fact.source}")
 
-    # Display issues
-    if result.issues:
-        output.info("")
-        output.info("Consistency issues:")
-        for issue in result.issues:
-            icon = "✗" if issue.severity == "error" else "⚠"
-            # Always show issues, even in quiet mode
-            if output.quiet and output.format == OutputFormat.TEXT:
-                print(f"{icon} {issue.message}")
-            else:
-                output.info(f"  {icon} {issue.message}")
-            if output.verbose:
-                output.verbose_info(f"      Sources: {', '.join(issue.sources)}")
+        # Display errors
+        if result.errors:
+            for error in result.errors:
+                output.error(f"Scan error: {error}")
 
-    # Summary
-    if not output.quiet:
-        output.info("")
-        output.info(
-            f"Assumptions: {len(result.assumptions)}, Issues: {len(result.issues)}"
-        )
+        # Summary
+        if not output.quiet:
+            print()
+            print(f"Facts: {len(result.facts)}, Errors: {len(result.errors)}")
 
     # JSON output
     output.json_output(
         {
-            "assumptions": [
+            "facts": [
                 {
-                    "id": a.id,
-                    "description": a.description,
-                    "category": a.category,
-                    "evidence": a.evidence,
-                    "should_match": a.should_match,
-                    "status": a.status,
+                    "key": f.key,
+                    "value": f.value,
+                    "source": f.source,
+                    "confidence": f.confidence,
                 }
-                for a in result.assumptions
+                for f in result.facts
             ],
-            "issues": [
-                {
-                    "message": i.message,
-                    "sources": i.sources,
-                    "severity": i.severity,
-                }
-                for i in result.issues
-            ],
+            "errors": result.errors,
         }
     )
 
-    return 1 if result.issues else 0
+    return 1 if result.errors else 0

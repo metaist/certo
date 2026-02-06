@@ -18,15 +18,16 @@ def test_check_spec_integration() -> None:
         spec.write_text('[spec]\nname = "test"\nversion = 1\n')
 
         results = check_spec(spec)
-        assert len(results) == 1
-        assert results[0].passed
+        # Empty spec = no claims = no results
+        assert len(results) == 0
 
 
 def test_check_spec_missing() -> None:
     """Test full check on missing spec."""
-    results = check_spec(Path("/nonexistent/.certo/spec.toml"))
-    assert len(results) == 1
-    assert not results[0].passed
+    import pytest
+
+    with pytest.raises(FileNotFoundError):
+        check_spec(Path("/nonexistent/.certo/spec.toml"))
 
 
 def test_check_spec_claims_without_checks_are_skipped() -> None:
@@ -48,12 +49,12 @@ status = "confirmed"
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[0].claim_id == "builtin-spec-valid"
-        assert results[1].claim_id == "c-no-checks"
-        assert results[1].passed  # Not a failure, just skipped
-        assert "skipped" in results[1].message.lower()
-        assert results[1].strategy == "none"
+        assert len(results) == 1
+        assert results[0].claim_id == "c-no-checks"
+        assert results[0].passed  # Not a failure, just skipped
+        assert results[0].skipped
+        assert results[0].skip_reason == "no checks defined"
+        assert results[0].kind == "none"
 
 
 def test_check_spec_shell_check() -> None:
@@ -80,10 +81,10 @@ matches = ["hello"]
 """)
 
         results = check_spec(spec)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-shell"
-        assert results[1].passed
-        assert results[1].strategy == "shell"
+        assert len(results) == 1
+        assert results[0].claim_id == "c-shell"
+        assert results[0].passed
+        assert results[0].kind == "shell"
 
 
 def test_check_spec_llm_check_offline() -> None:
@@ -110,10 +111,10 @@ files = ["README.md"]
         (root / "README.md").write_text("# Test")
 
         results = check_spec(spec, offline=True)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-llm"
-        assert results[1].passed  # Skipped is not a failure
-        assert "skipped" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-llm"
+        assert results[0].passed  # Skipped is not a failure
+        assert "skipped" in results[0].message.lower()
 
 
 def test_check_spec_skips_rejected_claims() -> None:
@@ -139,9 +140,11 @@ cmd = "false"
 """)
 
         results = check_spec(spec)
-        # Should only have builtin, not the rejected claim
+        # Should have skipped rejected claim
         assert len(results) == 1
-        assert results[0].claim_id == "builtin-spec-valid"
+        assert results[0].claim_id == "c-rejected"
+        assert results[0].skipped
+        assert results[0].skip_reason == "status=rejected"
 
 
 def test_check_spec_skips_level_skip() -> None:
@@ -168,9 +171,11 @@ cmd = "false"
 """)
 
         results = check_spec(spec)
-        # Should only have builtin, not the skipped claim
+        # Should have skipped claim
         assert len(results) == 1
-        assert results[0].claim_id == "builtin-spec-valid"
+        assert results[0].claim_id == "c-skipped"
+        assert results[0].skipped
+        assert results[0].skip_reason == "level=skip"
 
 
 def test_check_spec_skip_by_check_id() -> None:
@@ -203,7 +208,7 @@ cmd = "echo hello"
 
         results = check_spec(spec, skip={"k-skip-this"})
         # Should have builtin + one shell check (the one that wasn't skipped)
-        shell_results = [r for r in results if r.strategy == "shell"]
+        shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
         assert shell_results[0].check_id == "k-run-this"
         assert shell_results[0].passed
@@ -238,7 +243,7 @@ cmd = "exit 1"
 """)
 
         results = check_spec(spec, only={"k-only-this"})
-        shell_results = [r for r in results if r.strategy == "shell"]
+        shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
         assert shell_results[0].check_id == "k-only-this"
         assert shell_results[0].passed
@@ -271,5 +276,5 @@ cmd = "echo hello"
         builtin_results = [r for r in results if r.claim_id == "builtin-spec-valid"]
         assert len(builtin_results) == 0
         # But should still have the shell check
-        shell_results = [r for r in results if r.strategy == "shell"]
+        shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1

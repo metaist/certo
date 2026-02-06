@@ -41,12 +41,12 @@ cmd = "echo hello world"
         # Check output file was created
         assert output_file.exists()
         data = json.loads(output_file.read_text())
-        assert data["passed"] == 2
+        assert data["passed"] == 1
         assert data["failed"] == 0
-        assert len(data["results"]) == 2
+        assert len(data["results"]) == 1
 
         # Check that output contains command output
-        shell_result = [r for r in data["results"] if r["strategy"] == "shell"][0]
+        shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
         assert "hello world" in shell_result["output"]
 
 
@@ -117,7 +117,7 @@ cmd = "echo hello"
         assert result == 0
 
         data = json.loads(output_file.read_text())
-        shell_result = [r for r in data["results"] if r["strategy"] == "shell"][0]
+        shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
         assert shell_result["check_id"] == "k-custom-id"
 
 
@@ -147,6 +147,6 @@ cmd = "echo hello"
         assert result == 0
 
         data = json.loads(output_file.read_text())
-        shell_result = [r for r in data["results"] if r["strategy"] == "shell"][0]
+        shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
         # Should have auto-generated k- prefixed ID
         assert shell_result["check_id"].startswith("k-")

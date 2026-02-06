@@ -36,10 +36,10 @@ files = ["README.md"]
 
         results = check_spec(spec, offline=True)
         # Should have builtin (TOML valid) + c-test (skipped)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert results[1].passed  # Skipped counts as pass
-        assert "skipped" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert results[0].passed  # Skipped counts as pass
+        assert "skipped" in results[0].message.lower()
 
 
 def test_check_spec_llm_missing_files() -> None:
@@ -67,12 +67,12 @@ files = ["nonexistent.md"]
         # Not offline, so it will try to verify
         # Missing files should fail before API key check
         results = check_spec(spec, offline=False)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert not results[0].passed
         assert (
-            "missing" in results[1].message.lower()
-            or "not found" in results[1].message.lower()
+            "missing" in results[0].message.lower()
+            or "not found" in results[0].message.lower()
         )
 
 
@@ -99,10 +99,10 @@ files = ["README.md"]
         (root / "README.md").write_text("# Test")
 
         results = check_spec(spec, offline=True)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
-        assert "text" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert not results[0].passed
+        assert "text" in results[0].message.lower()
 
 
 def test_check_spec_llm_missing_files_field() -> None:
@@ -127,10 +127,10 @@ kind = "llm"
 """)
 
         results = check_spec(spec, offline=True)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
-        assert "files" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert not results[0].passed
+        assert "files" in results[0].message.lower()
 
 
 def test_check_spec_llm_no_api_key() -> None:
@@ -161,10 +161,10 @@ files = ["README.md"]
             os.environ.pop("OPENROUTER_API_KEY", None)
             results = check_spec(spec, offline=False)
 
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
-        assert "api key" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert results[0].skipped
+        assert "api key" in results[0].message.lower()
 
 
 def test_check_spec_llm_file_too_large() -> None:
@@ -194,10 +194,10 @@ files = ["large.txt"]
         (root / "large.txt").write_text("x" * (MAX_CONTEXT_FILE_SIZE + 1))
 
         results = check_spec(spec, offline=False)
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
-        assert "too large" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert not results[0].passed
+        assert "too large" in results[0].message.lower()
 
 
 def test_check_spec_llm_api_error() -> None:
@@ -229,10 +229,10 @@ files = ["README.md"]
             mock_call.side_effect = APIError("Connection failed")
             results = check_spec(spec, offline=False)
 
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert not results[1].passed
-        assert "llm error" in results[1].message.lower()
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert not results[0].passed
+        assert "llm error" in results[0].message.lower()
 
 
 def test_check_spec_llm_cached_result() -> None:
@@ -275,7 +275,7 @@ files = ["README.md"]
         with patch("certo.llm.verify.verify_concern", return_value=mock_result):
             results = check_spec(spec, offline=False)
 
-        assert len(results) == 2
-        assert results[1].claim_id == "c-test"
-        assert results[1].passed
-        assert "(cached)" in results[1].message
+        assert len(results) == 1
+        assert results[0].claim_id == "c-test"
+        assert results[0].passed
+        assert "(cached)" in results[0].message

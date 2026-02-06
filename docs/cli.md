@@ -284,3 +284,73 @@ certo kb update [source]
 
 - `CERTO_MODEL` - Default LLM model for verification (default: `anthropic/claude-sonnet-4`)
 - `OPENROUTER_API_KEY` - API key for OpenRouter (required for LLM checks)
+
+### `certo claim check`
+
+Manage checks on claims. Running `certo claim check` without a subcommand displays help.
+
+#### `certo claim check add`
+
+Add a check to a claim.
+
+```bash
+certo claim check add CLAIM_ID KIND [options]
+```
+
+**Arguments:**
+
+- `CLAIM_ID` - The claim to add the check to
+- `KIND` - Check kind: `shell`, `llm`, or `fact`
+
+**Options for shell checks:**
+
+- `--cmd CMD` - Shell command to run (required)
+- `--exit-code N` - Expected exit code (default: 0)
+- `--matches PATTERNS` - Comma-separated patterns that must match
+- `--not-matches PATTERNS` - Comma-separated patterns that must not match
+- `--timeout N` - Timeout in seconds (default: 60)
+
+**Options for llm checks:**
+
+- `--files PATTERNS` - Comma-separated file patterns (required)
+- `--prompt TEXT` - Custom prompt
+
+**Options for fact checks:**
+
+- `--has KEY` - Fact key that must exist and be truthy
+- `--equals KEY` - Fact key that must equal `--value`
+- `--value VALUE` - Value to compare against
+- `--fact-matches KEY` - Fact key that must match `--pattern`
+- `--pattern REGEX` - Regex pattern to match
+
+#### `certo claim check list`
+
+List checks on a claim.
+
+```bash
+certo claim check list CLAIM_ID
+```
+
+#### `certo claim check view`
+
+View a specific check.
+
+```bash
+certo claim check view CHECK_ID
+```
+
+#### `certo claim check on`
+
+Enable a check.
+
+```bash
+certo claim check on CHECK_ID
+```
+
+#### `certo claim check off`
+
+Disable a check.
+
+```bash
+certo claim check off CHECK_ID
+```

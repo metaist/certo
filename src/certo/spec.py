@@ -7,7 +7,10 @@ import tomllib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from certo.check.core import Check
 
 
 def generate_id(prefix: str, text: str) -> str:
@@ -60,113 +63,6 @@ class Modification:
 
 
 @dataclass
-class ShellCheck:
-    """A check that runs a shell command."""
-
-    kind: Literal["shell"] = "shell"
-    id: str = ""
-    status: Literal["enabled", "disabled"] = "enabled"
-    cmd: str = ""
-    exit_code: int = 0
-    matches: list[str] = field(default_factory=list)
-    not_matches: list[str] = field(default_factory=list)
-    timeout: int = 60
-
-    @classmethod
-    def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a shell check from TOML data."""
-        check = cls(
-            kind="shell",
-            id=data.get("id", ""),
-            status=data.get("status", "enabled"),
-            cmd=data.get("cmd", ""),
-            exit_code=data.get("exit_code", 0),
-            matches=data.get("matches", []),
-            not_matches=data.get("not_matches", []),
-            timeout=data.get("timeout", 60),
-        )
-        # Auto-generate ID if not provided
-        if not check.id and check.cmd:
-            check.id = generate_id("k", f"shell:{check.cmd}")
-        return check
-
-    def to_toml(self) -> str:
-        """Serialize to TOML."""
-        lines = [
-            "[[claims.checks]]",
-            'kind = "shell"',
-            f'id = "{self.id}"',
-        ]
-        if self.status != "enabled":
-            lines.append(f'status = "{self.status}"')
-        lines.append(f'cmd = "{self.cmd}"')
-        if self.exit_code != 0:
-            lines.append(f"exit_code = {self.exit_code}")
-        if self.matches:
-            lines.append(f"matches = {self.matches}")
-        if self.not_matches:
-            lines.append(f"not_matches = {self.not_matches}")
-        if self.timeout != 60:
-            lines.append(f"timeout = {self.timeout}")
-        return "\n".join(lines)
-
-
-@dataclass
-class LLMCheck:
-    """A check that uses LLM verification."""
-
-    kind: Literal["llm"] = "llm"
-    id: str = ""
-    status: Literal["enabled", "disabled"] = "enabled"
-    files: list[str] = field(default_factory=list)
-    prompt: str | None = None
-
-    @classmethod
-    def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse an LLM check from TOML data."""
-        check = cls(
-            kind="llm",
-            id=data.get("id", ""),
-            status=data.get("status", "enabled"),
-            files=data.get("files", []),
-            prompt=data.get("prompt"),
-        )
-        # Auto-generate ID if not provided
-        if not check.id and check.files:
-            check.id = generate_id("k", f"llm:{','.join(check.files)}")
-        return check
-
-    def to_toml(self) -> str:
-        """Serialize to TOML."""
-        lines = [
-            "[[claims.checks]]",
-            'kind = "llm"',
-            f'id = "{self.id}"',
-        ]
-        if self.status != "enabled":
-            lines.append(f'status = "{self.status}"')
-        if self.files:
-            lines.append(f"files = {self.files}")
-        if self.prompt:
-            lines.append(f'prompt = "{self.prompt}"')
-        return "\n".join(lines)
-
-
-Check = ShellCheck | LLMCheck
-
-
-def parse_check(data: dict[str, Any]) -> Check:
-    """Parse a check from TOML data, dispatching on kind."""
-    kind = data.get("kind", "")
-    if kind == "shell":
-        return ShellCheck.parse(data)
-    elif kind == "llm":
-        return LLMCheck.parse(data)
-    else:
-        raise ValueError(f"Unknown check kind: {kind}")
-
-
-@dataclass
 class Claim:
     """A statement that can be verified."""
 
@@ -192,6 +88,8 @@ class Claim:
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a claim from TOML data."""
+        from certo.check import parse_check
+
         return cls(
             id=data.get("id", ""),
             text=data.get("text", ""),
@@ -394,6 +292,14 @@ class Spec:
         for context in self.contexts:
             if context.id == context_id:
                 return context
+        return None
+
+    def get_check(self, check_id: str) -> tuple[Claim, Check] | None:
+        """Get a check by ID, returning (claim, check) tuple."""
+        for claim in self.claims:
+            for check in claim.checks:
+                if check.id == check_id:
+                    return (claim, check)
         return None
 
     def to_toml(self) -> str:
