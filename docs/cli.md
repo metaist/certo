@@ -40,20 +40,20 @@ certo status [id] [options]
 
 **Arguments:**
 
-- `id` - Specific item ID to show (e.g., c-xxx, i-xxx, x-xxx)
+- `id` - Specific item ID to show (e.g., c-xxx, i-xxx, k-xxx)
 
 **Options:**
 
 - `--claims` - Show only claims
 - `--issues` - Show only issues
-- `--contexts` - Show only contexts
+- `--checks` - Show only checks
 
 **Examples:**
 
 ```bash
 certo status                       # Show all
 certo status --claims              # Show only claims
-certo status c-e50e9d4             # Show specific claim
+certo status k-test                # Show specific check
 certo status -v                    # Verbose output
 certo status --format json         # JSON output
 ```
@@ -174,67 +174,15 @@ Reopen a closed issue.
 certo issue reopen ID
 ```
 
-### `certo context`
-
-Manage contexts. Running `certo context` without a subcommand displays help.
-
-#### `certo context add`
-
-Create a new context.
-
-```bash
-certo context add "name" [options]
-```
-
-**Options:**
-
-- `--description DESC` - Context description
-
-#### `certo context list`
-
-List all contexts.
-
-```bash
-certo context list [options]
-```
-
-**Options:**
-
-- `--status {enabled,disabled}` - Filter by status
-
-#### `certo context view`
-
-View a specific context.
-
-```bash
-certo context view ID
-```
-
-#### `certo context on`
-
-Enable a context.
-
-```bash
-certo context on ID
-```
-
-#### `certo context off`
-
-Disable a context.
-
-```bash
-certo context off ID
-```
-
 ### `certo check`
 
-Verify the spec against code.
+Run checks and verify claims. Running `certo check` without arguments runs all checks.
 
 ```bash
-certo check [options]
+certo check [subcommand] [options]
 ```
 
-**Options:**
+**Options (for running checks):**
 
 - `--offline` - Skip LLM-backed checks (no network calls)
 - `--no-cache` - Ignore cached verification results
@@ -248,6 +196,116 @@ certo check [options]
 - `0` - All checks passed
 - `1` - One or more checks failed
 - `2` - Error (e.g., spec not found)
+
+#### `certo check run`
+
+Run verification checks (same as `certo check` with no subcommand).
+
+```bash
+certo check run [options]
+```
+
+#### `certo check list`
+
+List all checks.
+
+```bash
+certo check list [options]
+```
+
+**Options:**
+
+- `--status {enabled,disabled}` - Filter by status
+- `--kind {shell,llm,fact,url}` - Filter by check kind
+
+#### `certo check show`
+
+View a specific check.
+
+```bash
+certo check show ID
+```
+
+#### `certo check add`
+
+Add a new check.
+
+```bash
+certo check add KIND [options]
+```
+
+**Arguments:**
+
+- `KIND` - Check kind: `shell`, `llm`, `fact`, or `url`
+
+**Common options:**
+
+- `--id ID` - Check ID (auto-generated if not provided)
+- `--status {enabled,disabled}` - Initial status (default: enabled)
+
+**Options for shell checks:**
+
+- `--cmd CMD` - Shell command to run (required)
+- `--exit-code N` - Expected exit code (default: 0)
+- `--matches PATTERNS` - Comma-separated patterns that must match
+- `--timeout N` - Timeout in seconds (default: 60)
+
+**Options for llm checks:**
+
+- `--files PATTERNS` - Comma-separated file patterns (required)
+- `--prompt TEXT` - Verification prompt
+
+**Options for fact checks:**
+
+- `--has KEY` - Fact key that must exist
+- `--empty KEY` - Fact key that must be empty
+- `--equals KEY` - Fact key that must equal `--value`
+- `--value VALUE` - Value to compare against (required with `--equals`)
+
+**Options for url checks:**
+
+- `--url URL` - URL to fetch (required)
+- `--cmd CMD` - Shell command to pipe fetched content through
+
+**Examples:**
+
+```bash
+# Add a shell check
+certo check add shell --cmd "test -f README.md"
+
+# Add an LLM check
+certo check add llm --files "src/*.py" --prompt "Verify code quality"
+
+# Add a fact check
+certo check add fact --has python.version
+
+# Add a URL check
+certo check add url --url https://api.example.com/status --cmd "jq .healthy"
+```
+
+#### `certo check remove`
+
+Remove a check.
+
+```bash
+certo check remove ID
+```
+
+#### `certo check on`
+
+Enable a disabled check.
+
+```bash
+certo check on ID
+```
+
+#### `certo check off`
+
+Disable a check.
+
+```bash
+certo check off ID
+```
 
 ### `certo scan`
 
@@ -284,73 +342,3 @@ certo kb update [source]
 
 - `CERTO_MODEL` - Default LLM model for verification (default: `anthropic/claude-sonnet-4`)
 - `OPENROUTER_API_KEY` - API key for OpenRouter (required for LLM checks)
-
-### `certo claim check`
-
-Manage checks on claims. Running `certo claim check` without a subcommand displays help.
-
-#### `certo claim check add`
-
-Add a check to a claim.
-
-```bash
-certo claim check add CLAIM_ID KIND [options]
-```
-
-**Arguments:**
-
-- `CLAIM_ID` - The claim to add the check to
-- `KIND` - Check kind: `shell`, `llm`, or `fact`
-
-**Options for shell checks:**
-
-- `--cmd CMD` - Shell command to run (required)
-- `--exit-code N` - Expected exit code (default: 0)
-- `--matches PATTERNS` - Comma-separated patterns that must match
-- `--not-matches PATTERNS` - Comma-separated patterns that must not match
-- `--timeout N` - Timeout in seconds (default: 60)
-
-**Options for llm checks:**
-
-- `--files PATTERNS` - Comma-separated file patterns (required)
-- `--prompt TEXT` - Custom prompt
-
-**Options for fact checks:**
-
-- `--has KEY` - Fact key that must exist and be truthy
-- `--equals KEY` - Fact key that must equal `--value`
-- `--value VALUE` - Value to compare against
-- `--fact-matches KEY` - Fact key that must match `--pattern`
-- `--pattern REGEX` - Regex pattern to match
-
-#### `certo claim check list`
-
-List checks on a claim.
-
-```bash
-certo claim check list CLAIM_ID
-```
-
-#### `certo claim check view`
-
-View a specific check.
-
-```bash
-certo claim check view CHECK_ID
-```
-
-#### `certo claim check on`
-
-Enable a check.
-
-```bash
-certo claim check on CHECK_ID
-```
-
-#### `certo claim check off`
-
-Disable a check.
-
-```bash
-certo claim check off CHECK_ID
-```

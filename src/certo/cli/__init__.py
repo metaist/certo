@@ -6,7 +6,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from certo.cli.check import cmd_check
+from certo.cli.check import add_check_parser
 from certo.cli.claim import add_claim_parser
 from certo.cli.init import cmd_init
 from certo.cli.issue import add_issue_parser
@@ -159,37 +159,8 @@ def _build_parser() -> ArgumentParser:
     # issue command (noun-verb pattern with subcommands)
     add_issue_parser(subparsers, _add_global_args)
 
-    # check command
-    check_parser = subparsers.add_parser("check", help="verify spec against code")
-    _add_global_args(check_parser)
-    check_parser.add_argument(
-        "--offline",
-        action="store_true",
-        help="skip LLM-backed checks (no network calls)",
-    )
-    check_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="ignore cached verification results",
-    )
-    check_parser.add_argument(
-        "--model",
-        help="LLM model to use (overrides CERTO_MODEL env var)",
-    )
-    check_parser.add_argument(
-        "--only",
-        help="run only specific claims/checks (comma-separated IDs)",
-    )
-    check_parser.add_argument(
-        "--skip",
-        help="skip specific claims/checks (comma-separated IDs)",
-    )
-    check_parser.add_argument(
-        "--output",
-        metavar="PATH",
-        help="write detailed results to file (use - for stdout)",
-    )
-    check_parser.set_defaults(func=cmd_check)
+    # check command (noun-verb pattern with subcommands)
+    add_check_parser(subparsers, _add_global_args)
 
     # scan command
     scan_parser = subparsers.add_parser(
