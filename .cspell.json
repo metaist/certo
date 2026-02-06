@@ -169,6 +169,7 @@
     "newname",
     "testproject",
     "testpaths",
-    "dedupe"
+    "dedupe",
+    "mypackage"
   ]
 }
