@@ -163,32 +163,38 @@ def _resolve_path(
 
     if _has_glob(segment):
         # Expand glob against current level
-        if isinstance(data, dict):
-            for key in data:
-                if _matches_pattern(str(key), segment):
-                    new_prefix = f"{prefix}.{key}" if prefix else key
-                    sub_results = _resolve_path(remaining, data[key], new_prefix)
-                    results.extend(sub_results)
-        elif isinstance(data, list):
-            for i, item in enumerate(data):
-                if _matches_pattern(str(i), segment):
-                    new_prefix = f"{prefix}[{i}]"
-                    sub_results = _resolve_path(remaining, item, new_prefix)
-                    results.extend(sub_results)
+        match data:
+            case dict():
+                for key in data:
+                    if _matches_pattern(str(key), segment):
+                        new_prefix = f"{prefix}.{key}" if prefix else key
+                        sub_results = _resolve_path(remaining, data[key], new_prefix)
+                        results.extend(sub_results)
+            case list():
+                for i, item in enumerate(data):
+                    if _matches_pattern(str(i), segment):
+                        new_prefix = f"{prefix}[{i}]"
+                        sub_results = _resolve_path(remaining, item, new_prefix)
+                        results.extend(sub_results)
+            case _:
+                pass  # Scalar values don't support glob expansion
     else:
         # Direct access
-        if isinstance(data, dict) and segment in data:
-            new_prefix = f"{prefix}.{segment}" if prefix else segment
-            sub_results = _resolve_path(remaining, data[segment], new_prefix)
-            results.extend(sub_results)
-        elif isinstance(data, list):
-            try:
-                idx = int(segment)
-                if 0 <= idx < len(data):
-                    new_prefix = f"{prefix}[{idx}]"
-                    sub_results = _resolve_path(remaining, data[idx], new_prefix)
-                    results.extend(sub_results)
-            except ValueError:
-                pass  # Not a valid index
+        match data:
+            case dict() if segment in data:
+                new_prefix = f"{prefix}.{segment}" if prefix else segment
+                sub_results = _resolve_path(remaining, data[segment], new_prefix)
+                results.extend(sub_results)
+            case list():
+                try:
+                    idx = int(segment)
+                    if 0 <= idx < len(data):
+                        new_prefix = f"{prefix}[{idx}]"
+                        sub_results = _resolve_path(remaining, data[idx], new_prefix)
+                        results.extend(sub_results)
+                except ValueError:
+                    pass  # Not a valid index
+            case _:
+                pass  # Segment not found or wrong data type
 
     return results

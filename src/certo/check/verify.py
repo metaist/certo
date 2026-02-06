@@ -278,31 +278,32 @@ def _apply_operator(op: str, value: Any, expected: Any) -> tuple[bool, str]:
 
         # String/list operators
         case "in":
-            if isinstance(value, str):
-                passed = expected in value
-                return (
-                    passed,
-                    f"expected '{expected}' in string, not found"
-                    if not passed
-                    else f"contains '{expected}' ✓",
-                )
-            elif isinstance(value, list):
-                passed = expected in value
-                return (
-                    passed,
-                    f"expected {expected} in list, not found"
-                    if not passed
-                    else f"contains {expected} ✓",
-                )
-            else:
-                # Check if value is in expected (for "value in [list]" pattern)
-                passed = value in expected
-                return (
-                    passed,
-                    f"expected {value} in {expected}, not found"
-                    if not passed
-                    else f"{value} in {expected} ✓",
-                )
+            match value:
+                case str():
+                    passed = expected in value
+                    return (
+                        passed,
+                        f"expected '{expected}' in string, not found"
+                        if not passed
+                        else f"contains '{expected}' ✓",
+                    )
+                case list():
+                    passed = expected in value
+                    return (
+                        passed,
+                        f"expected {expected} in list, not found"
+                        if not passed
+                        else f"contains {expected} ✓",
+                    )
+                case _:
+                    # Check if value is in expected (for "value in [list]" pattern)
+                    passed = value in expected
+                    return (
+                        passed,
+                        f"expected {value} in {expected}, not found"
+                        if not passed
+                        else f"{value} in {expected} ✓",
+                    )
 
         case "match":
             if not isinstance(value, str):
@@ -317,12 +318,13 @@ def _apply_operator(op: str, value: Any, expected: Any) -> tuple[bool, str]:
 
         case "empty":
             if expected:  # empty = true
-                if isinstance(value, str):
-                    passed = value == ""
-                elif isinstance(value, (list, dict)):
-                    passed = len(value) == 0
-                else:
-                    passed = not value
+                match value:
+                    case str():
+                        passed = value == ""
+                    case list() | dict():
+                        passed = len(value) == 0
+                    case _:
+                        passed = not value
                 return (
                     passed,
                     f"expected empty, got {repr(value)[:50]}"
@@ -330,12 +332,13 @@ def _apply_operator(op: str, value: Any, expected: Any) -> tuple[bool, str]:
                     else "empty ✓",
                 )
             else:  # empty = false
-                if isinstance(value, str):
-                    passed = value != ""
-                elif isinstance(value, (list, dict)):
-                    passed = len(value) > 0
-                else:
-                    passed = bool(value)
+                match value:
+                    case str():
+                        passed = value != ""
+                    case list() | dict():
+                        passed = len(value) > 0
+                    case _:
+                        passed = bool(value)
                 return (
                     passed,
                     "expected non-empty, got empty" if not passed else "non-empty ✓",

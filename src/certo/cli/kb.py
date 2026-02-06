@@ -13,18 +13,19 @@ def cmd_kb_update(args: Namespace, output: Output) -> int:
 
     source = getattr(args, "source", None)
 
-    if source == "python":
-        output.info("Updating Python knowledge...")
-        success = update_python(verbose=output.verbose)
-        if success:
-            output.info("Python knowledge updated.")
-        else:
-            output.error("Failed to update Python knowledge.")
-            return 1
-    else:
-        output.info("Updating all knowledge sources...")
-        count = update_all(verbose=output.verbose)
-        output.info(f"Updated {count} source(s).")
+    match source:
+        case "python":
+            output.info("Updating Python knowledge...")
+            success = update_python(verbose=output.verbose)
+            if success:
+                output.info("Python knowledge updated.")
+            else:
+                output.error("Failed to update Python knowledge.")
+                return 1
+        case _:
+            output.info("Updating all knowledge sources...")
+            count = update_all(verbose=output.verbose)
+            output.info(f"Updated {count} source(s).")
 
     output.json_output({"updated": source or "all", "success": True})
     return 0

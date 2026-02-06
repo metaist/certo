@@ -100,77 +100,78 @@ def _show_item(spec: Spec, item_id: str, output: Output) -> int:
     """Show a specific item by ID."""
     item_type = _get_item_type(item_id)
 
-    if item_type == "claim":
-        claim = spec.get_claim(item_id)
-        if not claim:
-            output.error(f"Claim not found: {item_id}")
+    match item_type:
+        case "claim":
+            claim = spec.get_claim(item_id)
+            if not claim:
+                output.error(f"Claim not found: {item_id}")
+                return 1
+            _show_claim_detail(claim, output)
+            output.json_output(
+                {
+                    "id": claim.id,
+                    "text": claim.text,
+                    "status": claim.status,
+                    "source": claim.source,
+                    "author": claim.author,
+                    "level": claim.level,
+                    "tags": claim.tags,
+                    "checks": [{"kind": ch.kind} for ch in claim.checks],
+                    "evidence": claim.evidence,
+                    "why": claim.why,
+                    "considered": claim.considered,
+                    "traces_to": claim.traces_to,
+                    "supersedes": claim.supersedes,
+                    "closes": claim.closes,
+                    "created": claim.created.isoformat() if claim.created else None,
+                    "updated": claim.updated.isoformat() if claim.updated else None,
+                }
+            )
+        case "issue":
+            issue = spec.get_issue(item_id)
+            if not issue:
+                output.error(f"Issue not found: {item_id}")
+                return 1
+            _show_issue_detail(issue, output)
+            output.json_output(
+                {
+                    "id": issue.id,
+                    "text": issue.text,
+                    "status": issue.status,
+                    "tags": issue.tags,
+                    "closed_reason": issue.closed_reason,
+                    "created": issue.created.isoformat() if issue.created else None,
+                    "updated": issue.updated.isoformat() if issue.updated else None,
+                }
+            )
+        case "context":
+            context = spec.get_context(item_id)
+            if not context:
+                output.error(f"Context not found: {item_id}")
+                return 1
+            _show_context_detail(context, output)
+            output.json_output(
+                {
+                    "id": context.id,
+                    "name": context.name,
+                    "description": context.description,
+                    "expires": context.expires.isoformat() if context.expires else None,
+                    "modifications": [
+                        {
+                            "action": m.action,
+                            "claim": m.claim,
+                            "level": m.level,
+                            "topic": m.topic,
+                        }
+                        for m in context.modifications
+                    ],
+                    "created": context.created.isoformat() if context.created else None,
+                    "updated": context.updated.isoformat() if context.updated else None,
+                }
+            )
+        case _:
+            output.error(f"Unknown item type for ID: {item_id}")
             return 1
-        _show_claim_detail(claim, output)
-        output.json_output(
-            {
-                "id": claim.id,
-                "text": claim.text,
-                "status": claim.status,
-                "source": claim.source,
-                "author": claim.author,
-                "level": claim.level,
-                "tags": claim.tags,
-                "checks": [{"kind": ch.kind} for ch in claim.checks],
-                "evidence": claim.evidence,
-                "why": claim.why,
-                "considered": claim.considered,
-                "traces_to": claim.traces_to,
-                "supersedes": claim.supersedes,
-                "closes": claim.closes,
-                "created": claim.created.isoformat() if claim.created else None,
-                "updated": claim.updated.isoformat() if claim.updated else None,
-            }
-        )
-    elif item_type == "issue":
-        issue = spec.get_issue(item_id)
-        if not issue:
-            output.error(f"Issue not found: {item_id}")
-            return 1
-        _show_issue_detail(issue, output)
-        output.json_output(
-            {
-                "id": issue.id,
-                "text": issue.text,
-                "status": issue.status,
-                "tags": issue.tags,
-                "closed_reason": issue.closed_reason,
-                "created": issue.created.isoformat() if issue.created else None,
-                "updated": issue.updated.isoformat() if issue.updated else None,
-            }
-        )
-    elif item_type == "context":
-        context = spec.get_context(item_id)
-        if not context:
-            output.error(f"Context not found: {item_id}")
-            return 1
-        _show_context_detail(context, output)
-        output.json_output(
-            {
-                "id": context.id,
-                "name": context.name,
-                "description": context.description,
-                "expires": context.expires.isoformat() if context.expires else None,
-                "modifications": [
-                    {
-                        "action": m.action,
-                        "claim": m.claim,
-                        "level": m.level,
-                        "topic": m.topic,
-                    }
-                    for m in context.modifications
-                ],
-                "created": context.created.isoformat() if context.created else None,
-                "updated": context.updated.isoformat() if context.updated else None,
-            }
-        )
-    else:
-        output.error(f"Unknown item type for ID: {item_id}")
-        return 1
 
     return 0
 
@@ -179,19 +180,23 @@ def _show_claims(spec: Spec, output: Output) -> None:
     """Show claims list."""
     output.info("Claims:")
     for c in spec.claims:
-        status_marker = ""
-        if c.status == "superseded":
-            status_marker = " [superseded]"
-        elif c.status == "rejected":
-            status_marker = " [rejected]"
-        elif c.status == "pending":
-            status_marker = " [pending]"
+        match c.status:
+            case "superseded":
+                status_marker = " [superseded]"
+            case "rejected":
+                status_marker = " [rejected]"
+            case "pending":
+                status_marker = " [pending]"
+            case _:
+                status_marker = ""
 
-        level_marker = ""
-        if c.level == "block":
-            level_marker = " *"
-        elif c.level == "skip":
-            level_marker = " -"
+        match c.level:
+            case "block":
+                level_marker = " *"
+            case "skip":
+                level_marker = " -"
+            case _:
+                level_marker = ""
 
         output.info(f"  {c.id}  {c.text}{status_marker}{level_marker}")
 
@@ -303,14 +308,15 @@ def _show_context_detail(context: Context, output: Output) -> None:
         output.info("")
         output.info("Modifications:")
         for m in context.modifications:
-            if m.claim:
-                target = m.claim
-            elif m.level:
-                target = f"level={m.level}"
-            elif m.topic:
-                target = f"topic={m.topic}"
-            else:
-                target = "(unknown)"
+            match (m.claim, m.level, m.topic):
+                case (claim, _, _) if claim:
+                    target = claim
+                case (_, level, _) if level:
+                    target = f"level={level}"
+                case (_, _, topic) if topic:
+                    target = f"topic={topic}"
+                case _:
+                    target = "(unknown)"
             output.info(f"  - {target}: {m.action}")
     if context.created:
         output.info("")

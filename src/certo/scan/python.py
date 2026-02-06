@@ -176,14 +176,14 @@ def _scan_imports(root: Path, result: ScanResult) -> None:
             for node in ast.walk(tree):
                 module_name = None
                 lineno = 0
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        module_name = alias.name.split(".")[0]
-                    lineno = node.lineno
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module:
+                match node:
+                    case ast.Import():
+                        for alias in node.names:
+                            module_name = alias.name.split(".")[0]
+                        lineno = node.lineno
+                    case ast.ImportFrom() if node.module:
                         module_name = node.module.split(".")[0]
-                    lineno = node.lineno
+                        lineno = node.lineno
 
                 if module_name and module_name in stdlib_versions:
                     required = stdlib_versions[module_name]

@@ -35,13 +35,15 @@ class ScanResult:
         fact = self.get(key)
         if fact is None:
             return False
-        if isinstance(fact.value, bool):
-            return fact.value
-        if isinstance(fact.value, str):
-            return bool(fact.value)
-        if isinstance(fact.value, list):
-            return len(fact.value) > 0
-        return True
+        match fact.value:
+            case bool():
+                return fact.value
+            case str():
+                return bool(fact.value)
+            case list():
+                return len(fact.value) > 0
+            case _:
+                return True  # Assume other types are truthy if present
 
     def get_value(
         self, key: str, default: str | bool | list[str] | None = None
