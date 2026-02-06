@@ -1,9 +1,10 @@
-"""Fact check - config and runner."""
+"""Fact check - config, runner, and evidence."""
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Self
@@ -180,4 +181,40 @@ class FactRunner:
             passed=True,
             message="Fact check passed",
             kind="fact",
+        )
+
+
+@dataclass
+class FactEvidence:
+    """Evidence from a fact/scan check."""
+
+    check_id: str
+    kind: str = "fact"
+    timestamp: datetime | None = None
+    duration: float = 0.0
+    check_hash: str = ""
+    facts: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "check_id": self.check_id,
+            "kind": self.kind,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
+            "duration": self.duration,
+            "check_hash": self.check_hash,
+            "facts": self.facts,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create from dictionary."""
+        timestamp = data.get("timestamp", "")
+        return cls(
+            check_id=data["check_id"],
+            kind=data.get("kind", "fact"),
+            timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
+            duration=data.get("duration", 0.0),
+            check_hash=data.get("check_hash", ""),
+            facts=data.get("facts", {}),
         )

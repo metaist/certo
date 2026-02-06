@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from certo.evidence.selector import parse_selector, resolve_selector
-from certo.evidence.types import Evidence
+from certo.evidence.types import AnyEvidence
 
 
 @dataclass
@@ -44,7 +44,7 @@ class Verify:
 
 def verify_claim(
     verify: Verify,
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Verify a claim against evidence.
 
@@ -60,7 +60,7 @@ def verify_claim(
 
 def _evaluate_rules(
     rules: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Evaluate verification rules against evidence."""
     # Check for boolean operators at top level
@@ -90,7 +90,7 @@ def _evaluate_rules(
 
 def _evaluate_and(
     clauses: list[dict[str, Any]],
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Evaluate AND of multiple rule sets."""
     details: list[str] = []
@@ -104,7 +104,7 @@ def _evaluate_and(
 
 def _evaluate_or(
     clauses: list[dict[str, Any]],
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Evaluate OR of multiple rule sets."""
     details: list[str] = []
@@ -120,7 +120,7 @@ def _evaluate_or(
 
 def _evaluate_not(
     clause: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Evaluate NOT of a rule set."""
     result = _evaluate_rules(clause, evidence_map)
@@ -136,7 +136,7 @@ def _evaluate_not(
 def _evaluate_selector(
     selector_str: str,
     ops: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    evidence_map: dict[str, AnyEvidence],
 ) -> VerifyResult:
     """Evaluate a selector with its operators against evidence."""
     selector = parse_selector(selector_str)

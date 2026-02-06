@@ -13,6 +13,8 @@ from certo.evidence.types import (
     UrlEvidence,
     LlmEvidence,
     FactEvidence,
+    load_evidence,
+    save_evidence,
 )
 
 
@@ -170,6 +172,21 @@ class TestFactEvidence:
         assert evidence.facts["foo"] == "bar"
 
 
+class TestBaseEvidence:
+    """Tests for base Evidence class."""
+
+    def test_to_dict_no_timestamp(self) -> None:
+        """Test to_dict with no timestamp."""
+        evidence = Evidence(
+            check_id="k-test",
+            kind="custom",
+            timestamp=None,
+            duration=1.0,
+        )
+        d = evidence.to_dict()
+        assert d["timestamp"] == ""
+
+
 class TestEvidenceSaveLoad:
     """Tests for saving and loading evidence."""
 
@@ -186,9 +203,9 @@ class TestEvidenceSaveLoad:
         )
         with TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "evidence" / "k-pytest.json"
-            evidence.save(path)
+            save_evidence(evidence, path)
 
-            loaded = Evidence.load(path)
+            loaded = load_evidence(path)
             assert isinstance(loaded, ShellEvidence)
             assert loaded.check_id == "k-pytest"
             assert loaded.exit_code == 0
@@ -205,9 +222,9 @@ class TestEvidenceSaveLoad:
         )
         with TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "k-eol.json"
-            evidence.save(path)
+            save_evidence(evidence, path)
 
-            loaded = Evidence.load(path)
+            loaded = load_evidence(path)
             assert isinstance(loaded, UrlEvidence)
             assert loaded.status_code == 200
 
@@ -224,9 +241,9 @@ class TestEvidenceSaveLoad:
         )
         with TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "k-review.json"
-            evidence.save(path)
+            save_evidence(evidence, path)
 
-            loaded = Evidence.load(path)
+            loaded = load_evidence(path)
             assert isinstance(loaded, LlmEvidence)
             assert loaded.verdict is True
 
@@ -240,9 +257,9 @@ class TestEvidenceSaveLoad:
         )
         with TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "k-scan.json"
-            evidence.save(path)
+            save_evidence(evidence, path)
 
-            loaded = Evidence.load(path)
+            loaded = load_evidence(path)
             assert isinstance(loaded, FactEvidence)
             assert loaded.facts["key"] == "value"
 
@@ -258,6 +275,6 @@ class TestEvidenceSaveLoad:
             }
             path.write_text(json.dumps(data))
 
-            loaded = Evidence.load(path)
+            loaded = load_evidence(path)
             assert isinstance(loaded, Evidence)
             assert loaded.kind == "custom"

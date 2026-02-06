@@ -1,10 +1,11 @@
-"""URL check - config and runner. Extends shell check."""
+"""URL check - config, runner, and evidence. Extends shell check."""
 
 from __future__ import annotations
 
 import hashlib
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Self
 
 from certo.check.core import CheckContext, CheckResult, generate_id
@@ -159,3 +160,47 @@ class UrlRunner(ShellRunner):
         if from_cache and "(cached)" not in result.message:
             result.message += " (cached)"
         return result
+
+
+@dataclass
+class UrlEvidence:
+    """Evidence from a URL check."""
+
+    check_id: str
+    kind: str = "url"
+    timestamp: datetime | None = None
+    duration: float = 0.0
+    check_hash: str = ""
+    status_code: int = 0
+    body: str = ""
+    json: dict[str, Any] | list[Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        d: dict[str, Any] = {
+            "check_id": self.check_id,
+            "kind": self.kind,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
+            "duration": self.duration,
+            "check_hash": self.check_hash,
+            "status_code": self.status_code,
+            "body": self.body,
+        }
+        if self.json is not None:
+            d["json"] = self.json
+        return d
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create from dictionary."""
+        timestamp = data.get("timestamp", "")
+        return cls(
+            check_id=data["check_id"],
+            kind=data.get("kind", "url"),
+            timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
+            duration=data.get("duration", 0.0),
+            check_hash=data.get("check_hash", ""),
+            status_code=data.get("status_code", 0),
+            body=data.get("body", ""),
+            json=data.get("json"),
+        )

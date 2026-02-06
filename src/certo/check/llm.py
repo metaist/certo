@@ -1,8 +1,9 @@
-"""LLM check - config and runner."""
+"""LLM check - config, runner, and evidence."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Self
 
 from certo.check.core import Check, CheckContext, CheckResult, generate_id
@@ -184,3 +185,48 @@ class LLMRunner:
                 message=f"LLM error: {e}",
                 kind="llm",
             )
+
+
+@dataclass
+class LlmEvidence:
+    """Evidence from an LLM check."""
+
+    check_id: str
+    kind: str = "llm"
+    timestamp: datetime | None = None
+    duration: float = 0.0
+    check_hash: str = ""
+    verdict: bool = False
+    reasoning: str = ""
+    model: str = ""
+    tokens: dict[str, int] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "check_id": self.check_id,
+            "kind": self.kind,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
+            "duration": self.duration,
+            "check_hash": self.check_hash,
+            "verdict": self.verdict,
+            "reasoning": self.reasoning,
+            "model": self.model,
+            "tokens": self.tokens,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create from dictionary."""
+        timestamp = data.get("timestamp", "")
+        return cls(
+            check_id=data["check_id"],
+            kind=data.get("kind", "llm"),
+            timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
+            duration=data.get("duration", 0.0),
+            check_hash=data.get("check_hash", ""),
+            verdict=data.get("verdict", False),
+            reasoning=data.get("reasoning", ""),
+            model=data.get("model", ""),
+            tokens=data.get("tokens", {}),
+        )

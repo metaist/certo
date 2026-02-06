@@ -1,10 +1,11 @@
-"""Shell command check - config and runner."""
+"""Shell command check - config, runner, and evidence."""
 
 from __future__ import annotations
 
 import re
 import subprocess
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Self
 
 from certo.check.core import Check, CheckContext, CheckResult, generate_id
@@ -162,4 +163,51 @@ class ShellRunner:
             message=f"{self.kind_name.title()} check passed",
             kind=self.kind_name,
             output=output,
+        )
+
+
+@dataclass
+class ShellEvidence:
+    """Evidence from a shell command check."""
+
+    check_id: str
+    kind: str = "shell"
+    timestamp: datetime | None = None
+    duration: float = 0.0
+    check_hash: str = ""
+    exit_code: int = 0
+    stdout: str = ""
+    stderr: str = ""
+    json: dict[str, Any] | list[Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        d: dict[str, Any] = {
+            "check_id": self.check_id,
+            "kind": self.kind,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
+            "duration": self.duration,
+            "check_hash": self.check_hash,
+            "exit_code": self.exit_code,
+            "stdout": self.stdout,
+            "stderr": self.stderr,
+        }
+        if self.json is not None:
+            d["json"] = self.json
+        return d
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create from dictionary."""
+        timestamp = data.get("timestamp", "")
+        return cls(
+            check_id=data["check_id"],
+            kind=data.get("kind", "shell"),
+            timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
+            duration=data.get("duration", 0.0),
+            check_hash=data.get("check_hash", ""),
+            exit_code=data.get("exit_code", 0),
+            stdout=data.get("stdout", ""),
+            stderr=data.get("stderr", ""),
+            json=data.get("json"),
         )
