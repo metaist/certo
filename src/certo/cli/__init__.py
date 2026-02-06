@@ -7,10 +7,10 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from certo.cli.check import cmd_check
-from certo.cli.claim import cmd_claim
-from certo.cli.context import cmd_context
+from certo.cli.claim import add_claim_parser
+from certo.cli.context import add_context_parser
 from certo.cli.init import cmd_init
-from certo.cli.issue import cmd_issue
+from certo.cli.issue import add_issue_parser
 from certo.cli.kb import cmd_kb_update
 from certo.cli.output import Output, OutputFormat
 from certo.cli.scan import cmd_scan
@@ -156,37 +156,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     status_parser.set_defaults(func=cmd_status)
 
-    # claim command
-    claim_parser = subparsers.add_parser("claim", help="manage claims")
-    _add_global_args(claim_parser)
-    claim_parser.add_argument("text", nargs="?", help="claim text (to create)")
-    claim_parser.add_argument("--confirm", metavar="ID", help="confirm a pending claim")
-    claim_parser.add_argument("--reject", metavar="ID", help="reject a claim")
-    claim_parser.add_argument(
-        "--level", choices=["block", "warn", "skip"], default="warn"
-    )
-    claim_parser.add_argument("--tags", help="comma-separated tags")
-    claim_parser.add_argument("--why", help="rationale for the claim")
-    claim_parser.add_argument("--closes", help="comma-separated issue IDs to close")
-    claim_parser.add_argument("--author", help="author name")
-    claim_parser.set_defaults(func=cmd_claim)
+    # claim command (noun-verb pattern with subcommands)
+    add_claim_parser(subparsers, _add_global_args)
 
-    # issue command
-    issue_parser = subparsers.add_parser("issue", help="manage issues")
-    _add_global_args(issue_parser)
-    issue_parser.add_argument("text", nargs="?", help="issue text (to create)")
-    issue_parser.add_argument("--close", metavar="ID", help="close an issue")
-    issue_parser.add_argument("--reopen", metavar="ID", help="reopen an issue")
-    issue_parser.add_argument("--reason", help="reason for closing")
-    issue_parser.add_argument("--tags", help="comma-separated tags")
-    issue_parser.set_defaults(func=cmd_issue)
+    # issue command (noun-verb pattern with subcommands)
+    add_issue_parser(subparsers, _add_global_args)
 
-    # context command
-    context_parser = subparsers.add_parser("context", help="manage contexts")
-    _add_global_args(context_parser)
-    context_parser.add_argument("name", nargs="?", help="context name (to create)")
-    context_parser.add_argument("--description", help="context description")
-    context_parser.set_defaults(func=cmd_context)
+    # context command (noun-verb pattern with subcommands)
+    add_context_parser(subparsers, _add_global_args)
 
     # check command
     check_parser = subparsers.add_parser("check", help="verify spec against code")

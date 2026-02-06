@@ -701,3 +701,29 @@ def test_llm_check_auto_generates_id() -> None:
     check = LLMCheck.parse(data)
     assert check.id.startswith("k-")
     assert len(check.id) > 2
+
+
+def test_shell_check_disabled_to_toml() -> None:
+    """Test serializing a disabled shell check to TOML."""
+    from certo.spec import ShellCheck
+
+    check = ShellCheck(
+        id="k-test",
+        status="disabled",
+        cmd="echo test",
+    )
+    toml = check.to_toml()
+    assert 'status = "disabled"' in toml
+
+
+def test_llm_check_disabled_to_toml() -> None:
+    """Test serializing a disabled LLM check to TOML."""
+    from certo.spec import LLMCheck
+
+    check = LLMCheck(
+        id="k-test",
+        status="disabled",
+        files=["README.md"],
+    )
+    toml = check.to_toml()
+    assert 'status = "disabled"' in toml

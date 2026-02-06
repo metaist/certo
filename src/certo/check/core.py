@@ -137,6 +137,11 @@ def check_spec(
         # Run each check
         for check in claim.checks:
             check_id = getattr(check, "id", "") or ""
+            check_status = getattr(check, "status", "enabled")
+
+            # Skip disabled checks
+            if check_status == "disabled":
+                continue
 
             # Skip this specific check if in skip set
             if check_id and check_id in skip:

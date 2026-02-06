@@ -9,7 +9,7 @@ version = 1
 ```
 
 ```bash
-certo issue "Should we do this?"
+certo issue add "Should we do this?"
 ```
 
 **Expected**
@@ -27,7 +27,7 @@ version = 1
 ```
 
 ```bash
-certo issue "Question?" --tags arch,design
+certo issue add "Question?" --tags arch,design
 ```
 
 **Expected**
@@ -39,7 +39,7 @@ Created issue:
 ## Create issue with no spec
 
 ```bash
-certo issue "Question?"
+certo issue add "Question?"
 ```
 
 **Exit Code:** 1
@@ -48,26 +48,6 @@ certo issue "Question?"
 
 ```
 no spec
-```
-
-## Create issue without text
-
-```toml
-[spec]
-name = "test"
-version = 1
-```
-
-```bash
-certo issue
-```
-
-**Exit Code:** 1
-
-**Expected Stderr**
-
-```
-required
 ```
 
 ## Create duplicate issue
@@ -83,7 +63,7 @@ text = "Question?"
 ```
 
 ```bash
-certo issue "Question?"
+certo issue add "Question?"
 ```
 
 **Exit Code:** 1
@@ -108,7 +88,7 @@ status = "open"
 ```
 
 ```bash
-certo issue --close i-ff0cda1
+certo issue close i-ff0cda1
 ```
 
 **Expected**
@@ -131,7 +111,7 @@ status = "open"
 ```
 
 ```bash
-certo issue --close i-ff0cda1 --reason "Decided to do X"
+certo issue close i-ff0cda1 --reason "Decided to do X"
 ```
 
 **Expected**
@@ -154,7 +134,7 @@ status = "closed"
 ```
 
 ```bash
-certo issue --close i-ff0cda1
+certo issue close i-ff0cda1
 ```
 
 **Expected**
@@ -172,7 +152,7 @@ version = 1
 ```
 
 ```bash
-certo issue --close i-notfound
+certo issue close i-notfound
 ```
 
 **Exit Code:** 1
@@ -197,7 +177,7 @@ status = "closed"
 ```
 
 ```bash
-certo issue --reopen i-ff0cda1
+certo issue reopen i-ff0cda1
 ```
 
 **Expected**
@@ -220,7 +200,7 @@ status = "open"
 ```
 
 ```bash
-certo issue --reopen i-ff0cda1
+certo issue reopen i-ff0cda1
 ```
 
 **Expected**
@@ -238,7 +218,7 @@ version = 1
 ```
 
 ```bash
-certo issue --reopen i-notfound
+certo issue reopen i-notfound
 ```
 
 **Exit Code:** 1
@@ -258,7 +238,7 @@ version = 1
 ```
 
 ```bash
-certo --format json issue "Question?"
+certo --format json issue add "Question?"
 ```
 
 **Expected**
@@ -266,4 +246,283 @@ certo --format json issue "Question?"
 ```
 "id":
 "text": "Question?"
+```
+
+## List issues
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "First issue"
+status = "open"
+
+[[issues]]
+id = "i-def5678"
+text = "Second issue"
+status = "closed"
+```
+
+```bash
+certo issue list
+```
+
+**Expected**
+
+```
+i-abc1234
+i-def5678
+```
+
+## List issues filtered by status
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "First issue"
+status = "open"
+
+[[issues]]
+id = "i-def5678"
+text = "Second issue"
+status = "closed"
+```
+
+```bash
+certo issue list --status open
+```
+
+**Expected**
+
+```
+i-abc1234
+```
+
+**Not Expected**
+
+```
+i-def5678
+```
+
+## View an issue
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "Test issue"
+status = "open"
+```
+
+```bash
+certo issue view i-abc1234
+```
+
+**Expected**
+
+```
+ID:      i-abc1234
+Text:    Test issue
+Status:  open
+```
+
+## View non-existent issue
+
+```toml
+[spec]
+name = "test"
+version = 1
+```
+
+```bash
+certo issue view i-notfound
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+not found
+```
+
+## Show issue help
+
+```toml
+[spec]
+name = "test"
+version = 1
+```
+
+```bash
+certo issue
+```
+
+**Expected**
+
+```
+usage:
+```
+
+## List issues empty
+
+```toml
+[spec]
+name = "test"
+version = 1
+```
+
+```bash
+certo issue list
+```
+
+**Expected**
+
+```
+No issues found
+```
+
+## List issues no spec
+
+```bash
+certo issue list
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+no spec
+```
+
+## View issue no spec
+
+```bash
+certo issue view i-xxx
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+no spec
+```
+
+## Close issue no spec
+
+```bash
+certo issue close i-xxx
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+no spec
+```
+
+## Reopen issue no spec
+
+```bash
+certo issue reopen i-xxx
+```
+
+**Exit Code:** 1
+
+**Expected Stderr**
+
+```
+no spec
+```
+
+## List issues quiet mode
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "Test issue"
+status = "open"
+```
+
+```bash
+certo issue list -q
+```
+
+**Not Expected**
+
+```
+i-abc1234
+```
+
+## View issue quiet mode
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "Test issue"
+status = "open"
+```
+
+```bash
+certo issue view i-abc1234 -q
+```
+
+**Not Expected**
+
+```
+ID:
+```
+
+## View issue with all fields
+
+```toml
+[spec]
+name = "test"
+version = 1
+
+[[issues]]
+id = "i-abc1234"
+text = "Test issue"
+status = "closed"
+tags = ["question", "design"]
+closed_reason = "Decided to do X"
+created = 2024-01-01T00:00:00Z
+updated = 2024-01-02T00:00:00Z
+```
+
+```bash
+certo issue view i-abc1234
+```
+
+**Expected**
+
+```
+ID:      i-abc1234
+Text:    Test issue
+Status:  closed
+Tags:    question, design
+Reason:  Decided to do X
+Created:
+Updated:
 ```

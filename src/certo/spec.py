@@ -65,6 +65,7 @@ class ShellCheck:
 
     kind: Literal["shell"] = "shell"
     id: str = ""
+    status: Literal["enabled", "disabled"] = "enabled"
     cmd: str = ""
     exit_code: int = 0
     matches: list[str] = field(default_factory=list)
@@ -77,6 +78,7 @@ class ShellCheck:
         check = cls(
             kind="shell",
             id=data.get("id", ""),
+            status=data.get("status", "enabled"),
             cmd=data.get("cmd", ""),
             exit_code=data.get("exit_code", 0),
             matches=data.get("matches", []),
@@ -94,8 +96,10 @@ class ShellCheck:
             "[[claims.checks]]",
             'kind = "shell"',
             f'id = "{self.id}"',
-            f'cmd = "{self.cmd}"',
         ]
+        if self.status != "enabled":
+            lines.append(f'status = "{self.status}"')
+        lines.append(f'cmd = "{self.cmd}"')
         if self.exit_code != 0:
             lines.append(f"exit_code = {self.exit_code}")
         if self.matches:
@@ -113,6 +117,7 @@ class LLMCheck:
 
     kind: Literal["llm"] = "llm"
     id: str = ""
+    status: Literal["enabled", "disabled"] = "enabled"
     files: list[str] = field(default_factory=list)
     prompt: str | None = None
 
@@ -122,6 +127,7 @@ class LLMCheck:
         check = cls(
             kind="llm",
             id=data.get("id", ""),
+            status=data.get("status", "enabled"),
             files=data.get("files", []),
             prompt=data.get("prompt"),
         )
@@ -137,6 +143,8 @@ class LLMCheck:
             'kind = "llm"',
             f'id = "{self.id}"',
         ]
+        if self.status != "enabled":
+            lines.append(f'status = "{self.status}"')
         if self.files:
             lines.append(f"files = {self.files}")
         if self.prompt:
@@ -289,6 +297,7 @@ class Context:
     id: str
     name: str
     description: str = ""
+    enabled: bool = True
     created: datetime | None = None
     updated: datetime | None = None
     expires: datetime | None = None
@@ -301,6 +310,7 @@ class Context:
             id=data.get("id", ""),
             name=data.get("name", ""),
             description=data.get("description", ""),
+            enabled=data.get("enabled", True),
             created=data.get("created"),
             updated=data.get("updated"),
             expires=data.get("expires"),
@@ -318,6 +328,8 @@ class Context:
         ]
         if self.description:
             lines.append(f'description = "{self.description}"')
+        if not self.enabled:
+            lines.append("enabled = false")
         if self.created:
             lines.append(f"created = {format_datetime(self.created)}")
         if self.updated:
