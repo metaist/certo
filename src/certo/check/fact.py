@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Self
 
-from certo.check.core import Check, CheckContext, CheckResult, generate_id
+from certo.check.core import Check, CheckContext, CheckResult, Evidence, generate_id
 
 
 @dataclass
@@ -185,26 +185,17 @@ class FactRunner:
 
 
 @dataclass
-class FactEvidence:
+class FactEvidence(Evidence):
     """Evidence from a fact/scan check."""
 
-    check_id: str
     kind: str = "fact"
-    timestamp: datetime | None = None
-    duration: float = 0.0
-    check_hash: str = ""
     facts: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
-            "check_id": self.check_id,
-            "kind": self.kind,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
-            "duration": self.duration,
-            "check_hash": self.check_hash,
-            "facts": self.facts,
-        }
+        d = super().to_dict()
+        d["facts"] = self.facts
+        return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:

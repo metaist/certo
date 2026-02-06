@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import CheckContext, CheckResult, generate_id
+from certo.check.core import CheckContext, CheckResult, Evidence, generate_id
 from certo.check.shell import ShellCheck, ShellRunner
 
 
@@ -163,29 +163,19 @@ class UrlRunner(ShellRunner):
 
 
 @dataclass
-class UrlEvidence:
+class UrlEvidence(Evidence):
     """Evidence from a URL check."""
 
-    check_id: str
     kind: str = "url"
-    timestamp: datetime | None = None
-    duration: float = 0.0
-    check_hash: str = ""
     status_code: int = 0
     body: str = ""
     json: dict[str, Any] | list[Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        d: dict[str, Any] = {
-            "check_id": self.check_id,
-            "kind": self.kind,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
-            "duration": self.duration,
-            "check_hash": self.check_hash,
-            "status_code": self.status_code,
-            "body": self.body,
-        }
+        d = super().to_dict()
+        d["status_code"] = self.status_code
+        d["body"] = self.body
         if self.json is not None:
             d["json"] = self.json
         return d

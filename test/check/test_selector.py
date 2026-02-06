@@ -4,8 +4,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from certo.evidence.selector import parse_selector, resolve_selector, Selector
-from certo.evidence.types import AnyEvidence, ShellEvidence, UrlEvidence
+from certo.check.core import Evidence
+from certo.check.selector import parse_selector, resolve_selector, Selector
+from certo.check.shell import ShellEvidence
+from certo.check.url import UrlEvidence
 
 
 def test_parse_simple_selector() -> None:
@@ -76,7 +78,7 @@ def test_selector_str() -> None:
 
 
 @pytest.fixture
-def evidence_map() -> dict[str, AnyEvidence]:
+def evidence_map() -> dict[str, Evidence]:
     """Create a sample evidence map for testing."""
     now = datetime.now(timezone.utc)
     return {
@@ -117,21 +119,21 @@ def evidence_map() -> dict[str, AnyEvidence]:
     }
 
 
-def test_resolve_simple(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_simple(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving simple selector."""
     results = resolve_selector("k-pytest.exit_code", evidence_map)
     assert len(results) == 1
     assert results[0] == ("k-pytest.exit_code", 0)
 
 
-def test_resolve_deep(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_deep(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving deep selector."""
     results = resolve_selector("k-pytest.json.totals.percent_covered", evidence_map)
     assert len(results) == 1
     assert results[0] == ("k-pytest.json.totals.percent_covered", 100.0)
 
 
-def test_resolve_glob_check_id(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_glob_check_id(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving glob on check IDs."""
     results = resolve_selector("*.exit_code", evidence_map)
     # Should match k-pytest and k-ruff (both have exit_code)
@@ -141,14 +143,14 @@ def test_resolve_glob_check_id(evidence_map: dict[str, AnyEvidence]) -> None:
     assert "k-ruff.exit_code" in paths
 
 
-def test_resolve_glob_partial(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_glob_partial(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving partial glob on check IDs."""
     results = resolve_selector("k-py*.exit_code", evidence_map)
     assert len(results) == 1
     assert results[0][0] == "k-pytest.exit_code"
 
 
-def test_resolve_glob_in_keys(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_glob_in_keys(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving glob in nested keys."""
     results = resolve_selector("k-pytest.json.files[*].percent_covered", evidence_map)
     assert len(results) == 2
@@ -157,7 +159,7 @@ def test_resolve_glob_in_keys(evidence_map: dict[str, AnyEvidence]) -> None:
     assert 100.0 in values
 
 
-def test_resolve_glob_pattern_in_keys(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_glob_pattern_in_keys(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving glob pattern in nested keys."""
     results = resolve_selector(
         "k-pytest.json.files[*.py].percent_covered", evidence_map
@@ -166,26 +168,26 @@ def test_resolve_glob_pattern_in_keys(evidence_map: dict[str, AnyEvidence]) -> N
     assert len(results) == 2
 
 
-def test_resolve_missing_check(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_missing_check(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving non-existent check."""
     results = resolve_selector("k-nonexistent.exit_code", evidence_map)
     assert len(results) == 0
 
 
-def test_resolve_missing_path(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_missing_path(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving non-existent path."""
     results = resolve_selector("k-pytest.nonexistent.path", evidence_map)
     assert len(results) == 0
 
 
-def test_resolve_url_evidence(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_url_evidence(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving URL evidence."""
     results = resolve_selector("k-python-eol.status_code", evidence_map)
     assert len(results) == 1
     assert results[0] == ("k-python-eol.status_code", 200)
 
 
-def test_resolve_status_code_glob(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_status_code_glob(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving status_code with glob (only URL checks)."""
     results = resolve_selector("*.status_code", evidence_map)
     # Only k-python-eol has status_code
@@ -193,14 +195,14 @@ def test_resolve_status_code_glob(evidence_map: dict[str, AnyEvidence]) -> None:
     assert results[0] == ("k-python-eol.status_code", 200)
 
 
-def test_resolve_list_by_index(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_list_by_index(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving list item by index."""
     results = resolve_selector("k-python-eol.json[0].version", evidence_map)
     assert len(results) == 1
     assert results[0][1] == "3.11"
 
 
-def test_resolve_list_glob(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_list_glob(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving list items with glob."""
     results = resolve_selector("k-python-eol.json[*].version", evidence_map)
     assert len(results) == 1
@@ -213,7 +215,7 @@ def test_resolve_empty_selector() -> None:
     assert len(results) == 0
 
 
-def test_resolve_no_remaining_segments(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_no_remaining_segments(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving with no remaining segments (returns whole check)."""
     results = resolve_selector("k-pytest", evidence_map)
     assert len(results) == 1
@@ -221,13 +223,13 @@ def test_resolve_no_remaining_segments(evidence_map: dict[str, AnyEvidence]) -> 
     assert isinstance(results[0][1], dict)
 
 
-def test_resolve_list_invalid_index(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_list_invalid_index(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving list with invalid index."""
     results = resolve_selector("k-python-eol.json[foo]", evidence_map)
     assert len(results) == 0
 
 
-def test_resolve_list_out_of_bounds(evidence_map: dict[str, AnyEvidence]) -> None:
+def test_resolve_list_out_of_bounds(evidence_map: dict[str, Evidence]) -> None:
     """Test resolving list with out of bounds index."""
     results = resolve_selector("k-python-eol.json[99]", evidence_map)
     assert len(results) == 0

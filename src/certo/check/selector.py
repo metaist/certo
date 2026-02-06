@@ -6,7 +6,7 @@ import fnmatch
 from dataclasses import dataclass
 from typing import Any
 
-from certo.evidence.types import AnyEvidence
+from certo.check.core import Evidence
 
 
 @dataclass
@@ -100,7 +100,7 @@ def _has_glob(segment: str) -> bool:
 
 def resolve_selector(
     selector: Selector | str,
-    evidence_map: dict[str, AnyEvidence],
+    evidence_map: dict[str, Evidence],
 ) -> list[tuple[str, Any]]:
     """Resolve a selector against evidence, returning all matches.
 

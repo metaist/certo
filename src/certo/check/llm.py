@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import Check, CheckContext, CheckResult, generate_id
+from certo.check.core import Check, CheckContext, CheckResult, Evidence, generate_id
 
 
 @dataclass
@@ -188,14 +188,10 @@ class LLMRunner:
 
 
 @dataclass
-class LlmEvidence:
+class LlmEvidence(Evidence):
     """Evidence from an LLM check."""
 
-    check_id: str
     kind: str = "llm"
-    timestamp: datetime | None = None
-    duration: float = 0.0
-    check_hash: str = ""
     verdict: bool = False
     reasoning: str = ""
     model: str = ""
@@ -203,17 +199,12 @@ class LlmEvidence:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
-            "check_id": self.check_id,
-            "kind": self.kind,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
-            "duration": self.duration,
-            "check_hash": self.check_hash,
-            "verdict": self.verdict,
-            "reasoning": self.reasoning,
-            "model": self.model,
-            "tokens": self.tokens,
-        }
+        d = super().to_dict()
+        d["verdict"] = self.verdict
+        d["reasoning"] = self.reasoning
+        d["model"] = self.model
+        d["tokens"] = self.tokens
+        return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:

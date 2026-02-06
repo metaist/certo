@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import Check, CheckContext, CheckResult, generate_id
+from certo.check.core import Check, CheckContext, CheckResult, Evidence, generate_id
 
 
 @dataclass
@@ -167,14 +167,10 @@ class ShellRunner:
 
 
 @dataclass
-class ShellEvidence:
+class ShellEvidence(Evidence):
     """Evidence from a shell command check."""
 
-    check_id: str
     kind: str = "shell"
-    timestamp: datetime | None = None
-    duration: float = 0.0
-    check_hash: str = ""
     exit_code: int = 0
     stdout: str = ""
     stderr: str = ""
@@ -182,16 +178,10 @@ class ShellEvidence:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        d: dict[str, Any] = {
-            "check_id": self.check_id,
-            "kind": self.kind,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else "",
-            "duration": self.duration,
-            "check_hash": self.check_hash,
-            "exit_code": self.exit_code,
-            "stdout": self.stdout,
-            "stderr": self.stderr,
-        }
+        d = super().to_dict()
+        d["exit_code"] = self.exit_code
+        d["stdout"] = self.stdout
+        d["stderr"] = self.stderr
         if self.json is not None:
             d["json"] = self.json
         return d
