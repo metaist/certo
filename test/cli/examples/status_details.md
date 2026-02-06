@@ -1,4 +1,4 @@
-# spec show - Detail Views
+# status - Detail Views
 
 ## Show claim detail
 
@@ -24,7 +24,7 @@ created = 2026-02-05T12:00:00Z
 ```
 
 ```bash
-certo spec show c-abc1234
+certo status c-abc1234
 ```
 
 **Expected**
@@ -58,7 +58,7 @@ text = "Minimal claim"
 ```
 
 ```bash
-certo spec show c-abc1234
+certo status c-abc1234
 ```
 
 **Expected**
@@ -95,7 +95,7 @@ created = 2026-02-05T12:00:00Z
 ```
 
 ```bash
-certo spec show i-abc1234
+certo status i-abc1234
 ```
 
 **Expected**
@@ -120,7 +120,7 @@ text = "Minimal issue"
 ```
 
 ```bash
-certo spec show i-abc1234
+certo status i-abc1234
 ```
 
 **Expected**
@@ -153,7 +153,7 @@ modifications = [{ action = "relax", claim = "c-xxx" }]
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**
@@ -179,7 +179,7 @@ name = "Minimal context"
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**
@@ -204,7 +204,7 @@ version = 1
 ```
 
 ```bash
-certo spec show c-notfound
+certo status c-notfound
 ```
 
 **Exit Code:** 1
@@ -224,7 +224,7 @@ version = 1
 ```
 
 ```bash
-certo spec show i-notfound
+certo status i-notfound
 ```
 
 **Exit Code:** 1
@@ -244,7 +244,7 @@ version = 1
 ```
 
 ```bash
-certo spec show x-notfound
+certo status x-notfound
 ```
 
 **Exit Code:** 1
@@ -264,7 +264,7 @@ version = 1
 ```
 
 ```bash
-certo spec show z-unknown
+certo status z-unknown
 ```
 
 **Exit Code:** 1

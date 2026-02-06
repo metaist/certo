@@ -1,4 +1,4 @@
-# spec show - Filter Tests
+# status - Filter Tests
 
 ## Show only claims with --claims
 
@@ -17,7 +17,7 @@ text = "Test issue"
 ```
 
 ```bash
-certo spec show --claims
+certo status --claims
 ```
 
 **Expected**
@@ -50,7 +50,7 @@ text = "Test issue"
 ```
 
 ```bash
-certo spec show --issues
+certo status --issues
 ```
 
 **Expected**
@@ -83,7 +83,7 @@ name = "Test context"
 ```
 
 ```bash
-certo spec show --contexts
+certo status --contexts
 ```
 
 **Expected**

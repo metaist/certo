@@ -1,4 +1,4 @@
-# spec show - Status and Level Markers
+# status - Status and Level Markers
 
 ## Claim status markers
 
@@ -29,7 +29,7 @@ status = "rejected"
 ```
 
 ```bash
-certo spec show --claims
+certo status --claims
 ```
 
 **Expected**
@@ -68,7 +68,7 @@ level = "skip"
 ```
 
 ```bash
-certo spec show --claims
+certo status --claims
 ```
 
 **Expected**
@@ -98,7 +98,7 @@ status = "closed"
 ```
 
 ```bash
-certo spec show --issues
+certo status --issues
 ```
 
 **Expected**
@@ -129,7 +129,7 @@ name = "Test context"
 ```
 
 ```bash
-certo spec show
+certo status
 ```
 
 **Expected**

@@ -1,4 +1,4 @@
-# spec show - Verbose Mode
+# status - Verbose Mode
 
 ## Verbose claims with tags and author
 
@@ -17,7 +17,7 @@ created = 2026-02-05T12:00:00Z
 ```
 
 ```bash
-certo -v spec show --claims
+certo -v status --claims
 ```
 
 **Expected**
@@ -44,7 +44,7 @@ created = 2026-02-05T12:00:00Z
 ```
 
 ```bash
-certo -v spec show --claims
+certo -v status --claims
 ```
 
 **Expected**
@@ -73,7 +73,7 @@ text = "Test claim"
 ```
 
 ```bash
-certo -v spec show --claims
+certo -v status --claims
 ```
 
 **Expected**
@@ -102,7 +102,7 @@ author = "tester"
 ```
 
 ```bash
-certo -v spec show --claims
+certo -v status --claims
 ```
 
 **Expected**
@@ -128,7 +128,7 @@ closed_reason = "Resolved"
 ```
 
 ```bash
-certo -v spec show --issues
+certo -v status --issues
 ```
 
 **Expected**
@@ -153,7 +153,7 @@ text = "Test issue"
 ```
 
 ```bash
-certo -v spec show --issues
+certo -v status --issues
 ```
 
 **Expected**
@@ -184,7 +184,7 @@ expires = 2026-12-31T00:00:00Z
 ```
 
 ```bash
-certo -v spec show --contexts
+certo -v status --contexts
 ```
 
 **Expected**
@@ -210,7 +210,7 @@ description = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 ```
 
 ```bash
-certo -v spec show --contexts
+certo -v status --contexts
 ```
 
 **Expected**
@@ -232,7 +232,7 @@ name = "Test context"
 ```
 
 ```bash
-certo -v spec show --contexts
+certo -v status --contexts
 ```
 
 **Expected**

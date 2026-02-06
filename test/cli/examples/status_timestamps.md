@@ -1,4 +1,4 @@
-# spec show - Timestamps and Optional Fields
+# status - Timestamps and Optional Fields
 
 ## Claim with timestamps
 
@@ -15,7 +15,7 @@ updated = 2026-02-06T14:30:00Z
 ```
 
 ```bash
-certo spec show c-abc1234
+certo status c-abc1234
 ```
 
 **Expected**
@@ -41,7 +41,7 @@ supersedes = "c-old1234"
 ```
 
 ```bash
-certo spec show c-abc1234
+certo status c-abc1234
 ```
 
 **Expected**
@@ -69,7 +69,7 @@ updated = 2026-02-06T14:30:00Z
 ```
 
 ```bash
-certo spec show i-abc1234
+certo status i-abc1234
 ```
 
 **Expected**
@@ -94,7 +94,7 @@ updated = 2026-02-06T14:30:00Z
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**
@@ -118,7 +118,7 @@ modifications = [{ action = "promote", topic = "security" }]
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**
@@ -142,7 +142,7 @@ modifications = [{ action = "promote", level = "warn" }]
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**
@@ -166,7 +166,7 @@ modifications = [{ action = "relax" }]
 ```
 
 ```bash
-certo spec show x-abc1234
+certo status x-abc1234
 ```
 
 **Expected**

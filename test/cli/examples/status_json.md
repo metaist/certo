@@ -1,4 +1,4 @@
-# spec show - JSON Output
+# status - JSON Output
 
 ## JSON output for all
 
@@ -17,7 +17,7 @@ text = "Test issue"
 ```
 
 ```bash
-certo --format json spec show
+certo --format json status
 ```
 
 **Expected**
@@ -43,7 +43,7 @@ status = "confirmed"
 ```
 
 ```bash
-certo --format json spec show c-abc1234
+certo --format json status c-abc1234
 ```
 
 **Expected**
@@ -68,7 +68,7 @@ status = "open"
 ```
 
 ```bash
-certo --format json spec show i-abc1234
+certo --format json status i-abc1234
 ```
 
 **Expected**
@@ -93,7 +93,7 @@ description = "A description"
 ```
 
 ```bash
-certo --format json spec show x-abc1234
+certo --format json status x-abc1234
 ```
 
 **Expected**

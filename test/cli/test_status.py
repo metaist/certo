@@ -1,22 +1,8 @@
-"""Tests for certo.cli.spec module - non-example tests."""
+"""Tests for certo.cli.status module - non-example tests."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from certo.cli import main
-from certo.cli.spec import _get_item_type
-
-if TYPE_CHECKING:
-    from pytest import CaptureFixture
-
-
-def test_main_spec_no_subcommand(capsys: CaptureFixture[str]) -> None:
-    """Test spec command without subcommand shows help."""
-    result = main(["spec"])
-    assert result == 0
-    captured = capsys.readouterr()
-    assert "show" in captured.out
+from certo.cli.status import _get_item_type
 
 
 def test_get_item_type() -> None:

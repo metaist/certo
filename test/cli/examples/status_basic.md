@@ -1,4 +1,4 @@
-# spec show - Basic Tests
+# status - Basic Tests
 
 ## Show claims and issues
 
@@ -18,7 +18,7 @@ text = "Test issue"
 ```
 
 ```bash
-certo spec show
+certo status
 ```
 
 **Expected**
@@ -39,7 +39,7 @@ version = 1
 ```
 
 ```bash
-certo spec show
+certo status
 ```
 
 **Not Expected**
@@ -53,7 +53,7 @@ Contexts:
 ## Missing spec file
 
 ```bash
-certo spec show
+certo status
 ```
 
 **Exit Code:** 1

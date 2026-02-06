@@ -1,4 +1,4 @@
-"""Spec command implementation."""
+"""Status command implementation."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def _get_item_type(item_id: str) -> str | None:
     return None
 
 
-def cmd_spec_show(args: Namespace, output: Output) -> int:
+def cmd_status(args: Namespace, output: Output) -> int:
     """Show spec contents."""
     spec_path = args.path / ".certo" / "spec.toml"
 

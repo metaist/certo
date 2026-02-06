@@ -1,4 +1,4 @@
-"""Example-driven tests for certo spec show command.
+"""Example-driven tests for certo status command.
 
 This module parses markdown files in test/cli/examples/ and runs them as tests.
 Each markdown file contains multiple test scenarios with:
@@ -179,7 +179,7 @@ def case_id(case: ExampleCase) -> str:
 
 
 @pytest.mark.parametrize("case", ALL_CASES, ids=case_id)
-def test_spec_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
+def test_status_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
     """Run a single example test case."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
@@ -191,14 +191,14 @@ def test_spec_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
             spec = certo_dir / "spec.toml"
             spec.write_text(case.spec_content)
 
-        # Build command args, appending tmpdir as path for spec commands
+        # Build command args, appending tmpdir as path for status commands
         args = list(case.command)
-        if "spec" in args and "show" in args:
-            # Find position after 'show' to insert path
-            # Handle: spec show, spec show --claims, spec show c-xxx
-            show_idx = args.index("show")
-            # Check if there's already a path-like argument or ID after show
-            insert_idx = show_idx + 1
+        if "status" in args:
+            # Find position after 'status' to insert path
+            # Handle: status, status --claims, status c-xxx
+            status_idx = args.index("status")
+            # Check if there's already a path-like argument or ID after status
+            insert_idx = status_idx + 1
             while insert_idx < len(args) and args[insert_idx].startswith("-"):
                 insert_idx += 1
             # If the next arg looks like an ID (starts with c-, i-, x-), insert before it
