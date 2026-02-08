@@ -124,10 +124,7 @@ def _build_parser() -> ArgumentParser:
     # init command
     init_parser = subparsers.add_parser("init", help="initialize a new certo spec")
     _add_global_args(init_parser)
-    init_parser.add_argument(
-        "--name",
-        help="project name (default: directory name)",
-    )
+
     init_parser.add_argument(
         "--force",
         action="store_true",

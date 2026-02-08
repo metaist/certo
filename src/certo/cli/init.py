@@ -7,7 +7,7 @@ from pathlib import Path
 
 from certo.cli.output import Output
 from certo.config import CONFIG_FILENAME, ensure_cache_dir
-from certo.spec import Spec, now_utc
+from certo.spec import Spec
 
 
 def cmd_init(args: Namespace, output: Output) -> int:
@@ -21,26 +21,14 @@ def cmd_init(args: Namespace, output: Output) -> int:
         output.error("Use --force to overwrite")
         return 1
 
-    # Determine project name
-    name = getattr(args, "name", None) or root.resolve().name
-
     # Ensure cache directory exists
     ensure_cache_dir(root)
 
     # Create spec
-    spec = Spec(
-        name=name,
-        version=1,
-        created=now_utc(),
-    )
+    spec = Spec(version=1)
     spec.save(config_path)
 
     output.success(f"Initialized certo spec at {config_path}")
-    output.json_output(
-        {
-            "path": str(config_path),
-            "name": name,
-        }
-    )
+    output.json_output({"path": str(config_path)})
 
     return 0

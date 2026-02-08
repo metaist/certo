@@ -15,7 +15,7 @@ Initialized certo spec
 ## Initialize with custom name
 
 ```bash
-certo init --name myproject
+certo init
 ```
 
 **Expected**
@@ -28,7 +28,7 @@ Initialized certo spec
 
 ```toml
 [spec]
-name = "existing"
+
 version = 1
 ```
 
@@ -48,12 +48,12 @@ already exists
 
 ```toml
 [spec]
-name = "existing"
+
 version = 1
 ```
 
 ```bash
-certo init --force --name newname
+certo init --force
 ```
 
 **Expected**
@@ -65,12 +65,12 @@ Initialized certo spec
 ## Initialize with JSON output
 
 ```bash
-certo --format json init --name testproject
+certo --format json init
 ```
 
 **Expected**
 
 ```
-"name": "testproject"
+certo.toml
 "path":
 ```

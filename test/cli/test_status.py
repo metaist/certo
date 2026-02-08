@@ -29,7 +29,7 @@ def test_status_claim_detail_all_fields() -> None:
 name = "test"
 version = 1
 
-[[certo.claims]]
+[[claims]]
 id = "c-test123"
 text = "Test claim"
 status = "confirmed"
@@ -44,7 +44,7 @@ closes = ["i-issue"]
 created = 2026-02-05T12:00:00Z
 updated = 2026-02-06T12:00:00Z
 
-[certo.claims.verify]
+[claims.verify]
 "k-test.passed" = { eq = true }
 """)
         result = main(["status", "c-test123", "--path", tmpdir])

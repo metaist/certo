@@ -48,7 +48,7 @@ class ScanConfig(ProbeConfig):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[certo.probes]]",
+            "[[probes]]",
             f'id = "{self.id}"',
             'kind = "scan"',
         ]

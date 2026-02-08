@@ -12,15 +12,15 @@ def test_claim_verify_passes() -> None:
     """Test that a claim with verify passes when check passes."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -34,7 +34,7 @@ status = "confirmed"
 "k-test.passed" = { eq = true }
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Should have 2 results: check result + claim verify result
         assert len(results) == 2
@@ -53,15 +53,15 @@ def test_claim_verify_fails_when_check_fails() -> None:
     """Test that a claim with verify fails when check fails."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-fail"
 kind = "shell"
 cmd = "exit 1"
@@ -75,7 +75,7 @@ status = "confirmed"
 "k-fail.passed" = { eq = true }
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Check failed
         check_result = [r for r in results if r.probe_id == "k-fail"][0]
@@ -90,12 +90,12 @@ def test_claim_verify_missing_check() -> None:
     """Test that a claim fails when referenced check doesn't exist."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
 [[claims]]
@@ -107,7 +107,7 @@ status = "confirmed"
 "k-missing.passed" = { eq = true }
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Claim verification failed due to missing evidence
         claim_result = [r for r in results if r.rule_id == "c-test"][0]
@@ -120,12 +120,12 @@ def test_claim_without_verify_skipped() -> None:
     """Test that claims without verify are skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
 [[claims]]
@@ -134,7 +134,7 @@ text = "Test without verify"
 status = "confirmed"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Claim should be skipped
         claim_result = [r for r in results if r.rule_id == "c-test"][0]
@@ -146,15 +146,15 @@ def test_claim_verify_with_output_match() -> None:
     """Test verifying check output with match operator."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-hello"
 kind = "shell"
 cmd = "echo hello world"
@@ -168,7 +168,7 @@ status = "confirmed"
 "k-hello.output" = { match = "hello" }
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Claim should pass
         claim_result = [r for r in results if r.rule_id == "c-test"][0]
@@ -179,15 +179,15 @@ def test_claim_verify_multiple_conditions() -> None:
     """Test verifying with multiple conditions (implicit AND)."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -202,7 +202,7 @@ status = "confirmed"
 "k-test.skipped" = { eq = false }
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
 
         # Claim should pass (both conditions met)
         claim_result = [r for r in results if r.rule_id == "c-test"][0]

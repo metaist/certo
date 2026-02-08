@@ -82,7 +82,7 @@ class Claim:
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[certo.claims]]",
+            "[[claims]]",
             f'id = "{self.id}"',
             f'text = "{self.text}"',
             f'status = "{self.status}"',
@@ -95,7 +95,7 @@ class Claim:
             lines.append(f"tags = {self.tags}")
         if self.verify:
             lines.append("")
-            lines.append("[certo.claims.verify]")
+            lines.append("[claims.verify]")
             for key, conditions in self.verify.rules.items():
                 lines.append(f'"{key}" = {conditions}')
         if self.created:
@@ -119,41 +119,20 @@ class Claim:
 class Spec:
     """A certo specification for a project."""
 
-    name: str = ""
     version: int = 1  # schema version
-    created: datetime | None = None
-    author: str = ""
-    imports: list[str] = field(default_factory=list)
     checks: list[ProbeConfig] = field(default_factory=list)
     claims: list[Claim] = field(default_factory=list)
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a spec from TOML data.
-
-        Supports both new [certo] format and legacy [spec] format.
-        """
+        """Parse a spec from TOML data."""
         from certo.probe import parse_probe
 
-        # Try new [certo] format first, fall back to legacy [spec]
-        certo = data.get("certo", {})
-        if not certo:
-            # Legacy format: [spec] + top-level [[probes]]/[[claims]]
-            meta = data.get("spec", {})
-            probes_data = data.get("probes", []) or data.get("checks", [])
-            claims_data = data.get("claims", [])
-        else:
-            # New format: everything under [certo]
-            meta = certo
-            probes_data = certo.get("probes", [])
-            claims_data = certo.get("claims", [])
+        probes_data = data.get("probes", [])
+        claims_data = data.get("claims", [])
 
         return cls(
-            name=meta.get("name", ""),
-            version=meta.get("version", 1),
-            created=meta.get("created"),
-            author=meta.get("author", ""),
-            imports=meta.get("imports", []),
+            version=data.get("version", 1),
             checks=[parse_probe(c) for c in probes_data],
             claims=[Claim.parse(c) for c in claims_data],
         )
@@ -185,17 +164,8 @@ class Spec:
             "# Certo Spec",
             "# https://github.com/metaist/certo",
             "",
-            "[certo]",
             f"version = {self.version}",
         ]
-        if self.name:
-            lines.append(f'name = "{self.name}"')
-        if self.created:
-            lines.append(f"created = {format_datetime(self.created)}")
-        if self.author:
-            lines.append(f'author = "{self.author}"')
-        if self.imports:
-            lines.append(f"imports = {self.imports}")
 
         if self.checks:
             lines.append("")

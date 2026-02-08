@@ -12,12 +12,12 @@ def test_check_spec_integration() -> None:
     """Test full spec check integration."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text('[spec]\nname = "test"\nversion = 1\n')
+        config = root / "certo.toml"
 
-        results = check_spec(spec)
+        config = root / "certo.toml"
+        config.write_text("# spec\n\nversion = 1\n")
+
+        results = check_spec(config)
         # Empty spec = no checks, no claims = no results
         assert len(results) == 0
 
@@ -34,12 +34,12 @@ def test_check_spec_claims_without_verify_are_skipped() -> None:
     """Test that claims without verify are marked as skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
 [[claims]]
@@ -48,7 +48,7 @@ text = "Claim without verify"
 status = "confirmed"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         assert len(results) == 1
         assert results[0].rule_id == "c-no-verify"
         assert results[0].passed  # Not a failure, just skipped
@@ -61,22 +61,22 @@ def test_check_spec_shell_check() -> None:
     """Test shell check runs command."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-shell"
 kind = "shell"
 cmd = "echo hello"
 matches = ["hello"]
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         assert len(results) == 1
         assert results[0].probe_id == "k-shell"
         assert results[0].passed
@@ -87,15 +87,15 @@ def test_check_spec_llm_check_offline() -> None:
     """Test LLM check is skipped in offline mode."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-llm"
 kind = "llm"
 files = ["README.md"]
@@ -103,7 +103,7 @@ prompt = "Verify this file"
 """)
         (root / "README.md").write_text("# Test")
 
-        results = check_spec(spec, offline=True)
+        results = check_spec(config, offline=True)
         assert len(results) == 1
         assert results[0].probe_id == "k-llm"
         assert results[0].passed  # Skipped is not a failure
@@ -114,12 +114,12 @@ def test_check_spec_skips_rejected_claims() -> None:
     """Test that rejected claims are skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
 [[claims]]
@@ -128,7 +128,7 @@ text = "Rejected claim"
 status = "rejected"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         # Should have skipped rejected claim
         assert len(results) == 1
         assert results[0].rule_id == "c-rejected"
@@ -140,12 +140,12 @@ def test_check_spec_skips_level_skip() -> None:
     """Test that claims with level=skip are skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
 [[claims]]
@@ -155,7 +155,7 @@ status = "confirmed"
 level = "skip"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         # Should have skipped claim
         assert len(results) == 1
         assert results[0].rule_id == "c-skipped"
@@ -167,26 +167,26 @@ def test_check_spec_skip_by_check_id() -> None:
     """Test skipping specific check by ID."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-skip-this"
 kind = "shell"
 cmd = "exit 1"
 
-[[checks]]
+[[probes]]
 id = "k-run-this"
 kind = "shell"
 cmd = "echo hello"
 """)
 
-        results = check_spec(spec, skip={"k-skip-this"})
+        results = check_spec(config, skip={"k-skip-this"})
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
         assert shell_results[0].probe_id == "k-run-this"
@@ -197,26 +197,26 @@ def test_check_spec_only_by_check_id() -> None:
     """Test running only specific check by ID."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-only-this"
 kind = "shell"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-not-this"
 kind = "shell"
 cmd = "exit 1"
 """)
 
-        results = check_spec(spec, only={"k-only-this"})
+        results = check_spec(config, only={"k-only-this"})
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
         assert shell_results[0].probe_id == "k-only-this"
@@ -227,22 +227,22 @@ def test_check_spec_disabled_check() -> None:
     """Test that disabled checks are skipped."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
-[spec]
-name = "test"
+        config = root / "certo.toml"
+
+        config = root / "certo.toml"
+        config.write_text("""
+# spec
+
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
 cmd = "exit 1"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         assert len(results) == 1
         assert results[0].probe_id == "k-disabled"
         assert results[0].skipped

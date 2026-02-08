@@ -41,21 +41,7 @@ def test_init_cache_gitignore_contents(capsys: CaptureFixture[str]) -> None:
 
 
 def test_init_spec_contents(capsys: CaptureFixture[str]) -> None:
-    """Test init creates valid spec with name."""
-    with TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-
-        main(["init", "--name", "testproject", "--path", tmpdir])
-
-        config_path = root / CONFIG_FILENAME
-        contents = config_path.read_text()
-        assert 'name = "testproject"' in contents
-        assert "version = 1" in contents
-        assert "created = " in contents
-
-
-def test_init_uses_directory_name(capsys: CaptureFixture[str]) -> None:
-    """Test init uses directory name if --name not provided."""
+    """Test init creates valid spec."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
 
@@ -63,5 +49,4 @@ def test_init_uses_directory_name(capsys: CaptureFixture[str]) -> None:
 
         config_path = root / CONFIG_FILENAME
         contents = config_path.read_text()
-        # Should contain the temp directory name
-        assert f'name = "{root.name}"' in contents
+        assert "version = 1" in contents
