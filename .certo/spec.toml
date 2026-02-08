@@ -66,7 +66,7 @@ cmd = "uv run coverage report --format=total | python3 -c \"import sys; cov=int(
 
 [[checks]]
 id = "k-ci-versions"
-kind = "fact"
+kind = "scan"
 has = "python.ci-versions"
 
 [[checks]]
@@ -83,7 +83,7 @@ cmd = "OURS=$(grep \"Programming Language :: Python :: 3\\.\" pyproject.toml | g
 
 [[checks]]
 id = "k-version-consistency"
-kind = "fact"
+kind = "scan"
 empty = "python.consistency-issues"
 
 # =============================================================================

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from certo.probe import FactCheck, LLMCheck, ShellCheck, parse_check
+from certo.probe import ScanConfig, LLMConfig, ShellConfig, parse_probe
 
 
 def test_shell_check_parse() -> None:
@@ -17,7 +17,7 @@ def test_shell_check_parse() -> None:
         "not_matches": ["error"],
         "timeout": 30,
     }
-    check = ShellCheck.parse(data)
+    check = ShellConfig.parse(data)
     assert check.kind == "shell"
     assert check.cmd == "echo test"
     assert check.exit_code == 1
@@ -29,7 +29,7 @@ def test_shell_check_parse() -> None:
 def test_shell_check_parse_defaults() -> None:
     """Test parsing a shell check with defaults."""
     data = {"kind": "shell"}
-    check = ShellCheck.parse(data)
+    check = ShellConfig.parse(data)
     assert check.cmd == ""
     assert check.exit_code == 0
     assert check.matches == []
@@ -44,7 +44,7 @@ def test_shell_check_parse_with_id() -> None:
         "id": "k-custom-id",
         "cmd": "echo test",
     }
-    check = ShellCheck.parse(data)
+    check = ShellConfig.parse(data)
     assert check.id == "k-custom-id"
 
 
@@ -54,14 +54,14 @@ def test_shell_check_auto_generates_id() -> None:
         "kind": "shell",
         "cmd": "echo hello",
     }
-    check = ShellCheck.parse(data)
+    check = ShellConfig.parse(data)
     assert check.id.startswith("k-")
     assert len(check.id) > 2
 
 
 def test_shell_check_to_toml() -> None:
     """Test shell check TOML serialization."""
-    check = ShellCheck(
+    check = ShellConfig(
         cmd="echo test",
         exit_code=1,
         matches=["test"],
@@ -80,7 +80,7 @@ def test_shell_check_to_toml() -> None:
 
 def test_shell_check_to_toml_defaults() -> None:
     """Test shell check TOML serialization with defaults."""
-    check = ShellCheck(cmd="echo test")
+    check = ShellConfig(cmd="echo test")
     result = check.to_toml()
     assert "exit_code" not in result
     assert "matches" not in result
@@ -90,7 +90,7 @@ def test_shell_check_to_toml_defaults() -> None:
 
 def test_shell_check_disabled_to_toml() -> None:
     """Test serializing a disabled shell check to TOML."""
-    check = ShellCheck(
+    check = ShellConfig(
         id="k-test",
         status="disabled",
         cmd="echo test",
@@ -106,7 +106,7 @@ def test_llm_check_parse() -> None:
         "files": ["README.md", "src/*.py"],
         "prompt": "Check for X",
     }
-    check = LLMCheck.parse(data)
+    check = LLMConfig.parse(data)
     assert check.kind == "llm"
     assert check.files == ["README.md", "src/*.py"]
     assert check.prompt == "Check for X"
@@ -115,7 +115,7 @@ def test_llm_check_parse() -> None:
 def test_llm_check_parse_defaults() -> None:
     """Test parsing an LLM check with defaults."""
     data = {"kind": "llm"}
-    check = LLMCheck.parse(data)
+    check = LLMConfig.parse(data)
     assert check.files == []
     assert check.prompt is None
 
@@ -127,7 +127,7 @@ def test_llm_check_parse_with_id() -> None:
         "id": "k-llm-custom",
         "files": ["README.md"],
     }
-    check = LLMCheck.parse(data)
+    check = LLMConfig.parse(data)
     assert check.id == "k-llm-custom"
 
 
@@ -137,14 +137,14 @@ def test_llm_check_auto_generates_id() -> None:
         "kind": "llm",
         "files": ["src/*.py"],
     }
-    check = LLMCheck.parse(data)
+    check = LLMConfig.parse(data)
     assert check.id.startswith("k-")
     assert len(check.id) > 2
 
 
 def test_llm_check_to_toml() -> None:
     """Test LLM check TOML serialization."""
-    check = LLMCheck(files=["README.md"], prompt="Check X")
+    check = LLMConfig(files=["README.md"], prompt="Check X")
     result = check.to_toml()
     assert "[[probes]]" in result
     assert 'kind = "llm"' in result
@@ -154,7 +154,7 @@ def test_llm_check_to_toml() -> None:
 
 def test_llm_check_to_toml_defaults() -> None:
     """Test LLM check TOML serialization with defaults."""
-    check = LLMCheck()
+    check = LLMConfig()
     result = check.to_toml()
     assert "files" not in result
     assert "prompt" not in result
@@ -162,7 +162,7 @@ def test_llm_check_to_toml_defaults() -> None:
 
 def test_llm_check_disabled_to_toml() -> None:
     """Test serializing a disabled LLM check to TOML."""
-    check = LLMCheck(
+    check = LLMConfig(
         id="k-test",
         status="disabled",
         files=["README.md"],
@@ -174,10 +174,10 @@ def test_llm_check_disabled_to_toml() -> None:
 def test_fact_check_parse() -> None:
     """Test parsing a fact check."""
     data = {
-        "kind": "fact",
+        "kind": "scan",
         "has": "uses.uv",
     }
-    check = FactCheck.parse(data)
+    check = ScanConfig.parse(data)
     assert check.kind == "scan"
     assert check.has == "uses.uv"
     assert check.id.startswith("k-")
@@ -186,12 +186,12 @@ def test_fact_check_parse() -> None:
 def test_fact_check_parse_equals() -> None:
     """Test parsing a fact check with equals."""
     data = {
-        "kind": "fact",
+        "kind": "scan",
         "id": "k-custom",
         "equals": "python.min-version",
         "value": "3.11",
     }
-    check = FactCheck.parse(data)
+    check = ScanConfig.parse(data)
     assert check.id == "k-custom"
     assert check.equals == "python.min-version"
     assert check.value == "3.11"
@@ -200,18 +200,18 @@ def test_fact_check_parse_equals() -> None:
 def test_fact_check_parse_matches() -> None:
     """Test parsing a fact check with matches."""
     data = {
-        "kind": "fact",
+        "kind": "scan",
         "matches": "python.requires-python",
         "pattern": r">=3\.\d+",
     }
-    check = FactCheck.parse(data)
+    check = ScanConfig.parse(data)
     assert check.matches == "python.requires-python"
     assert check.pattern == r">=3\.\d+"
 
 
 def test_fact_check_to_toml() -> None:
     """Test serializing a fact check to TOML."""
-    check = FactCheck(
+    check = ScanConfig(
         id="k-test",
         has="uses.uv",
     )
@@ -223,7 +223,7 @@ def test_fact_check_to_toml() -> None:
 
 def test_fact_check_to_toml_disabled() -> None:
     """Test serializing a disabled fact check."""
-    check = FactCheck(
+    check = ScanConfig(
         id="k-test",
         status="disabled",
         has="uses.uv",
@@ -234,7 +234,7 @@ def test_fact_check_to_toml_disabled() -> None:
 
 def test_fact_check_to_toml_equals() -> None:
     """Test serializing a fact check with equals."""
-    check = FactCheck(
+    check = ScanConfig(
         id="k-test",
         equals="python.min-version",
         value="3.11",
@@ -246,7 +246,7 @@ def test_fact_check_to_toml_equals() -> None:
 
 def test_fact_check_to_toml_matches() -> None:
     """Test serializing a fact check with matches."""
-    check = FactCheck(
+    check = ScanConfig(
         id="k-test",
         matches="python.requires-python",
         pattern=r">=3\.\d+",
@@ -256,31 +256,31 @@ def test_fact_check_to_toml_matches() -> None:
     assert 'pattern = ">=3' in toml
 
 
-def test_parse_check_shell() -> None:
-    """Test parse_check dispatches to ShellCheck."""
+def test_parse_probe_shell() -> None:
+    """Test parse_probe dispatches to ShellConfig."""
     data = {"kind": "shell", "cmd": "echo test"}
-    check = parse_check(data)
-    assert isinstance(check, ShellCheck)
+    check = parse_probe(data)
+    assert isinstance(check, ShellConfig)
     assert check.cmd == "echo test"
 
 
-def test_parse_check_llm() -> None:
-    """Test parse_check dispatches to LLMCheck."""
+def test_parse_probe_llm() -> None:
+    """Test parse_probe dispatches to LLMConfig."""
     data = {"kind": "llm", "files": ["README.md"]}
-    check = parse_check(data)
-    assert isinstance(check, LLMCheck)
+    check = parse_probe(data)
+    assert isinstance(check, LLMConfig)
     assert check.files == ["README.md"]
 
 
-def test_parse_check_fact() -> None:
-    """Test parse_check with fact kind."""
-    data = {"kind": "fact", "has": "uses.uv"}
-    check = parse_check(data)
-    assert isinstance(check, FactCheck)
+def test_parse_probe_fact() -> None:
+    """Test parse_probe with fact kind."""
+    data = {"kind": "scan", "has": "uses.uv"}
+    check = parse_probe(data)
+    assert isinstance(check, ScanConfig)
 
 
-def test_parse_check_unknown() -> None:
-    """Test parse_check raises on unknown kind."""
+def test_parse_probe_unknown() -> None:
+    """Test parse_probe raises on unknown kind."""
     data = {"kind": "unknown"}
     with pytest.raises(ValueError, match="Unknown probe kind"):
-        parse_check(data)
+        parse_probe(data)

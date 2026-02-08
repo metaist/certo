@@ -6,8 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from certo.probe import check_spec
-from certo.probe.core import CheckContext
-from certo.probe.shell import ShellCheck, ShellRunner
+from certo.probe.core import ProbeContext
+from certo.probe.shell import ShellConfig, ShellProbe
 from certo.spec import Claim
 
 
@@ -243,14 +243,14 @@ def test_shell_runner_not_matches_fails() -> None:
     """Test shell runner fails when not_matches pattern is found."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = ShellCheck(cmd="echo 'ERROR: something bad'", not_matches=["ERROR"])
+        check = ShellConfig(cmd="echo 'ERROR: something bad'", not_matches=["ERROR"])
 
-        result = ShellRunner().run(ctx, claim, check)
+        result = ShellProbe().run(ctx, claim, check)
         assert not result.passed
         assert "forbidden" in result.message.lower()
 
@@ -261,15 +261,15 @@ def test_shell_runner_command_exception() -> None:
 
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = ShellCheck(cmd="echo hello")
+        check = ShellConfig(cmd="echo hello")
 
         with patch("subprocess.run", side_effect=OSError("mock error")):
-            result = ShellRunner().run(ctx, claim, check)
+            result = ShellProbe().run(ctx, claim, check)
 
         assert not result.passed
         assert "failed" in result.message.lower()
@@ -279,14 +279,14 @@ def test_shell_runner_not_matches_passes_when_no_match() -> None:
     """Test shell runner passes when not_matches pattern is not found."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = ShellCheck(cmd="echo 'all good'", not_matches=["ERROR", "FAIL"])
+        check = ShellConfig(cmd="echo 'all good'", not_matches=["ERROR", "FAIL"])
 
-        result = ShellRunner().run(ctx, claim, check)
+        result = ShellProbe().run(ctx, claim, check)
         assert result.passed
 
 
@@ -294,13 +294,13 @@ def test_shell_runner_with_claim_none() -> None:
     """Test shell runner handles claim=None (top-level check)."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
-        check = ShellCheck(id="k-test", cmd="echo hello")
+        check = ShellConfig(id="k-test", cmd="echo hello")
 
-        result = ShellRunner().run(ctx, None, check)
+        result = ShellProbe().run(ctx, None, check)
         assert result.passed
         assert result.rule_id == ""
         assert result.rule_text == ""

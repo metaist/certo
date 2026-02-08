@@ -229,9 +229,3 @@ class LLMFact(Fact):
             model=data.get("model", ""),
             tokens=data.get("tokens", {}),
         )
-
-
-# Aliases for backward compatibility during transition
-LLMCheck = LLMConfig
-LLMRunner = LLMProbe
-LlmEvidence = LLMFact

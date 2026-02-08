@@ -227,7 +227,7 @@ version = 1
 ```
 
 ```bash
-certo check add fact --has python.version
+certo check add scan --has python.version
 ```
 
 **Expected**
@@ -245,7 +245,7 @@ version = 1
 ```
 
 ```bash
-certo check add fact
+certo check add scan
 ```
 
 **Exit Code:** 1
@@ -739,7 +739,7 @@ version = 1
 ```
 
 ```bash
-certo check add fact --equals python.version --value "3.14"
+certo check add scan --equals python.version --value "3.14"
 ```
 
 **Expected**
@@ -757,7 +757,7 @@ version = 1
 ```
 
 ```bash
-certo check add fact --equals python.version
+certo check add scan --equals python.version
 ```
 
 **Exit Code:** 1

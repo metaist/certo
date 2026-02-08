@@ -171,7 +171,7 @@ def _show_checks(spec: Spec, output: Output) -> None:
 
 def _show_check_detail(check: object, output: Output) -> None:
     """Show full check details."""
-    from certo.probe import FactCheck, LLMCheck, ShellCheck, UrlCheck
+    from certo.probe import LLMConfig, ScanConfig, ShellConfig, UrlConfig
 
     check_id = getattr(check, "id", "")
     kind = getattr(check, "kind", "")
@@ -182,21 +182,21 @@ def _show_check_detail(check: object, output: Output) -> None:
     output.info(f"Status: {status}")
 
     match check:
-        case UrlCheck():
+        case UrlConfig():
             output.info(f"URL:    {check.url}")
             if check.cmd:
                 output.info(f"Cmd:    {check.cmd}")
-        case ShellCheck():
+        case ShellConfig():
             output.info(f"Cmd:    {check.cmd}")
             if check.exit_code != 0:
                 output.info(f"Exit:   {check.exit_code}")
             if check.matches:
                 output.info(f"Match:  {check.matches}")
-        case LLMCheck():
+        case LLMConfig():
             output.info(f"Files:  {check.files}")
             if check.prompt:
                 output.info(f"Prompt: {check.prompt}")
-        case FactCheck():
+        case ScanConfig():
             if check.has:
                 output.info(f"Has:    {check.has}")
             if check.equals:

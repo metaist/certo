@@ -204,9 +204,3 @@ class ShellFact(Fact):
             stderr=data.get("stderr", ""),
             json=data.get("json"),
         )
-
-
-# Aliases for backward compatibility during transition
-ShellCheck = ShellConfig
-ShellRunner = ShellProbe
-ShellEvidence = ShellFact

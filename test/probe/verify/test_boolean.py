@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from certo.probe.core import Fact
-from certo.probe.verify import Verify, verify_claim
+from certo.probe.verify import Verify, verify_rule
 
 
 def test_and_pass(fact_map: dict[str, Fact]) -> None:
@@ -16,7 +16,7 @@ def test_and_pass(fact_map: dict[str, Fact]) -> None:
             ]
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert result.passed
 
 
@@ -30,7 +30,7 @@ def test_and_fail(fact_map: dict[str, Fact]) -> None:
             ]
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert not result.passed
 
 
@@ -44,7 +44,7 @@ def test_or_first_passes(fact_map: dict[str, Fact]) -> None:
             ]
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert result.passed
 
 
@@ -58,7 +58,7 @@ def test_or_second_passes(fact_map: dict[str, Fact]) -> None:
             ]
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert result.passed
 
 
@@ -72,21 +72,21 @@ def test_or_none_pass(fact_map: dict[str, Fact]) -> None:
             ]
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert not result.passed
 
 
 def test_not_pass(fact_map: dict[str, Fact]) -> None:
     """Test NOT passes when inner fails."""
     verify = Verify.parse({"not": {"k-failing.stderr": {"empty": True}}})
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert result.passed  # stderr is NOT empty
 
 
 def test_not_fail(fact_map: dict[str, Fact]) -> None:
     """Test NOT fails when inner passes."""
     verify = Verify.parse({"not": {"k-pytest.exit_code": {"eq": 0}}})
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert not result.passed  # exit_code IS 0
 
 
@@ -98,7 +98,7 @@ def test_implicit_and_pass(fact_map: dict[str, Fact]) -> None:
             "k-pytest.duration": {"lt": 10},
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert result.passed
 
 
@@ -110,5 +110,5 @@ def test_implicit_and_fail(fact_map: dict[str, Fact]) -> None:
             "k-pytest.duration": {"lt": 1},
         }
     )
-    result = verify_claim(verify, fact_map)
+    result = verify_rule(verify, fact_map)
     assert not result.passed

@@ -58,10 +58,6 @@ def verify_rule(
     return _evaluate_rules(verify.rules, fact_map)
 
 
-# Backward compat alias
-verify_claim = verify_rule
-
-
 def _evaluate_rules(
     rules: dict[str, Any],
     fact_map: dict[str, Fact],

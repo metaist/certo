@@ -198,7 +198,3 @@ def _resolve_path(
                 pass  # Segment not found or wrong data type
 
     return results
-
-
-# Backward compat alias
-Evidence = Fact

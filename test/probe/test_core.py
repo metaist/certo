@@ -1,4 +1,4 @@
-"""Tests for certo.check.core module."""
+"""Tests for certo.config.core module."""
 
 from __future__ import annotations
 
@@ -250,30 +250,30 @@ cmd = "exit 1"
 
 
 def test_check_base_parse_raises() -> None:
-    """Test that Check.parse raises NotImplementedError."""
+    """Test that ProbeConfig.parse raises NotImplementedError."""
     import pytest
-    from certo.probe.core import Check
+    from certo.probe.core import ProbeConfig
 
     with pytest.raises(NotImplementedError):
-        Check.parse({})
+        ProbeConfig.parse({})
 
 
 def test_check_base_to_toml_raises() -> None:
-    """Test that Check.to_toml raises NotImplementedError."""
+    """Test that ProbeConfig.to_toml raises NotImplementedError."""
     import pytest
-    from certo.probe.core import Check
+    from certo.probe.core import ProbeConfig
 
-    check = Check()
+    config = ProbeConfig()
     with pytest.raises(NotImplementedError):
-        check.to_toml()
+        config.to_toml()
 
 
 def test_check_content_hash() -> None:
-    """Test Check.content_hash generates deterministic hash."""
-    from certo.probe.core import Check
+    """Test ProbeConfig.content_hash generates deterministic hash."""
+    from certo.probe.core import ProbeConfig
 
-    check = Check(kind="shell", id="k-test")
-    hash1 = check.content_hash()
-    hash2 = check.content_hash()
+    config = ProbeConfig(kind="shell", id="k-test")
+    hash1 = config.content_hash()
+    hash2 = config.content_hash()
     assert hash1 == hash2
     assert hash1.startswith("h-")

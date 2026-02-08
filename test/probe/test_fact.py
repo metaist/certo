@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.probe.core import CheckContext
-from certo.probe.fact import clear_scan_cache, FactRunner
+from certo.probe.core import ProbeContext
+from certo.probe.fact import clear_scan_cache, ScanProbe
 from certo.spec import Claim
-from certo.probe import FactCheck
+from certo.probe import ScanConfig
 
 
 def test_fact_check_has_exists() -> None:
@@ -18,14 +18,14 @@ def test_fact_check_has_exists() -> None:
         (root / "uv.lock").write_text("")
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Uses uv", status="confirmed")
-        check = FactCheck(has="uses.uv")
+        check = ScanConfig(has="uses.uv")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert result.passed
         assert result.passed
 
@@ -36,14 +36,14 @@ def test_fact_check_has_missing() -> None:
         root = Path(tmpdir)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Uses uv", status="confirmed")
-        check = FactCheck(has="uses.uv")
+        check = ScanConfig(has="uses.uv")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "not found" in result.message
 
@@ -58,14 +58,14 @@ requires-python = ">=3.11"
 """)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Python 3.11+", status="confirmed")
-        check = FactCheck(equals="python.min-version", value="3.11")
+        check = ScanConfig(equals="python.min-version", value="3.11")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert result.passed
         assert result.passed
 
@@ -80,14 +80,14 @@ requires-python = ">=3.11"
 """)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Python 3.12+", status="confirmed")
-        check = FactCheck(equals="python.min-version", value="3.12")
+        check = ScanConfig(equals="python.min-version", value="3.12")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "3.11" in result.message  # actual value
         assert "3.12" in result.message  # expected value
@@ -99,14 +99,14 @@ def test_fact_check_equals_missing() -> None:
         root = Path(tmpdir)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = FactCheck(equals="missing.fact", value="foo")
+        check = ScanConfig(equals="missing.fact", value="foo")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "not found" in result.message
 
@@ -121,14 +121,14 @@ requires-python = ">=3.11,<4.0"
 """)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Python 3.x", status="confirmed")
-        check = FactCheck(matches="python.requires-python", pattern=r">=3\.\d+")
+        check = ScanConfig(matches="python.requires-python", pattern=r">=3\.\d+")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert result.passed
         assert result.passed
 
@@ -143,14 +143,14 @@ requires-python = ">=3.11"
 """)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Python 4+", status="confirmed")
-        check = FactCheck(matches="python.requires-python", pattern=r">=4\.\d+")
+        check = ScanConfig(matches="python.requires-python", pattern=r">=4\.\d+")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "doesn't match" in result.message
 
@@ -161,14 +161,14 @@ def test_fact_check_matches_missing() -> None:
         root = Path(tmpdir)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = FactCheck(matches="missing.fact", pattern=".*")
+        check = ScanConfig(matches="missing.fact", pattern=".*")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "not found" in result.message
 
@@ -179,14 +179,14 @@ def test_fact_check_no_criteria() -> None:
         root = Path(tmpdir)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = FactCheck()
+        check = ScanConfig()
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "no criteria" in result.message
 
@@ -199,14 +199,14 @@ def test_fact_check_empty_fails_when_not_empty() -> None:
         (root / "uv.lock").write_text("")
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="No uv", status="confirmed")
-        check = FactCheck(empty="uses.uv")
+        check = ScanConfig(empty="uses.uv")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert "not empty" in result.message.lower()
 
@@ -222,14 +222,14 @@ name = "test"
 """)
 
         clear_scan_cache()
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Has requires-python", status="confirmed")
-        check = FactCheck(has="python.requires-python")
+        check = ScanConfig(has="python.requires-python")
 
-        result = FactRunner().run(ctx, claim, check)
+        result = ScanProbe().run(ctx, claim, check)
         assert not result.passed
         assert (
             "falsy" in result.message.lower() or "not found" in result.message.lower()
@@ -250,14 +250,14 @@ def test_fact_check_has_fact_is_falsy_empty_string() -> None:
 
         with patch("certo.scan.scan_project", return_value=mock_result):
             clear_scan_cache()
-            ctx = CheckContext(
+            ctx = ProbeContext(
                 project_root=root,
                 spec_path=root / ".certo" / "spec.toml",
             )
             claim = Claim(id="c-test", text="Has test", status="confirmed")
-            check = FactCheck(has="test.empty")
+            check = ScanConfig(has="test.empty")
 
-            result = FactRunner().run(ctx, claim, check)
+            result = ScanProbe().run(ctx, claim, check)
             assert not result.passed
             assert "falsy" in result.message.lower()
 
@@ -277,14 +277,14 @@ def test_fact_check_empty_passes_when_fact_is_empty() -> None:
 
         with patch("certo.scan.scan_project", return_value=mock_result):
             clear_scan_cache()
-            ctx = CheckContext(
+            ctx = ProbeContext(
                 project_root=root,
                 spec_path=root / ".certo" / "spec.toml",
             )
             claim = Claim(id="c-test", text="No issues", status="confirmed")
-            check = FactCheck(empty="test.empty")
+            check = ScanConfig(empty="test.empty")
 
-            result = FactRunner().run(ctx, claim, check)
+            result = ScanProbe().run(ctx, claim, check)
             assert result.passed
 
 
@@ -301,12 +301,12 @@ def test_fact_check_empty_passes_when_fact_not_found() -> None:
 
         with patch("certo.scan.scan_project", return_value=mock_result):
             clear_scan_cache()
-            ctx = CheckContext(
+            ctx = ProbeContext(
                 project_root=root,
                 spec_path=root / ".certo" / "spec.toml",
             )
             claim = Claim(id="c-test", text="No issues", status="confirmed")
-            check = FactCheck(empty="test.missing")
+            check = ScanConfig(empty="test.missing")
 
-            result = FactRunner().run(ctx, claim, check)
+            result = ScanProbe().run(ctx, claim, check)
             assert result.passed

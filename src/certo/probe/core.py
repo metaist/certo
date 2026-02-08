@@ -160,12 +160,3 @@ class Probe(Protocol):
     def run(self, ctx: ProbeContext, rule: Rule | None, config: Any) -> ProbeResult:
         """Run the probe and return a result."""
         ...  # pragma: no cover
-
-
-# Aliases for backward compatibility during transition
-Evidence = Fact
-CheckResult = ProbeResult
-ResultEvidence = ResultFact
-CheckContext = ProbeContext
-Check = ProbeConfig
-Runner = Probe

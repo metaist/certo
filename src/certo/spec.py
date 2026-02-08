@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Self
 
-from certo.probe.core import Check
+from certo.probe.core import ProbeConfig
 from certo.probe.verify import Verify
 
 
@@ -164,7 +164,7 @@ class Spec:
     version: int = 1  # schema version
     created: datetime | None = None
     author: str = ""
-    checks: list[Check] = field(default_factory=list)
+    checks: list[ProbeConfig] = field(default_factory=list)
     claims: list[Claim] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
 
@@ -207,7 +207,7 @@ class Spec:
                 return issue
         return None
 
-    def get_check(self, check_id: str) -> Check | None:
+    def get_check(self, check_id: str) -> ProbeConfig | None:
         """Get a check by ID."""
         for check in self.checks:
             if check.id == check_id:

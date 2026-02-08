@@ -7,8 +7,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
-from certo.probe.core import CheckContext
-from certo.probe.url import UrlCheck, UrlRunner
+from certo.probe.core import ProbeContext
+from certo.probe.url import UrlConfig, UrlProbe
 from certo.spec import Claim
 
 
@@ -21,7 +21,7 @@ def test_url_check_parse() -> None:
         "cache_ttl": 3600,
         "cmd": "jq .",
     }
-    check = UrlCheck.parse(data)
+    check = UrlConfig.parse(data)
     assert check.kind == "url"
     assert check.id == "k-test"
     assert check.url == "https://example.com/api.json"
@@ -32,7 +32,7 @@ def test_url_check_parse() -> None:
 def test_url_check_parse_defaults() -> None:
     """Test parsing a URL check with defaults."""
     data = {"kind": "url", "url": "https://example.com"}
-    check = UrlCheck.parse(data)
+    check = UrlConfig.parse(data)
     assert check.cache_ttl == 86400
     assert check.cmd == ""
     assert check.id.startswith("k-")
@@ -40,7 +40,7 @@ def test_url_check_parse_defaults() -> None:
 
 def test_url_check_to_toml() -> None:
     """Test URL check serialization."""
-    check = UrlCheck(
+    check = UrlConfig(
         id="k-test",
         url="https://example.com/api.json",
         cmd="jq .",
@@ -54,7 +54,7 @@ def test_url_check_to_toml() -> None:
 
 def test_url_check_to_toml_with_cache_ttl() -> None:
     """Test URL check serialization with non-default cache_ttl."""
-    check = UrlCheck(
+    check = UrlConfig(
         id="k-test",
         url="https://example.com",
         cache_ttl=3600,
@@ -67,14 +67,14 @@ def test_url_runner_no_url() -> None:
     """Test URL runner with missing URL."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=root / ".certo" / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url="")
+        check = UrlConfig(id="k-test", url="")
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         assert not result.passed
         assert "no url" in result.message.lower()
 
@@ -86,15 +86,15 @@ def test_url_runner_offline_no_cache() -> None:
         certo_dir = root / ".certo"
         certo_dir.mkdir()
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url="https://example.com")
+        check = UrlConfig(id="k-test", url="https://example.com")
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         assert result.skipped
         assert "offline" in result.skip_reason.lower()
 
@@ -118,15 +118,15 @@ def test_url_runner_uses_cache() -> None:
         cache_file.write_text('{"status": "ok"}')
         cache_meta.write_text(f"{time.time()}\n{url}")
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url=url)
+        check = UrlConfig(id="k-test", url=url)
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         assert result.passed
         assert "(cached)" in result.message
 
@@ -151,15 +151,15 @@ def test_url_runner_cache_expired() -> None:
         # Set time to 2 days ago (expired for default 1 day TTL)
         cache_meta.write_text(f"{time.time() - 200000}\n{url}")
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url=url)
+        check = UrlConfig(id="k-test", url=url)
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         # Should skip because cache expired and we're offline
         assert result.skipped
 
@@ -171,13 +171,13 @@ def test_url_runner_fetches_url() -> None:
         certo_dir = root / ".certo"
         certo_dir.mkdir()
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url="https://example.com")
+        check = UrlConfig(id="k-test", url="https://example.com")
 
         # Mock urlopen
         mock_response = MagicMock()
@@ -186,7 +186,7 @@ def test_url_runner_fetches_url() -> None:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with patch("urllib.request.urlopen", return_value=mock_response):
-            result = UrlRunner().run(ctx, claim, check)
+            result = UrlProbe().run(ctx, claim, check)
 
         assert result.passed
         assert "fetched" in result.message.lower()
@@ -199,16 +199,16 @@ def test_url_runner_fetch_error() -> None:
         certo_dir = root / ".certo"
         certo_dir.mkdir()
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url="https://example.com")
+        check = UrlConfig(id="k-test", url="https://example.com")
 
         with patch("urllib.request.urlopen", side_effect=Exception("Connection error")):
-            result = UrlRunner().run(ctx, claim, check)
+            result = UrlProbe().run(ctx, claim, check)
 
         assert not result.passed
         assert "failed to fetch" in result.message.lower()
@@ -233,14 +233,14 @@ def test_url_runner_with_command() -> None:
         cache_file.write_text('{"status": "ok"}')
         cache_meta.write_text(f"{time.time()}\n{url}")
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url=url, cmd="cat")
+        check = UrlConfig(id="k-test", url=url, cmd="cat")
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         assert result.passed
         assert '{"status": "ok"}' in result.output
 
@@ -264,21 +264,21 @@ def test_url_runner_command_fails() -> None:
         cache_file.write_text('{"status": "ok"}')
         cache_meta.write_text(f"{time.time()}\n{url}")
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url=url, cmd="false")
+        check = UrlConfig(id="k-test", url=url, cmd="false")
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         assert not result.passed
         assert "exit code" in result.message.lower()
 
 
 def test_url_check_to_toml_all_options() -> None:
     """Test URL check serialization with all options."""
-    check = UrlCheck(
+    check = UrlConfig(
         id="k-test",
         status="disabled",
         url="https://example.com/api.json",
@@ -320,15 +320,15 @@ def test_url_runner_handles_corrupted_cache_meta() -> None:
         cache_file.write_text('{"status": "ok"}')
         cache_meta.write_text("not a valid timestamp\n{url}")  # Corrupted
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url=url)
+        check = UrlConfig(id="k-test", url=url)
 
-        result = UrlRunner().run(ctx, claim, check)
+        result = UrlProbe().run(ctx, claim, check)
         # Should skip because cache is corrupted and we're offline
         assert result.skipped
 
@@ -340,13 +340,13 @@ def test_url_runner_fresh_fetch_no_cached_indicator() -> None:
         certo_dir = root / ".certo"
         certo_dir.mkdir()
 
-        ctx = CheckContext(
+        ctx = ProbeContext(
             project_root=root,
             spec_path=certo_dir / "spec.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
-        check = UrlCheck(id="k-test", url="https://example.com", cmd="cat")
+        check = UrlConfig(id="k-test", url="https://example.com", cmd="cat")
 
         # Mock urlopen for fresh fetch
         mock_response = MagicMock()
@@ -355,7 +355,7 @@ def test_url_runner_fresh_fetch_no_cached_indicator() -> None:
         mock_response.__exit__ = MagicMock(return_value=False)
 
         with patch("urllib.request.urlopen", return_value=mock_response):
-            result = UrlRunner().run(ctx, claim, check)
+            result = UrlProbe().run(ctx, claim, check)
 
         assert result.passed
         # Fresh fetch should not have (cached) in message

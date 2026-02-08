@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.probe.shell import ShellCheck
+from certo.probe.shell import ShellConfig
 from certo.spec import Claim, Issue, Spec
 
 
@@ -120,8 +120,8 @@ def test_spec_get_check() -> None:
         name="test",
         version=1,
         checks=[
-            ShellCheck(id="k-first", cmd="true"),
-            ShellCheck(id="k-second", cmd="true"),
+            ShellConfig(id="k-first", cmd="true"),
+            ShellConfig(id="k-second", cmd="true"),
         ],
     )
 
@@ -138,7 +138,7 @@ def test_spec_to_toml_with_checks() -> None:
         name="test",
         version=1,
         checks=[
-            ShellCheck(id="k-test", cmd="echo hello"),
+            ShellConfig(id="k-test", cmd="echo hello"),
         ],
     )
     result = spec.to_toml()
@@ -185,7 +185,7 @@ def test_spec_save_and_load() -> None:
     spec = Spec(
         name="test",
         version=1,
-        checks=[ShellCheck(id="k-test", cmd="echo test")],
+        checks=[ShellConfig(id="k-test", cmd="echo test")],
         claims=[Claim(id="c-abc", text="Test claim", status="confirmed")],
         issues=[Issue(id="i-abc", text="Question?")],
     )

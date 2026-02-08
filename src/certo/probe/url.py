@@ -194,9 +194,3 @@ class UrlFact(Fact):
             body=data.get("body", ""),
             json=data.get("json"),
         )
-
-
-# Aliases for backward compatibility during transition
-UrlCheck = UrlConfig
-UrlRunner = UrlProbe
-UrlEvidence = UrlFact

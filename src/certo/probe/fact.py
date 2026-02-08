@@ -209,9 +209,3 @@ class ScanFact(Fact):
             probe_hash=data.get("probe_hash", ""),
             facts=data.get("facts", {}),
         )
-
-
-# Aliases for backward compatibility during transition
-FactCheck = ScanConfig
-FactRunner = ScanProbe
-FactEvidence = ScanFact

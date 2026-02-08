@@ -17,13 +17,6 @@ from certo.probe.core import (
     ProbeResult,
     ResultFact,
     generate_id,
-    # Backward compat aliases
-    Check,
-    CheckContext,
-    CheckResult,
-    Evidence,
-    ResultEvidence,
-    Runner,
 )
 from certo.probe.fact import ScanConfig, ScanProbe, clear_scan_cache
 from certo.probe.llm import LLMConfig, LLMProbe
@@ -31,23 +24,11 @@ from certo.probe.shell import ShellConfig, ShellProbe
 from certo.probe.url import UrlConfig, UrlProbe
 from certo.probe.verify import Verify, VerifyResult, verify_rule
 
-# Backward compat aliases for old names
-FactCheck = ScanConfig
-FactRunner = ScanProbe
-LLMCheck = LLMConfig
-LLMRunner = LLMProbe
-ShellCheck = ShellConfig
-ShellRunner = ShellProbe
-UrlCheck = UrlConfig
-UrlRunner = UrlProbe
-verify_claim = verify_rule
-
 # Registry mapping kind -> (ConfigClass, ProbeInstance)
 REGISTRY: dict[str, tuple[type[ProbeConfig], Probe]] = {
     "shell": (ShellConfig, ShellProbe()),
     "llm": (LLMConfig, LLMProbe()),
     "scan": (ScanConfig, ScanProbe()),
-    "fact": (ScanConfig, ScanProbe()),  # Alias for backward compat
     "url": (UrlConfig, UrlProbe()),
 }
 
@@ -61,18 +42,10 @@ def parse_probe(data: dict[str, Any]) -> ProbeConfig:
     return config_cls.parse(data)
 
 
-# Backward compat alias
-parse_check = parse_probe
-
-
 def get_probe(kind: str) -> Probe | None:
     """Get the probe for a config kind."""
     entry = REGISTRY.get(kind)
     return entry[1] if entry else None
-
-
-# Backward compat alias
-get_runner = get_probe
 
 
 def check_spec(
@@ -117,7 +90,7 @@ def check_spec(
     except Exception as e:
         raise ValueError(f"Failed to parse spec: {e}") from None
 
-    # Run probes (still called "checks" in spec for now)
+    # Run probes
     for probe_config in ctx.spec.checks:
         probe_id = probe_config.id or ""
 
@@ -255,7 +228,7 @@ def check_spec(
 
 
 __all__ = [
-    # New names
+    # Core types
     "Fact",
     "Probe",
     "ProbeConfig",
@@ -285,22 +258,4 @@ __all__ = [
     "check_spec",
     # Utilities
     "clear_scan_cache",
-    # Backward compat aliases
-    "Check",
-    "CheckContext",
-    "CheckResult",
-    "Evidence",
-    "ResultEvidence",
-    "Runner",
-    "FactCheck",
-    "FactRunner",
-    "LLMCheck",
-    "LLMRunner",
-    "ShellCheck",
-    "ShellRunner",
-    "UrlCheck",
-    "UrlRunner",
-    "parse_check",
-    "get_runner",
-    "verify_claim",
 ]

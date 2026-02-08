@@ -7,7 +7,7 @@ from argparse import ArgumentParser, Namespace, _SubParsersAction
 from pathlib import Path
 from typing import Any, Callable
 
-from certo.probe import CheckResult, check_spec, parse_check
+from certo.probe import ProbeResult, check_spec, parse_probe
 from certo.cli.output import Output, OutputFormat
 from certo.spec import Spec, generate_id
 
@@ -94,7 +94,7 @@ def add_check_parser(
     )
     list_parser.add_argument(
         "--kind",
-        choices=["shell", "llm", "fact", "url"],
+        choices=["shell", "llm", "scan", "url"],
         help="filter by check kind",
     )
     list_parser.set_defaults(func=cmd_check_list)
@@ -109,7 +109,7 @@ def add_check_parser(
     add_parser = check_subparsers.add_parser("add", help="add a new check")
     add_global_args(add_parser)
     add_parser.add_argument(
-        "kind", choices=["shell", "llm", "fact", "url"], help="check kind"
+        "kind", choices=["shell", "llm", "scan", "url"], help="check kind"
     )
     add_parser.add_argument("--id", help="check ID (auto-generated if not provided)")
     add_parser.add_argument(
@@ -219,7 +219,7 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
     # Group results by claim
     from collections import defaultdict
 
-    claim_results: dict[str, list[CheckResult]] = defaultdict(list)
+    claim_results: dict[str, list[ProbeResult]] = defaultdict(list)
     for result in results:
         claim_results[result.rule_id].append(result)
 
@@ -335,25 +335,25 @@ def cmd_check_show(args: Namespace, output: Output) -> int:
     }
 
     # Add kind-specific fields
-    from certo.probe.shell import ShellCheck
-    from certo.probe.llm import LLMCheck
-    from certo.probe.fact import FactCheck
-    from certo.probe.url import UrlCheck
+    from certo.probe.shell import ShellConfig
+    from certo.probe.llm import LLMConfig
+    from certo.probe.fact import ScanConfig
+    from certo.probe.url import UrlConfig
 
-    # Note: UrlCheck must come before ShellCheck (UrlCheck extends ShellCheck)
+    # Note: UrlConfig must come before ShellConfig (UrlConfig extends ShellConfig)
     match check:
-        case UrlCheck():
+        case UrlConfig():
             check_dict["url"] = check.url
             check_dict["cmd"] = check.cmd
-        case ShellCheck():
+        case ShellConfig():
             check_dict["cmd"] = check.cmd
             check_dict["exit_code"] = check.exit_code
             check_dict["matches"] = check.matches
             check_dict["timeout"] = check.timeout
-        case LLMCheck():
+        case LLMConfig():
             check_dict["files"] = check.files
             check_dict["prompt"] = check.prompt
-        case FactCheck():
+        case ScanConfig():
             check_dict["has"] = check.has
             check_dict["empty"] = check.empty
             check_dict["equals"] = check.equals
@@ -408,7 +408,7 @@ def cmd_check_add(args: Namespace, output: Output) -> int:
             else:
                 check_data["id"] = generate_id("k", f"llm:{args.files}")
 
-        case "fact":
+        case "scan":
             if not any([args.has, args.empty, args.equals]):
                 output.error("Fact checks require --has, --empty, or --equals")
                 return 1
@@ -447,7 +447,7 @@ def cmd_check_add(args: Namespace, output: Output) -> int:
         return 1
 
     # Parse and add check
-    check = parse_check(check_data)
+    check = parse_probe(check_data)
     spec.checks.append(check)
     spec.save(spec_path)
 
@@ -551,22 +551,22 @@ def _print_check_detail(check: Any, output: Output) -> None:
     if output.quiet:
         return
 
-    from certo.probe.shell import ShellCheck
-    from certo.probe.llm import LLMCheck
-    from certo.probe.fact import FactCheck
-    from certo.probe.url import UrlCheck
+    from certo.probe.shell import ShellConfig
+    from certo.probe.llm import LLMConfig
+    from certo.probe.fact import ScanConfig
+    from certo.probe.url import UrlConfig
 
     print(f"ID:     {check.id}")
     print(f"Kind:   {check.kind}")
     print(f"Status: {check.status}")
 
-    # Note: UrlCheck must come before ShellCheck (UrlCheck extends ShellCheck)
+    # Note: UrlConfig must come before ShellConfig (UrlConfig extends ShellConfig)
     match check:
-        case UrlCheck():
+        case UrlConfig():
             print(f"URL:    {check.url}")
             if check.cmd:
                 print(f"Cmd:    {check.cmd}")
-        case ShellCheck():
+        case ShellConfig():
             print(f"Cmd:    {check.cmd}")
             if check.exit_code != 0:
                 print(f"Exit:   {check.exit_code}")
@@ -574,11 +574,11 @@ def _print_check_detail(check: Any, output: Output) -> None:
                 print(f"Match:  {check.matches}")
             if check.timeout != 60:
                 print(f"Timeout: {check.timeout}s")
-        case LLMCheck():
+        case LLMConfig():
             print(f"Files:  {check.files}")
             if check.prompt:
                 print(f"Prompt: {check.prompt}")
-        case FactCheck():
+        case ScanConfig():
             if check.has:
                 print(f"Has:    {check.has}")
             if check.empty:
@@ -587,8 +587,8 @@ def _print_check_detail(check: Any, output: Output) -> None:
                 print(f"Equals: {check.equals} = {check.value}")
 
 
-def _result_to_dict(result: CheckResult) -> dict[str, Any]:
-    """Convert CheckResult to dict, including all fields."""
+def _result_to_dict(result: ProbeResult) -> dict[str, Any]:
+    """Convert ProbeResult to dict, including all fields."""
     return {
         "rule_id": result.rule_id,
         "rule_text": result.rule_text,
@@ -618,7 +618,7 @@ def _output_claim(
     passed: bool,
     failed: bool,
     skipped: bool,
-    checks: list[CheckResult],
+    checks: list[ProbeResult],
 ) -> None:
     """Output a claim and its checks."""
     if output.format != OutputFormat.TEXT:
@@ -656,7 +656,7 @@ def _output_claim(
         _output_check_result(output, result)
 
 
-def _output_check_result(output: Output, result: CheckResult) -> None:
+def _output_check_result(output: Output, result: ProbeResult) -> None:
     """Output a single check result (indented under claim)."""
     if output.format != OutputFormat.TEXT:  # pragma: no cover
         return
