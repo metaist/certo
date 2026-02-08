@@ -88,7 +88,7 @@ class UrlProbe(ShellProbe):
 
         # Cache path
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
-        cache_dir = ctx.spec_path.parent / "cache" / "url"
+        cache_dir = ctx.cache_dir / "url"
         cache_file = cache_dir / f"{url_hash}.txt"
         cache_meta = cache_dir / f"{url_hash}.meta"
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from certo.probe import ProbeResult, check_spec, parse_probe
-from certo.cli.output import Output, OutputFormat
+from certo.cli.output import Output, OutputFormat, get_config_path
 from certo.spec import Spec, generate_id
 
 
@@ -172,9 +172,12 @@ def add_check_parser(
 
 def cmd_check_run(args: Namespace, output: Output) -> int:
     """Run verification checks against the spec."""
-    spec_path = args.path / ".certo" / "spec.toml"
+    config_path = get_config_path(args, output)
+    if config_path is None:
+        output.json_output({"passed": 0, "failed": 1, "error": "Config not found"})
+        return 1
 
-    output.verbose_info(f"Checking spec: {spec_path}")
+    output.verbose_info(f"Checking spec: {config_path}")
 
     offline = getattr(args, "offline", False)
     no_cache = getattr(args, "no_cache", False)
@@ -189,6 +192,10 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
     # Get --output path
     output_path = getattr(args, "output", None)
 
+    # If output is to stdout ("-"), suppress text output
+    if output_path == "-":
+        output.quiet = True
+
     if offline:
         output.verbose_info(
             "Running in offline mode (using cached results where available)"
@@ -202,7 +209,7 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
 
     try:
         results = check_spec(
-            spec_path,
+            config_path,
             offline=offline,
             no_cache=no_cache,
             model=model,
@@ -277,13 +284,11 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
 
 def cmd_check_list(args: Namespace, output: Output) -> int:
     """List all checks."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
 
     # Filter checks
     status_filter = getattr(args, "status", None)
@@ -312,13 +317,11 @@ def cmd_check_list(args: Namespace, output: Output) -> int:
 
 def cmd_check_show(args: Namespace, output: Output) -> int:
     """Show check details."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     check = spec.get_check(args.id)
 
     if not check:
@@ -366,13 +369,11 @@ def cmd_check_show(args: Namespace, output: Output) -> int:
 
 def cmd_check_add(args: Namespace, output: Output) -> int:
     """Add a new check."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
 
     # Build check data based on kind
     check_data: dict[str, Any] = {
@@ -449,7 +450,7 @@ def cmd_check_add(args: Namespace, output: Output) -> int:
     # Parse and add check
     check = parse_probe(check_data)
     spec.checks.append(check)
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Added check: {check_id}")
     output.json_output({"id": check_id, "kind": args.kind, "status": args.status})
@@ -459,13 +460,11 @@ def cmd_check_add(args: Namespace, output: Output) -> int:
 
 def cmd_check_remove(args: Namespace, output: Output) -> int:
     """Remove a check."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     check = spec.get_check(args.id)
 
     if not check:
@@ -473,7 +472,7 @@ def cmd_check_remove(args: Namespace, output: Output) -> int:
         return 1
 
     spec.checks = [c for c in spec.checks if c.id != args.id]
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Removed check: {args.id}")
     output.json_output({"id": args.id, "removed": True})
@@ -483,13 +482,11 @@ def cmd_check_remove(args: Namespace, output: Output) -> int:
 
 def cmd_check_on(args: Namespace, output: Output) -> int:
     """Enable a check."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     check = spec.get_check(args.id)
 
     if not check:
@@ -501,7 +498,7 @@ def cmd_check_on(args: Namespace, output: Output) -> int:
         return 0
 
     check.status = "enabled"
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Enabled check: {args.id}")
     output.json_output({"id": args.id, "status": "enabled"})
@@ -511,13 +508,11 @@ def cmd_check_on(args: Namespace, output: Output) -> int:
 
 def cmd_check_off(args: Namespace, output: Output) -> int:
     """Disable a check."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     check = spec.get_check(args.id)
 
     if not check:
@@ -529,7 +524,7 @@ def cmd_check_off(args: Namespace, output: Output) -> int:
         return 0
 
     check.status = "disabled"
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Disabled check: {args.id}")
     output.json_output({"id": args.id, "status": "disabled"})

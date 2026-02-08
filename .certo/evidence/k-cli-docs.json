@@ -1,6 +1,0 @@
-{
-  "passed": true,
-  "message": "All CLI commands defined in src/certo/cli/__init__.py are documented in docs/cli.md. The main commands (init, status, claim, issue, check, scan, kb), global options (--version, --quiet, --verbose, --format, --path), and the kb update subcommand are all present in the documentation. While some subcommands are imported from other modules, the documentation comprehensively covers the expected subcommands for each command group.",
-  "reasoning": "All CLI commands defined in src/certo/cli/__init__.py are documented in docs/cli.md. The main commands (init, status, claim, issue, check, scan, kb), global options (--version, --quiet, --verbose, --format, --path), and the kb update subcommand are all present in the documentation. While some subcommands are imported from other modules, the documentation comprehensively covers the expected subcommands for each command group.",
-  "model": "anthropic/claude-sonnet-4"
-}

@@ -36,7 +36,7 @@ certo issue add "Question?" --tags arch,design
 Created issue:
 ```
 
-## Create issue with no spec
+## Create issue with certo.toml
 
 ```bash
 certo issue add "Question?"
@@ -47,7 +47,7 @@ certo issue add "Question?"
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
 ## Create duplicate issue
@@ -392,7 +392,7 @@ certo issue list
 No issues found
 ```
 
-## List issues no spec
+## List issues certo.toml
 
 ```bash
 certo issue list
@@ -403,10 +403,10 @@ certo issue list
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## View issue no spec
+## View issue certo.toml
 
 ```bash
 certo issue view i-xxx
@@ -417,10 +417,10 @@ certo issue view i-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## Close issue no spec
+## Close issue certo.toml
 
 ```bash
 certo issue close i-xxx
@@ -431,10 +431,10 @@ certo issue close i-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## Reopen issue no spec
+## Reopen issue certo.toml
 
 ```bash
 certo issue reopen i-xxx
@@ -445,7 +445,7 @@ certo issue reopen i-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
 ## List issues quiet mode

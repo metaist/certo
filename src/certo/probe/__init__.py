@@ -49,7 +49,7 @@ def get_probe(kind: str) -> Probe | None:
 
 
 def check_spec(
-    spec_path: Path,
+    config_path: Path,
     *,
     offline: bool = False,
     no_cache: bool = False,
@@ -60,20 +60,21 @@ def check_spec(
     """Run all spec probes and verify rules.
 
     Args:
-        spec_path: Path to spec.toml
+        config_path: Path to certo.toml
         offline: Skip LLM probes
         no_cache: Ignore cached results
         model: LLM model to use
         only: If set, only run probes for these rule/probe IDs
         skip: Skip probes for these rule/probe IDs
     """
+    from certo.config import get_project_root
     from certo.spec import Spec
 
-    project_root = spec_path.parent.parent  # .certo/spec.toml -> project root
+    project_root = get_project_root(config_path)
 
     ctx = ProbeContext(
         project_root=project_root,
-        spec_path=spec_path,
+        config_path=config_path,
         offline=offline,
         no_cache=no_cache,
         model=model,
@@ -84,9 +85,9 @@ def check_spec(
 
     # Load spec - fail early if can't parse
     try:
-        ctx.spec = Spec.load(spec_path)
+        ctx.spec = Spec.load(config_path)
     except FileNotFoundError:
-        raise FileNotFoundError(f"Spec not found: {spec_path}") from None
+        raise FileNotFoundError(f"Spec not found: {config_path}") from None
     except Exception as e:
         raise ValueError(f"Failed to parse spec: {e}") from None
 

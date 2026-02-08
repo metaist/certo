@@ -17,14 +17,12 @@ def test_check_output_to_file(capsys: CaptureFixture[str]) -> None:
     """Test --output writes to file."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        (certo_dir / "spec.toml").write_text("""
+        (root / "certo.toml").write_text("""
 [spec]
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello world"
@@ -50,14 +48,12 @@ def test_check_output_to_stdout(capsys: CaptureFixture[str]) -> None:
     """Test --output - writes to stdout."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        (certo_dir / "spec.toml").write_text("""
+        (root / "certo.toml").write_text("""
 [spec]
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -67,36 +63,24 @@ cmd = "echo hello"
         assert result == 0
 
         captured = capsys.readouterr()
-        # Find the JSON block in stdout (it's a multi-line pretty-printed JSON)
-        # Look for lines starting with { and ending with }
-        lines = captured.out.strip().split("\n")
-        json_start = None
-        for i, line in enumerate(lines):
-            if line.strip() == "{":
-                json_start = i
-                break
-        assert json_start is not None, f"No JSON found in output: {captured.out}"
-        json_text = "\n".join(lines[json_start:])
-        data = json.loads(json_text)
-        assert "passed" in data
-        assert "results" in data
+        # stdout should contain JSON
+        data = json.loads(captured.out)
+        assert data["passed"] == 1
 
 
 def test_check_output_includes_check_id(capsys: CaptureFixture[str]) -> None:
-    """Test that output includes check IDs."""
+    """Test --output includes check IDs."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        (certo_dir / "spec.toml").write_text("""
+        (root / "certo.toml").write_text("""
 [spec]
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-custom-id"
 kind = "shell"
-cmd = "echo hello"
+cmd = "echo test"
 """)
 
         output_file = root / "results.json"
@@ -109,19 +93,17 @@ cmd = "echo hello"
 
 
 def test_check_output_auto_generates_check_id(capsys: CaptureFixture[str]) -> None:
-    """Test that check IDs are auto-generated if not provided."""
+    """Test --output with auto-generated check ID."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        (certo_dir / "spec.toml").write_text("""
+        (root / "certo.toml").write_text("""
 [spec]
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 kind = "shell"
-cmd = "echo hello"
+cmd = "echo test"
 """)
 
         output_file = root / "results.json"
@@ -130,5 +112,5 @@ cmd = "echo hello"
 
         data = json.loads(output_file.read_text())
         shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
-        # Should have auto-generated k- prefixed ID
+        # ID should be auto-generated starting with k-
         assert shell_result["probe_id"].startswith("k-")

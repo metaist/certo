@@ -61,5 +61,5 @@ certo status
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```

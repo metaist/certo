@@ -91,6 +91,8 @@ def test_main_exception_text(
     monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "certo.toml").write_text('[spec]\nname = "test"\nversion = 1\n')
         result = main(["check", "--path", tmpdir])
         assert result == 2
         captured = capsys.readouterr()
@@ -108,6 +110,8 @@ def test_main_exception_json(
     monkeypatch.setattr("certo.cli.check.check_spec", raise_error)
 
     with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        (root / "certo.toml").write_text('[spec]\nname = "test"\nversion = 1\n')
         result = main(["--format", "json", "check", "--path", tmpdir])
         assert result == 2
         captured = capsys.readouterr()

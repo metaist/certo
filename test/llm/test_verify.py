@@ -250,7 +250,7 @@ def test_verify_concern_saves_cache() -> None:
             assert result.explanation == "Test failed"
 
             # Check cache file was created
-            cache_dir = certo_dir / "cache"
+            cache_dir = root / ".certo_cache"
             cache_files = list(cache_dir.glob("c-test-*.toml"))
             assert len(cache_files) == 1
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from argparse import ArgumentParser, Namespace, _SubParsersAction
 from typing import Callable
 
-from certo.cli.output import Output
+from certo.cli.output import Output, get_config_path
 from certo.spec import Claim, Spec, generate_id, now_utc
 
 
@@ -69,13 +69,11 @@ def add_claim_parser(
 
 def cmd_claim_add(args: Namespace, output: Output) -> int:
     """Add a new claim."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
 
     tags = []
     if args.tags:
@@ -103,7 +101,7 @@ def cmd_claim_add(args: Namespace, output: Output) -> int:
         return 1
 
     spec.claims.append(claim)
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Added claim: {claim.id}")
     output.json_output(
@@ -115,13 +113,11 @@ def cmd_claim_add(args: Namespace, output: Output) -> int:
 
 def cmd_claim_list(args: Namespace, output: Output) -> int:
     """List claims."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     status_filter = getattr(args, "status", None)
 
     claims = spec.claims
@@ -153,13 +149,11 @@ def cmd_claim_list(args: Namespace, output: Output) -> int:
 
 def cmd_claim_view(args: Namespace, output: Output) -> int:
     """View a specific claim."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     claim = spec.get_claim(args.id)
 
     if not claim:
@@ -188,13 +182,11 @@ def cmd_claim_view(args: Namespace, output: Output) -> int:
 
 def cmd_claim_confirm(args: Namespace, output: Output) -> int:
     """Confirm a pending claim."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     claim = spec.get_claim(args.id)
 
     if not claim:
@@ -207,7 +199,7 @@ def cmd_claim_confirm(args: Namespace, output: Output) -> int:
 
     claim.status = "confirmed"
     claim.updated = now_utc()
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Confirmed: {args.id}")
     output.json_output({"id": args.id, "status": "confirmed"})
@@ -217,13 +209,11 @@ def cmd_claim_confirm(args: Namespace, output: Output) -> int:
 
 def cmd_claim_reject(args: Namespace, output: Output) -> int:
     """Reject a claim."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     claim = spec.get_claim(args.id)
 
     if not claim:
@@ -236,7 +226,7 @@ def cmd_claim_reject(args: Namespace, output: Output) -> int:
 
     claim.status = "rejected"
     claim.updated = now_utc()
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Rejected: {args.id}")
     output.json_output({"id": args.id, "status": "rejected"})

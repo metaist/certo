@@ -77,7 +77,7 @@ version = 1
 id = "c-abc1234"
 text = "Test claim"
 
-[[checks]]
+[[probes]]
 id = "k-abc1234"
 kind = "shell"
 cmd = "echo test"

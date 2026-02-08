@@ -7,13 +7,14 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 
 from certo.cli import main
+from certo.config import CACHE_DIRNAME, CONFIG_FILENAME
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
 
 
 def test_init_creates_directory_structure(capsys: CaptureFixture[str]) -> None:
-    """Test init creates .certo directory structure."""
+    """Test init creates certo.toml and .certo_cache directory structure."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
 
@@ -21,11 +22,10 @@ def test_init_creates_directory_structure(capsys: CaptureFixture[str]) -> None:
         assert result == 0
 
         # Check directory structure
-        certo_dir = root / ".certo"
-        assert certo_dir.is_dir()
-        assert (certo_dir / "spec.toml").is_file()
-        assert (certo_dir / "cache").is_dir()
-        assert (certo_dir / "cache" / ".gitignore").is_file()
+        assert (root / CONFIG_FILENAME).is_file()
+        cache_dir = root / CACHE_DIRNAME
+        assert cache_dir.is_dir()
+        assert (cache_dir / ".gitignore").is_file()
 
 
 def test_init_cache_gitignore_contents(capsys: CaptureFixture[str]) -> None:
@@ -35,7 +35,7 @@ def test_init_cache_gitignore_contents(capsys: CaptureFixture[str]) -> None:
 
         main(["init", "--path", tmpdir])
 
-        gitignore = root / ".certo" / "cache" / ".gitignore"
+        gitignore = root / CACHE_DIRNAME / ".gitignore"
         contents = gitignore.read_text()
         assert "*" in contents
 
@@ -47,8 +47,8 @@ def test_init_spec_contents(capsys: CaptureFixture[str]) -> None:
 
         main(["init", "--name", "testproject", "--path", tmpdir])
 
-        spec_path = root / ".certo" / "spec.toml"
-        contents = spec_path.read_text()
+        config_path = root / CONFIG_FILENAME
+        contents = config_path.read_text()
         assert 'name = "testproject"' in contents
         assert "version = 1" in contents
         assert "created = " in contents
@@ -61,7 +61,7 @@ def test_init_uses_directory_name(capsys: CaptureFixture[str]) -> None:
 
         main(["init", "--path", tmpdir])
 
-        spec_path = root / ".certo" / "spec.toml"
-        contents = spec_path.read_text()
+        config_path = root / CONFIG_FILENAME
+        contents = config_path.read_text()
         # Should contain the temp directory name
         assert f'name = "{root.name}"' in contents

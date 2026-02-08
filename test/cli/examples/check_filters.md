@@ -7,12 +7,12 @@
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-skip-me"
 kind = "shell"
 cmd = "exit 1"
 
-[[checks]]
+[[probes]]
 id = "k-run-me"
 kind = "shell"
 cmd = "echo hello"
@@ -42,12 +42,12 @@ k-skip-me
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-only-this"
 kind = "shell"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-not-this"
 kind = "shell"
 cmd = "exit 1"
@@ -77,17 +77,17 @@ k-not-this
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-one"
 kind = "shell"
 cmd = "exit 1"
 
-[[checks]]
+[[probes]]
 id = "k-two"
 kind = "shell"
 cmd = "exit 1"
 
-[[checks]]
+[[probes]]
 id = "k-three"
 kind = "shell"
 cmd = "echo ok"
@@ -118,7 +118,7 @@ k-two
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
@@ -143,12 +143,12 @@ disabled
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-pass"
 kind = "shell"
 cmd = "true"
 
-[[checks]]
+[[probes]]
 id = "k-fail"
 kind = "shell"
 cmd = "false"
@@ -174,7 +174,7 @@ Failed: 1
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "true"
@@ -198,7 +198,7 @@ certo check --format json
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "false"
@@ -223,7 +223,7 @@ k-test [shell] Expected exit code 0, got 1
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "false"
@@ -249,13 +249,13 @@ certo check --format json
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-enabled"
 kind = "shell"
 cmd = "true"

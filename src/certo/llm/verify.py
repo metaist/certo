@@ -135,7 +135,7 @@ def _build_prompt(claim: str, context_contents: dict[str, str]) -> str:
 
 def _get_cache_path(project_root: Path, cache_key: str, concern_id: str) -> Path:
     """Get the path for a cached result."""
-    cache_dir = project_root / ".certo" / "cache"
+    cache_dir = project_root / ".certo_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir / f"{concern_id}-{cache_key}.toml"
 
@@ -228,7 +228,7 @@ def _save_transcript(
     result: VerificationResult,
 ) -> None:
     """Save a transcript of the LLM interaction as JSONL (pi-compatible format)."""
-    transcripts_dir = project_root / ".certo" / "transcripts"
+    transcripts_dir = project_root / ".certo_cache" / "transcripts"
     transcripts_dir.mkdir(parents=True, exist_ok=True)
 
     # File name: {date}-verify-{run-id}.jsonl

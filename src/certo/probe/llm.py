@@ -88,7 +88,7 @@ class LLMProbe:
             )
 
         if ctx.offline:
-            evidence_dir = ctx.spec_path.parent / "evidence"
+            evidence_dir = ctx.cache_dir / "evidence"
             evidence_file = evidence_dir / f"{probe_id}.json" if probe_id else None
 
             if evidence_file and evidence_file.exists():
@@ -131,7 +131,7 @@ class LLMProbe:
             if probe_id:  # pragma: no branch - always true since we set it above
                 import json
 
-                evidence_dir = ctx.spec_path.parent / "evidence"
+                evidence_dir = ctx.cache_dir / "evidence"
                 evidence_dir.mkdir(parents=True, exist_ok=True)
                 evidence_file = evidence_dir / f"{probe_id}.json"
                 evidence_file.write_text(

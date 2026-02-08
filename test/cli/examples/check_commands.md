@@ -7,12 +7,12 @@
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-one"
 kind = "shell"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-two"
 kind = "scan"
 has = "python.version"
@@ -54,12 +54,12 @@ No checks found
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-shell"
 kind = "shell"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-fact"
 kind = "scan"
 has = "python.version"
@@ -88,12 +88,12 @@ k-fact
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-enabled"
 kind = "shell"
 cmd = "echo hello"
 
-[[checks]]
+[[probes]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"
@@ -123,7 +123,7 @@ k-disabled
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -339,7 +339,7 @@ require --url
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-remove-me"
 kind = "shell"
 cmd = "echo hello"
@@ -382,7 +382,7 @@ not found
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 status = "disabled"
@@ -406,7 +406,7 @@ Enabled check: k-test
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -429,7 +429,7 @@ already enabled
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -452,7 +452,7 @@ Disabled check: k-test
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 status = "disabled"
@@ -476,7 +476,7 @@ already disabled
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -504,7 +504,7 @@ certo check list
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Check show no spec
@@ -518,7 +518,7 @@ certo check show k-test
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Check add no spec
@@ -532,7 +532,7 @@ certo check add shell --cmd "echo test"
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Check remove no spec
@@ -546,7 +546,7 @@ certo check remove k-test
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Check on no spec
@@ -560,7 +560,7 @@ certo check on k-test
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Check off no spec
@@ -574,7 +574,7 @@ certo check off k-test
 **Expected Stderr**
 
 ```
-No spec found
+No certo.toml found
 ```
 
 ## Show LLM check detail
@@ -584,7 +584,7 @@ No spec found
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-llm"
 kind = "llm"
 files = ["README.md"]
@@ -611,7 +611,7 @@ Prompt: Check this
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-fact"
 kind = "scan"
 has = "python.version"
@@ -636,7 +636,7 @@ Has:    python.version
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-url"
 kind = "url"
 url = "https://example.com"
@@ -663,7 +663,7 @@ Cmd:    jq .
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -688,7 +688,7 @@ certo check show k-test --format json
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -712,7 +712,7 @@ certo check list --format json
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-exists"
 kind = "shell"
 cmd = "echo hello"
@@ -775,7 +775,7 @@ certo check add scan --equals python.version
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "grep pattern"
@@ -806,7 +806,7 @@ Timeout: 30s
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-fact"
 kind = "scan"
 empty = "python.issues"
@@ -831,7 +831,7 @@ Empty:  python.issues
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-fact"
 kind = "scan"
 equals = "python.version"
@@ -897,7 +897,7 @@ not found
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -920,7 +920,7 @@ k-test
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-test"
 kind = "shell"
 cmd = "echo hello"
@@ -943,7 +943,7 @@ ID:
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-disabled"
 kind = "shell"
 status = "disabled"

@@ -118,7 +118,7 @@ class ProbeContext:
     """Context for running probes."""
 
     project_root: Path
-    spec_path: Path
+    config_path: Path
     spec: Spec | None = None
     offline: bool = False
     no_cache: bool = False
@@ -128,6 +128,18 @@ class ProbeContext:
     def root(self) -> Path:
         """Alias for project_root."""
         return self.project_root
+
+    @property
+    def spec_path(self) -> Path:
+        """Alias for config_path (backward compat)."""
+        return self.config_path
+
+    @property
+    def cache_dir(self) -> Path:
+        """Get the cache directory, creating if needed."""
+        from certo.config import ensure_cache_dir
+
+        return ensure_cache_dir(self.project_root)
 
 
 @dataclass

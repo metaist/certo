@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from argparse import Namespace
 
-from certo.cli.output import Output
+from certo.cli.output import Output, get_config_path
 from certo.spec import Claim, Issue, Spec
 
 # Item type prefixes
@@ -21,13 +21,11 @@ def _get_item_type(item_id: str) -> str | None:
 
 def cmd_status(args: Namespace, output: Output) -> int:
     """Show spec contents."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     item_id = getattr(args, "id", None)
 
     # Show specific item

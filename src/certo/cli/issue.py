@@ -5,7 +5,7 @@ from __future__ import annotations
 from argparse import ArgumentParser, Namespace, _SubParsersAction
 from typing import Callable
 
-from certo.cli.output import Output
+from certo.cli.output import Output, get_config_path
 from certo.spec import Issue, Spec, generate_id, now_utc
 
 
@@ -64,13 +64,11 @@ def add_issue_parser(
 
 def cmd_issue_add(args: Namespace, output: Output) -> int:
     """Create a new issue."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
 
     text = args.text
     issue_id = generate_id("i", text)
@@ -88,7 +86,7 @@ def cmd_issue_add(args: Namespace, output: Output) -> int:
     )
 
     spec.issues.append(issue)
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Created issue: {issue_id}")
     output.json_output({"id": issue_id, "text": text})
@@ -98,13 +96,11 @@ def cmd_issue_add(args: Namespace, output: Output) -> int:
 
 def cmd_issue_list(args: Namespace, output: Output) -> int:
     """List issues."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     status_filter = getattr(args, "status", None)
 
     issues = spec.issues
@@ -128,13 +124,11 @@ def cmd_issue_list(args: Namespace, output: Output) -> int:
 
 def cmd_issue_view(args: Namespace, output: Output) -> int:
     """View a specific issue."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     issue = spec.get_issue(args.id)
 
     if not issue:
@@ -159,13 +153,11 @@ def cmd_issue_view(args: Namespace, output: Output) -> int:
 
 def cmd_issue_close(args: Namespace, output: Output) -> int:
     """Close an issue."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     issue = spec.get_issue(args.id)
 
     if not issue:
@@ -179,7 +171,7 @@ def cmd_issue_close(args: Namespace, output: Output) -> int:
     issue.status = "closed"
     issue.updated = now_utc()
     issue.closed_reason = getattr(args, "reason", "") or ""
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Closed: {args.id}")
     output.json_output({"id": args.id, "status": "closed"})
@@ -189,13 +181,11 @@ def cmd_issue_close(args: Namespace, output: Output) -> int:
 
 def cmd_issue_reopen(args: Namespace, output: Output) -> int:
     """Reopen an issue."""
-    spec_path = args.path / ".certo" / "spec.toml"
-
-    if not spec_path.exists():
-        output.error(f"No spec found at {spec_path}")
+    config_path = get_config_path(args, output)
+    if config_path is None:
         return 1
 
-    spec = Spec.load(spec_path)
+    spec = Spec.load(config_path)
     issue = spec.get_issue(args.id)
 
     if not issue:
@@ -209,7 +199,7 @@ def cmd_issue_reopen(args: Namespace, output: Output) -> int:
     issue.status = "open"
     issue.updated = now_utc()
     issue.closed_reason = ""
-    spec.save(spec_path)
+    spec.save(config_path)
 
     output.success(f"Reopened: {args.id}")
     output.json_output({"id": args.id, "status": "open"})

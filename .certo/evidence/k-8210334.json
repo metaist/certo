@@ -1,6 +1,0 @@
-{
-  "passed": true,
-  "message": "The CLI documentation comprehensively covers all commands implemented in the code. The docs/cli.md file documents all top-level commands (init, status, claim, issue, context, check, scan, kb) and their subcommands, including all options, arguments, examples, and environment variables. The documentation structure matches the actual CLI implementation in src/certo/cli/__init__.py, including global options, command-specific options, exit codes, and the noun-verb pattern for subcommands. The claim check subcommands are also fully documented with all their options and arguments.",
-  "reasoning": "The CLI documentation comprehensively covers all commands implemented in the code. The docs/cli.md file documents all top-level commands (init, status, claim, issue, context, check, scan, kb) and their subcommands, including all options, arguments, examples, and environment variables. The documentation structure matches the actual CLI implementation in src/certo/cli/__init__.py, including global options, command-specific options, exit codes, and the noun-verb pattern for subcommands. The claim check subcommands are also fully documented with all their options and arguments.",
-  "model": "anthropic/claude-sonnet-4"
-}

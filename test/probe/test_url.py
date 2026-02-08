@@ -1,7 +1,8 @@
-"""Tests for certo.check.url module."""
+"""Tests for certo.probe.url module."""
 
 from __future__ import annotations
 
+import hashlib
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -69,7 +70,7 @@ def test_url_runner_no_url() -> None:
         root = Path(tmpdir)
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = UrlConfig(id="k-test", url="")
@@ -83,12 +84,9 @@ def test_url_runner_offline_no_cache() -> None:
     """Test URL runner in offline mode without cache."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -103,14 +101,10 @@ def test_url_runner_uses_cache() -> None:
     """Test URL runner uses cached response."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        cache_dir = certo_dir / "cache" / "url"
+        cache_dir = root / ".certo_cache" / "url"
         cache_dir.mkdir(parents=True)
 
         # Create cached response
-        import hashlib
-
         url = "https://example.com/test.json"
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
         cache_file = cache_dir / f"{url_hash}.txt"
@@ -120,7 +114,7 @@ def test_url_runner_uses_cache() -> None:
 
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -135,14 +129,10 @@ def test_url_runner_cache_expired() -> None:
     """Test URL runner ignores expired cache."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        cache_dir = certo_dir / "cache" / "url"
+        cache_dir = root / ".certo_cache" / "url"
         cache_dir.mkdir(parents=True)
 
         # Create expired cached response
-        import hashlib
-
         url = "https://example.com/test.json"
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
         cache_file = cache_dir / f"{url_hash}.txt"
@@ -153,7 +143,7 @@ def test_url_runner_cache_expired() -> None:
 
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -168,12 +158,9 @@ def test_url_runner_fetches_url() -> None:
     """Test URL runner fetches URL when not cached."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -196,12 +183,9 @@ def test_url_runner_fetch_error() -> None:
     """Test URL runner handles fetch error."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -218,14 +202,10 @@ def test_url_runner_with_command() -> None:
     """Test URL runner pipes to shell command."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        cache_dir = certo_dir / "cache" / "url"
+        cache_dir = root / ".certo_cache" / "url"
         cache_dir.mkdir(parents=True)
 
         # Create cached response
-        import hashlib
-
         url = "https://example.com/test.json"
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
         cache_file = cache_dir / f"{url_hash}.txt"
@@ -235,7 +215,7 @@ def test_url_runner_with_command() -> None:
 
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = UrlConfig(id="k-test", url=url, cmd="cat")
@@ -249,14 +229,10 @@ def test_url_runner_command_fails() -> None:
     """Test URL runner when shell command fails."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        cache_dir = certo_dir / "cache" / "url"
+        cache_dir = root / ".certo_cache" / "url"
         cache_dir.mkdir(parents=True)
 
         # Create cached response
-        import hashlib
-
         url = "https://example.com/test.json"
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
         cache_file = cache_dir / f"{url_hash}.txt"
@@ -266,7 +242,7 @@ def test_url_runner_command_fails() -> None:
 
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = UrlConfig(id="k-test", url=url, cmd="false")
@@ -305,14 +281,10 @@ def test_url_runner_handles_corrupted_cache_meta() -> None:
     """Test URL runner handles corrupted cache metadata."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        cache_dir = certo_dir / "cache" / "url"
+        cache_dir = root / ".certo_cache" / "url"
         cache_dir.mkdir(parents=True)
 
         # Create cache with corrupted meta
-        import hashlib
-
         url = "https://example.com/test.json"
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
         cache_file = cache_dir / f"{url_hash}.txt"
@@ -322,7 +294,7 @@ def test_url_runner_handles_corrupted_cache_meta() -> None:
 
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=True,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
@@ -337,12 +309,9 @@ def test_url_runner_fresh_fetch_no_cached_indicator() -> None:
     """Test URL runner doesn't add cached indicator for fresh fetch."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-
         ctx = ProbeContext(
             project_root=root,
-            spec_path=certo_dir / "spec.toml",
+            config_path=root / "certo.toml",
             offline=False,
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")

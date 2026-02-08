@@ -20,7 +20,7 @@ def test_fact_check_has_exists() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Uses uv", status="confirmed")
         check = ScanConfig(has="uses.uv")
@@ -38,7 +38,7 @@ def test_fact_check_has_missing() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Uses uv", status="confirmed")
         check = ScanConfig(has="uses.uv")
@@ -60,7 +60,7 @@ requires-python = ">=3.11"
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Python 3.11+", status="confirmed")
         check = ScanConfig(equals="python.min-version", value="3.11")
@@ -82,7 +82,7 @@ requires-python = ">=3.11"
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Python 3.12+", status="confirmed")
         check = ScanConfig(equals="python.min-version", value="3.12")
@@ -101,7 +101,7 @@ def test_fact_check_equals_missing() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ScanConfig(equals="missing.fact", value="foo")
@@ -123,7 +123,7 @@ requires-python = ">=3.11,<4.0"
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Python 3.x", status="confirmed")
         check = ScanConfig(matches="python.requires-python", pattern=r">=3\.\d+")
@@ -145,7 +145,7 @@ requires-python = ">=3.11"
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Python 4+", status="confirmed")
         check = ScanConfig(matches="python.requires-python", pattern=r">=4\.\d+")
@@ -163,7 +163,7 @@ def test_fact_check_matches_missing() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ScanConfig(matches="missing.fact", pattern=".*")
@@ -181,7 +181,7 @@ def test_fact_check_no_criteria() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ScanConfig()
@@ -201,7 +201,7 @@ def test_fact_check_empty_fails_when_not_empty() -> None:
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="No uv", status="confirmed")
         check = ScanConfig(empty="uses.uv")
@@ -224,7 +224,7 @@ name = "test"
         clear_scan_cache()
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Has requires-python", status="confirmed")
         check = ScanConfig(has="python.requires-python")
@@ -252,7 +252,7 @@ def test_fact_check_has_fact_is_falsy_empty_string() -> None:
             clear_scan_cache()
             ctx = ProbeContext(
                 project_root=root,
-                spec_path=root / ".certo" / "spec.toml",
+                config_path=root / "certo.toml",
             )
             claim = Claim(id="c-test", text="Has test", status="confirmed")
             check = ScanConfig(has="test.empty")
@@ -279,7 +279,7 @@ def test_fact_check_empty_passes_when_fact_is_empty() -> None:
             clear_scan_cache()
             ctx = ProbeContext(
                 project_root=root,
-                spec_path=root / ".certo" / "spec.toml",
+                config_path=root / "certo.toml",
             )
             claim = Claim(id="c-test", text="No issues", status="confirmed")
             check = ScanConfig(empty="test.empty")
@@ -303,7 +303,7 @@ def test_fact_check_empty_passes_when_fact_not_found() -> None:
             clear_scan_cache()
             ctx = ProbeContext(
                 project_root=root,
-                spec_path=root / ".certo" / "spec.toml",
+                config_path=root / "certo.toml",
             )
             claim = Claim(id="c-test", text="No issues", status="confirmed")
             check = ScanConfig(empty="test.missing")

@@ -15,13 +15,13 @@ author = "metaist"
 [[checks]]
 id = "k-spec-exists"
 kind = "shell"
-cmd = "test -f .certo/spec.toml && head -1 .certo/spec.toml"
+cmd = "test -f certo.toml && head -1 certo.toml"
 matches = ['# Certo Spec']
 
 [[checks]]
 id = "k-certo-dir"
 kind = "shell"
-cmd = "test -d .certo"
+cmd = "test -f certo.toml"
 
 [[checks]]
 id = "k-check-offline"
@@ -107,7 +107,7 @@ considered = ['YAML', 'JSON', 'KDL', 'Markdown+frontmatter']
 
 [[claims]]
 id = "c-caf8ac4"
-text = "Certo stores its data in .certo/ directory"
+text = "Certo stores its config in certo.toml at project root"
 status = "confirmed"
 source = "human"
 author = "metaist"

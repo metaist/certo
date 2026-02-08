@@ -31,4 +31,4 @@ __pycache__
 node_modules/
 
 # LLM verification cache
-.certo/cache/
+.certo_cache/

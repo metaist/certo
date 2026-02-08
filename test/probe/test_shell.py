@@ -219,21 +219,21 @@ def test_shell_check_cwd() -> None:
     """Test shell check runs in project root."""
     with TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
-        certo_dir = root / ".certo"
-        certo_dir.mkdir()
-        spec = certo_dir / "spec.toml"
-        spec.write_text("""
+        config = root / "certo.toml"
+        # Create a marker file to test cwd
+        (root / "marker.txt").write_text("exists")
+        config.write_text("""
 [spec]
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-cwd"
 kind = "shell"
-cmd = "test -d .certo"
+cmd = "test -f marker.txt"
 """)
 
-        results = check_spec(spec)
+        results = check_spec(config)
         assert len(results) == 1
         assert results[0].probe_id == "k-cwd"
         assert results[0].passed
@@ -245,7 +245,7 @@ def test_shell_runner_not_matches_fails() -> None:
         root = Path(tmpdir)
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ShellConfig(cmd="echo 'ERROR: something bad'", not_matches=["ERROR"])
@@ -263,7 +263,7 @@ def test_shell_runner_command_exception() -> None:
         root = Path(tmpdir)
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ShellConfig(cmd="echo hello")
@@ -281,7 +281,7 @@ def test_shell_runner_not_matches_passes_when_no_match() -> None:
         root = Path(tmpdir)
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         claim = Claim(id="c-test", text="Test", status="confirmed")
         check = ShellConfig(cmd="echo 'all good'", not_matches=["ERROR", "FAIL"])
@@ -296,7 +296,7 @@ def test_shell_runner_with_claim_none() -> None:
         root = Path(tmpdir)
         ctx = ProbeContext(
             project_root=root,
-            spec_path=root / ".certo" / "spec.toml",
+            config_path=root / "certo.toml",
         )
         check = ShellConfig(id="k-test", cmd="echo hello")
 

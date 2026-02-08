@@ -19,7 +19,7 @@ from certo.cli.status import cmd_status
 __all__ = ["Output", "OutputFormat", "main"]
 
 # Global flags that can appear before or after subcommand
-GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format", "--path"}
+GLOBAL_FLAGS = {"-q", "--quiet", "-v", "--verbose", "--format", "--config", "--path"}
 
 # Cached parser for performance (built once, reused)
 _PARSER: ArgumentParser | None = None
@@ -54,10 +54,10 @@ def _normalize_argv(argv: list[str]) -> list[str]:
         if arg in GLOBAL_FLAGS:
             global_flags_before.append(arg)
             # Check if this flag takes a value
-            if arg in ("--format", "--path") and i + 1 < cmd_index:
+            if arg in ("--format", "--config", "--path") and i + 1 < cmd_index:
                 i += 1
                 global_flags_before.append(argv[i])
-        elif arg.startswith("--format=") or arg.startswith("--path="):
+        elif arg.startswith(("--format=", "--config=", "--path=")):
             global_flags_before.append(arg)
         else:
             other_args_before.append(arg)
@@ -97,10 +97,17 @@ def _add_global_args(parser: ArgumentParser) -> None:
         help="output format (default: text)",
     )
     parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="path to certo.toml or - for stdin (default: find in parent dirs)",
+    )
+    # Keep --path as hidden alias for backward compat during transition
+    parser.add_argument(
         "--path",
         type=Path,
-        default=Path.cwd(),
-        help="project root (default: current directory)",
+        default=None,
+        help="DEPRECATED: use --config instead",
     )
 
 

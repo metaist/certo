@@ -55,7 +55,7 @@ certo status c-abc1234 --format json
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-abc1234"
 kind = "shell"
 cmd = "echo test"

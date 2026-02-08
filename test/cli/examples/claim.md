@@ -36,7 +36,7 @@ certo claim add "Test claim" --level block --tags foo,bar --why "Because reasons
 Added claim:
 ```
 
-## Create claim with no spec
+## Create claim with certo.toml
 
 ```bash
 certo claim add "Test claim"
@@ -47,7 +47,7 @@ certo claim add "Test claim"
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
 ## Create duplicate claim
@@ -373,7 +373,7 @@ certo claim list
 No claims found
 ```
 
-## List claims no spec
+## List claims certo.toml
 
 ```bash
 certo claim list
@@ -384,10 +384,10 @@ certo claim list
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## View claim no spec
+## View claim certo.toml
 
 ```bash
 certo claim view c-xxx
@@ -398,10 +398,10 @@ certo claim view c-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## Confirm claim no spec
+## Confirm claim certo.toml
 
 ```bash
 certo claim confirm c-xxx
@@ -412,10 +412,10 @@ certo claim confirm c-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
-## Reject claim no spec
+## Reject claim certo.toml
 
 ```bash
 certo claim reject c-xxx
@@ -426,7 +426,7 @@ certo claim reject c-xxx
 **Expected Stderr**
 
 ```
-no spec
+certo.toml
 ```
 
 ## List claims quiet mode

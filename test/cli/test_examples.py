@@ -187,10 +187,8 @@ def test_example(case: ExampleCase, capsys: CaptureFixture[str]) -> None:
 
         # Set up spec file if provided
         if case.spec_content is not None:
-            certo_dir = root / ".certo"
-            certo_dir.mkdir()
-            spec = certo_dir / "spec.toml"
-            spec.write_text(case.spec_content)
+            config_path = root / "certo.toml"
+            config_path.write_text(case.spec_content)
 
         # Build command args, adding --path for all commands
         args = list(case.command)

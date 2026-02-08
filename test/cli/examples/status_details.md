@@ -139,7 +139,7 @@ Closed reason:
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-abc1234"
 kind = "shell"
 cmd = "echo hello"
@@ -245,7 +245,7 @@ unknown
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-url"
 kind = "url"
 url = "https://example.com"
@@ -273,7 +273,7 @@ Cmd:    echo test
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-llm"
 kind = "llm"
 files = ["README.md"]
@@ -300,7 +300,7 @@ Prompt: Check it
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-fact"
 kind = "scan"
 has = "python.version"
@@ -325,7 +325,7 @@ Has:    python.version
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 id = "k-shell"
 kind = "shell"
 cmd = "echo hello"
