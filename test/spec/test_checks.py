@@ -69,7 +69,7 @@ def test_shell_check_to_toml() -> None:
         timeout=30,
     )
     result = check.to_toml()
-    assert "[[probes]]" in result
+    assert "[[certo.probes]]" in result
     assert 'kind = "shell"' in result
     assert 'cmd = "echo test"' in result
     assert "exit_code = 1" in result
@@ -146,7 +146,7 @@ def test_llm_check_to_toml() -> None:
     """Test LLM check TOML serialization."""
     check = LLMConfig(files=["README.md"], prompt="Check X")
     result = check.to_toml()
-    assert "[[probes]]" in result
+    assert "[[certo.probes]]" in result
     assert 'kind = "llm"' in result
     assert "files = ['README.md']" in result
     assert 'prompt = "Check X"' in result

@@ -82,7 +82,7 @@ class Claim:
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[claims]]",
+            "[[certo.claims]]",
             f'id = "{self.id}"',
             f'text = "{self.text}"',
             f'status = "{self.status}"',
@@ -94,7 +94,10 @@ class Claim:
         if self.tags:
             lines.append(f"tags = {self.tags}")
         if self.verify:
-            lines.append(f"verify = {self.verify.to_dict()}")
+            lines.append("")
+            lines.append("[certo.claims.verify]")
+            for key, conditions in self.verify.rules.items():
+                lines.append(f'"{key}" = {conditions}')
         if self.created:
             lines.append(f"created = {format_datetime(self.created)}")
         if self.updated:
@@ -113,77 +116,46 @@ class Claim:
 
 
 @dataclass
-class Issue:
-    """An open issue or question."""
-
-    id: str
-    text: str
-    status: str = "open"  # open | closed
-    tags: list[str] = field(default_factory=list)
-    created: datetime | None = None
-    updated: datetime | None = None
-    closed_reason: str = ""  # when status = closed
-
-    @classmethod
-    def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse an issue from TOML data."""
-        return cls(
-            id=data.get("id", ""),
-            text=data.get("text", ""),
-            status=data.get("status", "open"),
-            tags=data.get("tags", []),
-            created=data.get("created"),
-            updated=data.get("updated"),
-            closed_reason=data.get("closed_reason", ""),
-        )
-
-    def to_toml(self) -> str:
-        """Serialize to TOML."""
-        lines = [
-            "[[issues]]",
-            f'id = "{self.id}"',
-            f'text = "{self.text}"',
-            f'status = "{self.status}"',
-        ]
-        if self.tags:
-            lines.append(f"tags = {self.tags}")
-        if self.created:
-            lines.append(f"created = {format_datetime(self.created)}")
-        if self.updated:
-            lines.append(f"updated = {format_datetime(self.updated)}")
-        if self.closed_reason:
-            lines.append(f'closed_reason = "{self.closed_reason}"')
-        return "\n".join(lines)
-
-
-@dataclass
 class Spec:
-    """A specification for a project."""
+    """A certo specification for a project."""
 
-    name: str
+    name: str = ""
     version: int = 1  # schema version
     created: datetime | None = None
     author: str = ""
+    imports: list[str] = field(default_factory=list)
     checks: list[ProbeConfig] = field(default_factory=list)
     claims: list[Claim] = field(default_factory=list)
-    issues: list[Issue] = field(default_factory=list)
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a spec from TOML data."""
+        """Parse a spec from TOML data.
+
+        Supports both new [certo] format and legacy [spec] format.
+        """
         from certo.probe import parse_probe
 
-        meta = data.get("spec", {})
-        # Support both "probes" (new) and "checks" (legacy) keys
-        probes_data = data.get("probes", []) or data.get("checks", [])
+        # Try new [certo] format first, fall back to legacy [spec]
+        certo = data.get("certo", {})
+        if not certo:
+            # Legacy format: [spec] + top-level [[probes]]/[[claims]]
+            meta = data.get("spec", {})
+            probes_data = data.get("probes", []) or data.get("checks", [])
+            claims_data = data.get("claims", [])
+        else:
+            # New format: everything under [certo]
+            meta = certo
+            probes_data = certo.get("probes", [])
+            claims_data = certo.get("claims", [])
+
         return cls(
             name=meta.get("name", ""),
             version=meta.get("version", 1),
             created=meta.get("created"),
             author=meta.get("author", ""),
+            imports=meta.get("imports", []),
             checks=[parse_probe(c) for c in probes_data],
-            claims=[Claim.parse(c) for c in data.get("claims", [])],
-            issues=[Issue.parse(i) for i in data.get("issues", [])],
+            claims=[Claim.parse(c) for c in claims_data],
         )
 
     @classmethod
@@ -200,13 +172,6 @@ class Spec:
                 return claim
         return None
 
-    def get_issue(self, issue_id: str) -> Issue | None:
-        """Get an issue by ID."""
-        for issue in self.issues:
-            if issue.id == issue_id:
-                return issue
-        return None
-
     def get_check(self, check_id: str) -> ProbeConfig | None:
         """Get a check by ID."""
         for check in self.checks:
@@ -218,46 +183,39 @@ class Spec:
         """Serialize to TOML."""
         lines = [
             "# Certo Spec",
-            "# WARNING: This file is managed by certo. Manual edits may be overwritten.",
-            "# Use `certo claim`, `certo issue`, `certo check` to make changes.",
+            "# https://github.com/metaist/certo",
             "",
-            "[spec]",
-            f'name = "{self.name}"',
+            "[certo]",
             f"version = {self.version}",
         ]
+        if self.name:
+            lines.append(f'name = "{self.name}"')
         if self.created:
             lines.append(f"created = {format_datetime(self.created)}")
         if self.author:
             lines.append(f'author = "{self.author}"')
-        lines.append("")
+        if self.imports:
+            lines.append(f"imports = {self.imports}")
 
         if self.checks:
-            lines.append("# " + "=" * 77)
-            lines.append("# CHECKS")
-            lines.append("# " + "=" * 77)
             lines.append("")
+            lines.append("# " + "=" * 77)
+            lines.append("# PROBES")
+            lines.append("# " + "=" * 77)
             for check in self.checks:
-                lines.append(check.to_toml())
                 lines.append("")
+                lines.append(check.to_toml())
 
         if self.claims:
+            lines.append("")
             lines.append("# " + "=" * 77)
             lines.append("# CLAIMS")
             lines.append("# " + "=" * 77)
-            lines.append("")
             for claim in self.claims:
+                lines.append("")
                 lines.append(claim.to_toml())
-                lines.append("")
 
-        if self.issues:
-            lines.append("# " + "=" * 77)
-            lines.append("# ISSUES")
-            lines.append("# " + "=" * 77)
-            lines.append("")
-            for issue in self.issues:
-                lines.append(issue.to_toml())
-                lines.append("")
-
+        lines.append("")
         return "\n".join(lines)
 
     def save(self, path: Path) -> None:

@@ -33,39 +33,6 @@ Claims:
 Issues:
 ```
 
-## Show only issues with --issues
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[claims]]
-id = "c-abc1234"
-text = "Test claim"
-
-[[issues]]
-id = "i-abc1234"
-text = "Test issue"
-```
-
-```bash
-certo status --issues
-```
-
-**Expected**
-
-```
-Issues:
-  i-abc1234  Test issue
-```
-
-**Not Expected**
-
-```
-Claims:
-```
-
 ## Show only checks with --checks
 
 ```toml

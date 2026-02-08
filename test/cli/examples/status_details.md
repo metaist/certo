@@ -73,65 +73,6 @@ Considered:
 Closes:
 ```
 
-## Show issue detail
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[issues]]
-id = "i-abc1234"
-text = "Test issue"
-status = "closed"
-tags = ["architecture"]
-closed_reason = "Resolved by c-xxx"
-created = 2026-02-05T12:00:00Z
-```
-
-```bash
-certo status i-abc1234
-```
-
-**Expected**
-
-```
-i-abc1234: Test issue
-Status: closed
-Tags: architecture
-Closed reason: Resolved by c-xxx
-```
-
-## Show issue detail - minimal
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[issues]]
-id = "i-abc1234"
-text = "Minimal issue"
-```
-
-```bash
-certo status i-abc1234
-```
-
-**Expected**
-
-```
-i-abc1234: Minimal issue
-Status: open
-```
-
-**Not Expected**
-
-```
-Tags:
-Closed reason:
-```
-
 ## Show check detail
 
 ```toml
@@ -168,26 +109,6 @@ version = 1
 
 ```bash
 certo status c-notfound
-```
-
-**Exit Code:** 1
-
-**Expected Stderr**
-
-```
-not found
-```
-
-## Missing issue
-
-```toml
-[spec]
-name = "test"
-version = 1
-```
-
-```bash
-certo status i-notfound
 ```
 
 **Exit Code:** 1

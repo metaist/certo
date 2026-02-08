@@ -42,7 +42,7 @@ class UrlConfig(ShellConfig):
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[probes]]",
+            "[[certo.probes]]",
             f'id = "{self.id}"',
             'kind = "url"',
         ]

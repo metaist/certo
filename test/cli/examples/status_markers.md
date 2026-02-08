@@ -74,33 +74,3 @@ Claims:
   c-skip  Skipped claim -
   c-warn  Warning claim
 ```
-
-## Issues show closed status
-
-```toml
-[spec]
-name = "test"
-version = 1
-
-[[issues]]
-id = "i-open"
-text = "Open issue"
-status = "open"
-
-[[issues]]
-id = "i-closed"
-text = "Closed issue"
-status = "closed"
-```
-
-```bash
-certo status --issues
-```
-
-**Expected**
-
-```
-Issues:
-  i-open  Open issue
-  i-closed  Closed issue [closed]
-```

@@ -81,7 +81,7 @@ def test_claim_to_toml() -> None:
         why="Because",
     )
     result = claim.to_toml()
-    assert "[[claims]]" in result
+    assert "[[certo.claims]]" in result
     assert 'id = "c-abc1234"' in result
     assert 'text = "Test claim"' in result
     assert 'status = "confirmed"' in result
@@ -114,7 +114,7 @@ def test_claim_to_toml_all_fields() -> None:
         closes=["i-xxx"],
     )
     result = claim.to_toml()
-    assert "verify = " in result
+    assert "[certo.claims.verify]" in result
     assert "k-pytest.exit_code" in result
     assert "considered = ['alt1', 'alt2']" in result
     assert "traces_to = ['c-parent']" in result
@@ -146,5 +146,5 @@ def test_claim_to_toml_with_verify() -> None:
         verify=Verify.parse({"k-pytest.exit_code": {"eq": 0}}),
     )
     result = claim.to_toml()
-    assert "verify = " in result
+    assert "[certo.claims.verify]" in result
     assert "k-pytest.exit_code" in result

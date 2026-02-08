@@ -5,10 +5,10 @@ from __future__ import annotations
 from argparse import Namespace
 
 from certo.cli.output import Output, get_config_path
-from certo.spec import Claim, Issue, Spec
+from certo.spec import Claim, Spec
 
 # Item type prefixes
-ITEM_PREFIXES = [("k-", "check"), ("i-", "issue"), ("c-", "claim")]
+ITEM_PREFIXES = [("k-", "check"), ("c-", "claim")]
 
 
 def _get_item_type(item_id: str) -> str | None:
@@ -35,11 +35,10 @@ def cmd_status(args: Namespace, output: Output) -> int:
     # Filter flags
     show_checks = getattr(args, "checks", False)
     show_claims = getattr(args, "claims", False)
-    show_issues = getattr(args, "issues", False)
 
     # If no filter, show all
-    if not any([show_checks, show_claims, show_issues]):
-        show_checks = show_claims = show_issues = True
+    if not any([show_checks, show_claims]):
+        show_checks = show_claims = True
 
     # Build output data for JSON
     json_data: dict[str, list[dict[str, object]]] = {}
@@ -71,21 +70,6 @@ def cmd_status(args: Namespace, output: Output) -> int:
                 "created": c.created.isoformat() if c.created else None,
             }
             for c in spec.claims
-        ]
-
-    if show_issues and spec.issues:
-        if (show_checks and spec.checks) or (show_claims and spec.claims):
-            output.info("")
-        _show_issues(spec, output)
-        json_data["issues"] = [
-            {
-                "id": i.id,
-                "text": i.text,
-                "status": i.status,
-                "tags": i.tags,
-                "created": i.created.isoformat() if i.created else None,
-            }
-            for i in spec.issues
         ]
 
     output.json_output(json_data)
@@ -133,23 +117,6 @@ def _show_item(spec: Spec, item_id: str, output: Output) -> int:
                     "closes": claim.closes,
                     "created": claim.created.isoformat() if claim.created else None,
                     "updated": claim.updated.isoformat() if claim.updated else None,
-                }
-            )
-        case "issue":
-            issue = spec.get_issue(item_id)
-            if not issue:
-                output.error(f"Issue not found: {item_id}")
-                return 1
-            _show_issue_detail(issue, output)
-            output.json_output(
-                {
-                    "id": issue.id,
-                    "text": issue.text,
-                    "status": issue.status,
-                    "tags": issue.tags,
-                    "closed_reason": issue.closed_reason,
-                    "created": issue.created.isoformat() if issue.created else None,
-                    "updated": issue.updated.isoformat() if issue.updated else None,
                 }
             )
         case _:
@@ -272,32 +239,3 @@ def _show_claim_detail(claim: Claim, output: Output) -> None:
         output.info(f"Created: {claim.created.strftime('%Y-%m-%d %H:%M')}")
     if claim.updated:
         output.info(f"Updated: {claim.updated.strftime('%Y-%m-%d %H:%M')}")
-
-
-def _show_issues(spec: Spec, output: Output) -> None:
-    """Show issues list."""
-    output.info("Issues:")
-    for i in spec.issues:
-        status_marker = " [closed]" if i.status == "closed" else ""
-        output.info(f"  {i.id}  {i.text}{status_marker}")
-
-        if output.verbose:
-            if i.tags:
-                output.info(f"        Tags: {', '.join(i.tags)}")
-            if i.closed_reason:
-                output.info(f"        Reason: {i.closed_reason}")
-
-
-def _show_issue_detail(issue: Issue, output: Output) -> None:
-    """Show full issue details."""
-    output.info(f"{issue.id}: {issue.text}")
-    output.info(f"Status: {issue.status}")
-    if issue.tags:
-        output.info(f"Tags: {', '.join(issue.tags)}")
-    if issue.closed_reason:
-        output.info(f"Closed reason: {issue.closed_reason}")
-    if issue.created:
-        output.info("")
-        output.info(f"Created: {issue.created.strftime('%Y-%m-%d %H:%M')}")
-    if issue.updated:
-        output.info(f"Updated: {issue.updated.strftime('%Y-%m-%d %H:%M')}")
