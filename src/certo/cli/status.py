@@ -171,7 +171,7 @@ def _show_checks(spec: Spec, output: Output) -> None:
 
 def _show_check_detail(check: object, output: Output) -> None:
     """Show full check details."""
-    from certo.check import FactCheck, LLMCheck, ShellCheck, UrlCheck
+    from certo.probe import FactCheck, LLMCheck, ShellCheck, UrlCheck
 
     check_id = getattr(check, "id", "")
     kind = getattr(check, "kind", "")

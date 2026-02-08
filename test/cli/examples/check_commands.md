@@ -14,7 +14,7 @@ cmd = "echo hello"
 
 [[checks]]
 id = "k-two"
-kind = "fact"
+kind = "scan"
 has = "python.version"
 ```
 
@@ -26,7 +26,7 @@ certo check list
 
 ```
 k-one  [shell]
-k-two  [fact]
+k-two  [scan]
 ```
 
 ## List checks empty
@@ -61,7 +61,7 @@ cmd = "echo hello"
 
 [[checks]]
 id = "k-fact"
-kind = "fact"
+kind = "scan"
 has = "python.version"
 ```
 
@@ -613,7 +613,7 @@ version = 1
 
 [[checks]]
 id = "k-fact"
-kind = "fact"
+kind = "scan"
 has = "python.version"
 ```
 
@@ -625,7 +625,7 @@ certo check show k-fact
 
 ```
 ID:     k-fact
-Kind:   fact
+Kind:   scan
 Has:    python.version
 ```
 
@@ -808,7 +808,7 @@ version = 1
 
 [[checks]]
 id = "k-fact"
-kind = "fact"
+kind = "scan"
 empty = "python.issues"
 ```
 
@@ -820,7 +820,7 @@ certo check show k-fact
 
 ```
 ID:     k-fact
-Kind:   fact
+Kind:   scan
 Empty:  python.issues
 ```
 
@@ -833,7 +833,7 @@ version = 1
 
 [[checks]]
 id = "k-fact"
-kind = "fact"
+kind = "scan"
 equals = "python.version"
 value = "3.14"
 ```
@@ -846,7 +846,7 @@ certo check show k-fact
 
 ```
 ID:     k-fact
-Kind:   fact
+Kind:   scan
 Equals: python.version = 3.14
 ```
 

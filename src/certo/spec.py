@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Self
 
-from certo.check.core import Check
-from certo.check.verify import Verify
+from certo.probe.core import Check
+from certo.probe.verify import Verify
 
 
 def generate_id(prefix: str, text: str) -> str:
@@ -171,15 +171,17 @@ class Spec:
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
         """Parse a spec from TOML data."""
-        from certo.check import parse_check
+        from certo.probe import parse_probe
 
         meta = data.get("spec", {})
+        # Support both "probes" (new) and "checks" (legacy) keys
+        probes_data = data.get("probes", []) or data.get("checks", [])
         return cls(
             name=meta.get("name", ""),
             version=meta.get("version", 1),
             created=meta.get("created"),
             author=meta.get("author", ""),
-            checks=[parse_check(c) for c in data.get("checks", [])],
+            checks=[parse_probe(c) for c in probes_data],
             claims=[Claim.parse(c) for c in data.get("claims", [])],
             issues=[Issue.parse(i) for i in data.get("issues", [])],
         )

@@ -7,8 +7,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
-from certo.check.core import CheckContext
-from certo.check.url import UrlCheck, UrlRunner
+from certo.probe.core import CheckContext
+from certo.probe.url import UrlCheck, UrlRunner
 from certo.spec import Claim
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from certo.check import FactCheck, LLMCheck, ShellCheck, parse_check
+from certo.probe import FactCheck, LLMCheck, ShellCheck, parse_check
 
 
 def test_shell_check_parse() -> None:
@@ -69,7 +69,7 @@ def test_shell_check_to_toml() -> None:
         timeout=30,
     )
     result = check.to_toml()
-    assert "[[checks]]" in result
+    assert "[[probes]]" in result
     assert 'kind = "shell"' in result
     assert 'cmd = "echo test"' in result
     assert "exit_code = 1" in result
@@ -146,7 +146,7 @@ def test_llm_check_to_toml() -> None:
     """Test LLM check TOML serialization."""
     check = LLMCheck(files=["README.md"], prompt="Check X")
     result = check.to_toml()
-    assert "[[checks]]" in result
+    assert "[[probes]]" in result
     assert 'kind = "llm"' in result
     assert "files = ['README.md']" in result
     assert 'prompt = "Check X"' in result
@@ -178,7 +178,7 @@ def test_fact_check_parse() -> None:
         "has": "uses.uv",
     }
     check = FactCheck.parse(data)
-    assert check.kind == "fact"
+    assert check.kind == "scan"
     assert check.has == "uses.uv"
     assert check.id.startswith("k-")
 
@@ -216,7 +216,7 @@ def test_fact_check_to_toml() -> None:
         has="uses.uv",
     )
     toml = check.to_toml()
-    assert 'kind = "fact"' in toml
+    assert 'kind = "scan"' in toml
     assert 'id = "k-test"' in toml
     assert 'has = "uses.uv"' in toml
 
@@ -282,5 +282,5 @@ def test_parse_check_fact() -> None:
 def test_parse_check_unknown() -> None:
     """Test parse_check raises on unknown kind."""
     data = {"kind": "unknown"}
-    with pytest.raises(ValueError, match="Unknown check kind"):
+    with pytest.raises(ValueError, match="Unknown probe kind"):
         parse_check(data)

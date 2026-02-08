@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.check import check_spec
+from certo.probe import check_spec
 
 
 def test_check_spec_integration() -> None:
@@ -50,7 +50,7 @@ status = "confirmed"
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].claim_id == "c-no-verify"
+        assert results[0].rule_id == "c-no-verify"
         assert results[0].passed  # Not a failure, just skipped
         assert results[0].skipped
         assert results[0].skip_reason == "no verify defined"
@@ -78,7 +78,7 @@ matches = ["hello"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-shell"
+        assert results[0].probe_id == "k-shell"
         assert results[0].passed
         assert results[0].kind == "shell"
 
@@ -105,7 +105,7 @@ prompt = "Verify this file"
 
         results = check_spec(spec, offline=True)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert results[0].passed  # Skipped is not a failure
         assert "skipped" in results[0].message.lower()
 
@@ -131,7 +131,7 @@ status = "rejected"
         results = check_spec(spec)
         # Should have skipped rejected claim
         assert len(results) == 1
-        assert results[0].claim_id == "c-rejected"
+        assert results[0].rule_id == "c-rejected"
         assert results[0].skipped
         assert results[0].skip_reason == "status=rejected"
 
@@ -158,7 +158,7 @@ level = "skip"
         results = check_spec(spec)
         # Should have skipped claim
         assert len(results) == 1
-        assert results[0].claim_id == "c-skipped"
+        assert results[0].rule_id == "c-skipped"
         assert results[0].skipped
         assert results[0].skip_reason == "level=skip"
 
@@ -189,7 +189,7 @@ cmd = "echo hello"
         results = check_spec(spec, skip={"k-skip-this"})
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
-        assert shell_results[0].check_id == "k-run-this"
+        assert shell_results[0].probe_id == "k-run-this"
         assert shell_results[0].passed
 
 
@@ -219,7 +219,7 @@ cmd = "exit 1"
         results = check_spec(spec, only={"k-only-this"})
         shell_results = [r for r in results if r.kind == "shell"]
         assert len(shell_results) == 1
-        assert shell_results[0].check_id == "k-only-this"
+        assert shell_results[0].probe_id == "k-only-this"
         assert shell_results[0].passed
 
 
@@ -244,15 +244,15 @@ cmd = "exit 1"
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-disabled"
+        assert results[0].probe_id == "k-disabled"
         assert results[0].skipped
-        assert results[0].skip_reason == "check disabled"
+        assert results[0].skip_reason == "probe disabled"
 
 
 def test_check_base_parse_raises() -> None:
     """Test that Check.parse raises NotImplementedError."""
     import pytest
-    from certo.check.core import Check
+    from certo.probe.core import Check
 
     with pytest.raises(NotImplementedError):
         Check.parse({})
@@ -261,7 +261,7 @@ def test_check_base_parse_raises() -> None:
 def test_check_base_to_toml_raises() -> None:
     """Test that Check.to_toml raises NotImplementedError."""
     import pytest
-    from certo.check.core import Check
+    from certo.probe.core import Check
 
     check = Check()
     with pytest.raises(NotImplementedError):
@@ -270,7 +270,7 @@ def test_check_base_to_toml_raises() -> None:
 
 def test_check_content_hash() -> None:
     """Test Check.content_hash generates deterministic hash."""
-    from certo.check.core import Check
+    from certo.probe.core import Check
 
     check = Check(kind="shell", id="k-test")
     hash1 = check.content_hash()

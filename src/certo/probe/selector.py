@@ -1,4 +1,4 @@
-"""Selector parsing and resolution for evidence queries."""
+"""Selector parsing and resolution for fact queries."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ import fnmatch
 from dataclasses import dataclass
 from typing import Any
 
-from certo.check.core import Evidence
+from certo.probe.core import Fact
 
 
 @dataclass
 class Selector:
-    """A parsed selector for accessing evidence data."""
+    """A parsed selector for accessing fact data."""
 
     segments: list[str]  # Each segment is a literal or glob pattern
 
@@ -100,16 +100,16 @@ def _has_glob(segment: str) -> bool:
 
 def resolve_selector(
     selector: Selector | str,
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> list[tuple[str, Any]]:
-    """Resolve a selector against evidence, returning all matches.
+    """Resolve a selector against facts, returning all matches.
 
     Returns list of (full_path, value) tuples.
     Globs expand to multiple matches.
 
     Args:
         selector: Parsed selector or selector string
-        evidence_map: Dict mapping check_id to Evidence
+        fact_map: Dict mapping probe_id to Fact
 
     Returns:
         List of (path, value) tuples for all matches
@@ -120,26 +120,26 @@ def resolve_selector(
     if not selector.segments:
         return []
 
-    # Start with evidence map
-    # First segment should match check IDs
+    # Start with fact map
+    # First segment should match probe IDs
     first_seg = selector.segments[0]
     remaining = selector.segments[1:]
 
     results: list[tuple[str, Any]] = []
 
     if _has_glob(first_seg):
-        # Match multiple checks
-        for check_id, evidence in evidence_map.items():
-            if _matches_pattern(check_id, first_seg):
-                # Convert evidence to dict for traversal
-                data = evidence.to_dict()
-                sub_results = _resolve_path(remaining, data, check_id)
+        # Match multiple probes
+        for probe_id, fact in fact_map.items():
+            if _matches_pattern(probe_id, first_seg):
+                # Convert fact to dict for traversal
+                data = fact.to_dict()
+                sub_results = _resolve_path(remaining, data, probe_id)
                 results.extend(sub_results)
     else:
-        # Single check
-        if first_seg not in evidence_map:
+        # Single probe
+        if first_seg not in fact_map:
             return []
-        data = evidence_map[first_seg].to_dict()
+        data = fact_map[first_seg].to_dict()
         results = _resolve_path(remaining, data, first_seg)
 
     return results
@@ -198,3 +198,7 @@ def _resolve_path(
                 pass  # Segment not found or wrong data type
 
     return results
+
+
+# Backward compat alias
+Evidence = Fact

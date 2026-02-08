@@ -1,4 +1,4 @@
-"""LLM check - config, runner, and evidence."""
+"""LLM probe - config, probe, and fact."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import Check, CheckContext, CheckResult, Evidence, generate_id
+from certo.probe.core import Fact, ProbeConfig, ProbeContext, ProbeResult, generate_id
 
 
 @dataclass
-class LLMCheck(Check):
-    """A check that uses LLM verification."""
+class LLMConfig(ProbeConfig):
+    """Configuration for an LLM probe."""
 
     kind: str = "llm"
     id: str = ""
@@ -21,22 +21,22 @@ class LLMCheck(Check):
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse an LLM check from TOML data."""
-        check = cls(
+        """Parse an LLM probe config from TOML data."""
+        config = cls(
             kind="llm",
             id=data.get("id", ""),
             status=data.get("status", "enabled"),
             files=data.get("files", []),
             prompt=data.get("prompt"),
         )
-        if not check.id and check.files:
-            check.id = generate_id("k", f"llm:{','.join(check.files)}")
-        return check
+        if not config.id and config.files:
+            config.id = generate_id("k", f"llm:{','.join(config.files)}")
+        return config
 
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[checks]]",
+            "[[probes]]",
             f'id = "{self.id}"',
             'kind = "llm"',
         ]
@@ -50,46 +50,46 @@ class LLMCheck(Check):
         return "\n".join(lines)
 
 
-class LLMRunner:
-    """Runner for LLM-based checks."""
+class LLMProbe:
+    """Probe that uses LLM for verification."""
 
-    def run(self, ctx: CheckContext, claim: Any, check: Any) -> CheckResult:
+    def run(self, ctx: ProbeContext, rule: Any, config: Any) -> ProbeResult:
         """Verify using LLM.
 
-        If claim is provided, verifies claim.text against files.
-        If claim is None (top-level check), uses check.prompt or skips.
+        If rule is provided, verifies rule.text against files.
+        If rule is None (top-level probe), uses config.prompt or skips.
         """
         from certo.llm.provider import LLMError, NoAPIKeyError
         from certo.llm.verify import FileMissingError, FileTooLargeError, verify_concern
 
-        claim_id = claim.id if claim else ""
-        claim_text = claim.text if claim else ""
-        check_id = getattr(check, "id", "") or claim_id
+        rule_id = rule.id if rule else ""
+        rule_text = rule.text if rule else ""
+        probe_id = getattr(config, "id", "") or rule_id
 
         # Determine what to verify
-        text_to_verify = claim_text or getattr(check, "prompt", "")
+        text_to_verify = rule_text or getattr(config, "prompt", "")
         if not text_to_verify:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
-                message="LLM check has no claim text or prompt to verify",
+                message="LLM probe has no rule text or prompt to verify",
                 kind="llm",
             )
 
-        files = getattr(check, "files", [])
+        files = getattr(config, "files", [])
         if not files:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
-                message="LLM check has no files specified",
+                message="LLM probe has no files specified",
                 kind="llm",
             )
 
         if ctx.offline:
             evidence_dir = ctx.spec_path.parent / "evidence"
-            evidence_file = evidence_dir / f"{check_id}.json" if check_id else None
+            evidence_file = evidence_dir / f"{probe_id}.json" if probe_id else None
 
             if evidence_file and evidence_file.exists():
                 import json
@@ -97,9 +97,9 @@ class LLMRunner:
                 try:
                     evidence = json.loads(evidence_file.read_text())
                     msg = evidence.get("message", "cached result")
-                    return CheckResult(
-                        claim_id=claim_id,
-                        claim_text=claim_text,
+                    return ProbeResult(
+                        rule_id=rule_id,
+                        rule_text=rule_text,
                         passed=evidence.get("passed", False),
                         message=f"{msg} (cached)",
                         kind="llm",
@@ -108,9 +108,9 @@ class LLMRunner:
                 except (json.JSONDecodeError, OSError):
                     pass
 
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=True,
                 message="skipped (offline mode)",
                 kind="llm",
@@ -120,7 +120,7 @@ class LLMRunner:
 
         try:
             result = verify_concern(
-                concern_id=check_id,
+                concern_id=probe_id,
                 claim=text_to_verify,
                 context_patterns=files,
                 project_root=ctx.project_root,
@@ -128,12 +128,12 @@ class LLMRunner:
                 model=ctx.model,
             )
 
-            if check_id:  # pragma: no branch - always true since we set it above
+            if probe_id:  # pragma: no branch - always true since we set it above
                 import json
 
                 evidence_dir = ctx.spec_path.parent / "evidence"
                 evidence_dir.mkdir(parents=True, exist_ok=True)
-                evidence_file = evidence_dir / f"{check_id}.json"
+                evidence_file = evidence_dir / f"{probe_id}.json"
                 evidence_file.write_text(
                     json.dumps(
                         {
@@ -150,9 +150,9 @@ class LLMRunner:
             if result.cached:
                 message = f"{message} (cached)"
 
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=result.passed,
                 message=message,
                 kind="llm",
@@ -160,9 +160,9 @@ class LLMRunner:
             )
 
         except NoAPIKeyError:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=True,
                 message="skipped (no API key)",
                 kind="llm",
@@ -170,25 +170,25 @@ class LLMRunner:
                 skip_reason="no API key configured",
             )
         except FileMissingError as e:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"File not found: {e}",
                 kind="llm",
             )
         except FileTooLargeError as e:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"File too large: {e}",
                 kind="llm",
             )
         except LLMError as e:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"LLM error: {e}",
                 kind="llm",
@@ -196,8 +196,8 @@ class LLMRunner:
 
 
 @dataclass
-class LlmEvidence(Evidence):
-    """Evidence from an LLM check."""
+class LLMFact(Fact):
+    """Fact from an LLM probe."""
 
     kind: str = "llm"
     verdict: bool = False
@@ -219,13 +219,19 @@ class LlmEvidence(Evidence):
         """Create from dictionary."""
         timestamp = data.get("timestamp", "")
         return cls(
-            check_id=data["check_id"],
+            probe_id=data["probe_id"],
             kind=data.get("kind", "llm"),
             timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
             duration=data.get("duration", 0.0),
-            check_hash=data.get("check_hash", ""),
+            probe_hash=data.get("probe_hash", ""),
             verdict=data.get("verdict", False),
             reasoning=data.get("reasoning", ""),
             model=data.get("model", ""),
             tokens=data.get("tokens", {}),
         )
+
+
+# Aliases for backward compatibility during transition
+LLMCheck = LLMConfig
+LLMRunner = LLMProbe
+LlmEvidence = LLMFact

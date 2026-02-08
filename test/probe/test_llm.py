@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from certo.check import check_spec
+from certo.probe import check_spec
 
 
 def test_check_spec_with_llm_check_offline() -> None:
@@ -33,7 +33,7 @@ prompt = "Check this file"
 
         results = check_spec(spec, offline=True)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert results[0].passed  # Skipped counts as pass
         assert "skipped" in results[0].message.lower()
 
@@ -61,7 +61,7 @@ prompt = "Verify this"
         # Missing files should fail before API key check
         results = check_spec(spec, offline=False)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert not results[0].passed
         assert (
             "missing" in results[0].message.lower()
@@ -89,7 +89,7 @@ prompt = "Verify something"
 
         results = check_spec(spec, offline=False)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert not results[0].passed
         assert "files" in results[0].message.lower()
 
@@ -115,7 +115,7 @@ files = ["README.md"]
 
         results = check_spec(spec, offline=False)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert not results[0].passed
         assert (
             "prompt" in results[0].message.lower()
@@ -148,7 +148,7 @@ prompt = "Verify this"
             os.environ.pop("OPENROUTER_API_KEY", None)
             results = check_spec(spec, offline=False)
             assert len(results) == 1
-            assert results[0].check_id == "k-llm"
+            assert results[0].probe_id == "k-llm"
             # Without API key, should skip
             assert results[0].skipped or not results[0].passed
 
@@ -176,7 +176,7 @@ prompt = "Verify this"
 
         results = check_spec(spec, offline=False)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         # File too large should fail
         assert not results[0].passed
 
@@ -208,7 +208,7 @@ prompt = "Verify this"
                 mock_llm.side_effect = LLMError("API Error")
                 results = check_spec(spec, offline=False)
                 assert len(results) == 1
-                assert results[0].check_id == "k-llm"
+                assert results[0].probe_id == "k-llm"
                 assert not results[0].passed
                 assert "error" in results[0].message.lower()
 
@@ -251,6 +251,6 @@ prompt = "Verify this"
 
         results = check_spec(spec, offline=True)
         assert len(results) == 1
-        assert results[0].check_id == "k-llm"
+        assert results[0].probe_id == "k-llm"
         assert results[0].passed
         assert "cached" in results[0].message.lower()

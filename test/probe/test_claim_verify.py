@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.check import check_spec
+from certo.probe import check_spec
 
 
 def test_claim_verify_passes() -> None:
@@ -40,11 +40,11 @@ status = "confirmed"
         assert len(results) == 2
 
         # Check passed
-        check_result = [r for r in results if r.check_id == "k-test"][0]
+        check_result = [r for r in results if r.probe_id == "k-test"][0]
         assert check_result.passed
 
         # Claim verified
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert claim_result.passed
         assert claim_result.kind == "verify"
 
@@ -78,11 +78,11 @@ status = "confirmed"
         results = check_spec(spec)
 
         # Check failed
-        check_result = [r for r in results if r.check_id == "k-fail"][0]
+        check_result = [r for r in results if r.probe_id == "k-fail"][0]
         assert not check_result.passed
 
         # Claim verification failed
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert not claim_result.passed
 
 
@@ -110,7 +110,7 @@ status = "confirmed"
         results = check_spec(spec)
 
         # Claim verification failed due to missing evidence
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert not claim_result.passed
         # Message could be "missing evidence" or "Verification failed"
         assert not claim_result.passed
@@ -137,7 +137,7 @@ status = "confirmed"
         results = check_spec(spec)
 
         # Claim should be skipped
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert claim_result.skipped
         assert "no verify" in claim_result.skip_reason.lower()
 
@@ -171,7 +171,7 @@ status = "confirmed"
         results = check_spec(spec)
 
         # Claim should pass
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert claim_result.passed
 
 
@@ -205,5 +205,5 @@ status = "confirmed"
         results = check_spec(spec)
 
         # Claim should pass (both conditions met)
-        claim_result = [r for r in results if r.claim_id == "c-test"][0]
+        claim_result = [r for r in results if r.rule_id == "c-test"][0]
         assert claim_result.passed

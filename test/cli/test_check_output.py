@@ -105,7 +105,7 @@ cmd = "echo hello"
 
         data = json.loads(output_file.read_text())
         shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
-        assert shell_result["check_id"] == "k-custom-id"
+        assert shell_result["probe_id"] == "k-custom-id"
 
 
 def test_check_output_auto_generates_check_id(capsys: CaptureFixture[str]) -> None:
@@ -131,4 +131,4 @@ cmd = "echo hello"
         data = json.loads(output_file.read_text())
         shell_result = [r for r in data["results"] if r["kind"] == "shell"][0]
         # Should have auto-generated k- prefixed ID
-        assert shell_result["check_id"].startswith("k-")
+        assert shell_result["probe_id"].startswith("k-")

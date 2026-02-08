@@ -6,18 +6,18 @@ from datetime import datetime, timezone
 
 import pytest
 
-from certo.check.core import Evidence
-from certo.check.shell import ShellEvidence
-from certo.check.url import UrlEvidence
+from certo.probe.core import Fact
+from certo.probe.shell import ShellFact
+from certo.probe.url import UrlFact
 
 
 @pytest.fixture
-def evidence_map() -> dict[str, Evidence]:
+def fact_map() -> dict[str, Fact]:
     """Create a sample evidence map for testing."""
     now = datetime.now(timezone.utc)
     return {
-        "k-pytest": ShellEvidence(
-            check_id="k-pytest",
+        "k-pytest": ShellFact(
+            probe_id="k-pytest",
             kind="shell",
             timestamp=now,
             duration=7.2,
@@ -28,8 +28,8 @@ def evidence_map() -> dict[str, Evidence]:
                 "totals": {"percent_covered": 100.0},
             },
         ),
-        "k-ruff": ShellEvidence(
-            check_id="k-ruff",
+        "k-ruff": ShellFact(
+            probe_id="k-ruff",
             kind="shell",
             timestamp=now,
             duration=0.3,
@@ -37,8 +37,8 @@ def evidence_map() -> dict[str, Evidence]:
             stdout="All checks passed!",
             stderr="",
         ),
-        "k-failing": ShellEvidence(
-            check_id="k-failing",
+        "k-failing": ShellFact(
+            probe_id="k-failing",
             kind="shell",
             timestamp=now,
             duration=1.0,
@@ -46,8 +46,8 @@ def evidence_map() -> dict[str, Evidence]:
             stdout="",
             stderr="Error: something went wrong",
         ),
-        "k-python-eol": UrlEvidence(
-            check_id="k-python-eol",
+        "k-python-eol": UrlFact(
+            probe_id="k-python-eol",
             kind="url",
             timestamp=now,
             duration=0.5,

@@ -302,7 +302,7 @@ version = 1
 
 [[checks]]
 id = "k-fact"
-kind = "fact"
+kind = "scan"
 has = "python.version"
 ```
 
@@ -314,7 +314,7 @@ certo status k-fact
 
 ```
 ID:     k-fact
-Kind:   fact
+Kind:   scan
 Has:    python.version
 ```
 

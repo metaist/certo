@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.check import check_spec
-from certo.check.core import CheckContext
-from certo.check.shell import ShellCheck, ShellRunner
+from certo.probe import check_spec
+from certo.probe.core import CheckContext
+from certo.probe.shell import ShellCheck, ShellRunner
 from certo.spec import Claim
 
 
@@ -32,7 +32,7 @@ matches = ["hello", "world"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-echo"
+        assert results[0].probe_id == "k-echo"
         assert results[0].passed
         assert results[0].kind == "shell"
 
@@ -58,7 +58,7 @@ exit_code = 0
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-fail"
+        assert results[0].probe_id == "k-fail"
         assert not results[0].passed
         assert "exit code" in results[0].message.lower()
 
@@ -84,7 +84,7 @@ exit_code = 1
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-exit1"
+        assert results[0].probe_id == "k-exit1"
         assert results[0].passed
 
 
@@ -109,7 +109,7 @@ matches = ["goodbye"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-match"
+        assert results[0].probe_id == "k-match"
         assert not results[0].passed
         assert "pattern not found" in results[0].message.lower()
 
@@ -135,7 +135,7 @@ not_matches = ["ERROR"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-not-match"
+        assert results[0].probe_id == "k-not-match"
         assert not results[0].passed
         assert "forbidden pattern found" in results[0].message.lower()
 
@@ -161,7 +161,7 @@ matches = ["version \\d+\\.\\d+\\.\\d+"]
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-regex"
+        assert results[0].probe_id == "k-regex"
         assert results[0].passed
 
 
@@ -184,7 +184,7 @@ kind = "shell"
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-no-cmd"
+        assert results[0].probe_id == "k-no-cmd"
         assert not results[0].passed
         assert "no command" in results[0].message.lower()
 
@@ -210,7 +210,7 @@ timeout = 1
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-timeout"
+        assert results[0].probe_id == "k-timeout"
         assert not results[0].passed
         assert "timed out" in results[0].message.lower()
 
@@ -235,7 +235,7 @@ cmd = "test -d .certo"
 
         results = check_spec(spec)
         assert len(results) == 1
-        assert results[0].check_id == "k-cwd"
+        assert results[0].probe_id == "k-cwd"
         assert results[0].passed
 
 
@@ -302,5 +302,5 @@ def test_shell_runner_with_claim_none() -> None:
 
         result = ShellRunner().run(ctx, None, check)
         assert result.passed
-        assert result.claim_id == ""
-        assert result.claim_text == ""
+        assert result.rule_id == ""
+        assert result.rule_text == ""

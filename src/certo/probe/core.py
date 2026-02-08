@@ -1,4 +1,4 @@
-"""Core check types - shared by all runners."""
+"""Core probe types - shared by all probes."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, Self
 
 if TYPE_CHECKING:
-    from certo.spec import Claim, Spec
+    from certo.spec import Claim as Rule, Spec
 
 
 def generate_id(prefix: str, content: str) -> str:
@@ -21,23 +21,23 @@ def generate_id(prefix: str, content: str) -> str:
 
 
 @dataclass
-class Evidence:
-    """Base class for evidence produced by checks."""
+class Fact:
+    """Base class for facts produced by probes."""
 
-    check_id: str
+    probe_id: str
     kind: str
     timestamp: datetime | None = None
     duration: float = 0.0
-    check_hash: str = ""
+    probe_hash: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
-            "check_id": self.check_id,
+            "probe_id": self.probe_id,
             "kind": self.kind,
             "timestamp": self.timestamp.isoformat() if self.timestamp else "",
             "duration": self.duration,
-            "check_hash": self.check_hash,
+            "probe_hash": self.probe_hash,
         }
 
     @classmethod
@@ -45,43 +45,43 @@ class Evidence:
         """Create from dictionary."""
         timestamp = data.get("timestamp", "")
         return cls(
-            check_id=data["check_id"],
+            probe_id=data["probe_id"],
             kind=data["kind"],
             timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
             duration=data.get("duration", 0.0),
-            check_hash=data.get("check_hash", ""),
+            probe_hash=data.get("probe_hash", ""),
         )
 
     def save(self, path: Path) -> None:
-        """Save evidence to JSON file."""
+        """Save fact to JSON file."""
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(self.to_dict(), indent=2))
 
     @classmethod
     def load(cls, path: Path) -> Self:
-        """Load evidence from JSON file."""
+        """Load fact from JSON file."""
         data = json.loads(path.read_text())
         return cls.from_dict(data)
 
 
 @dataclass
-class CheckResult:
-    """Result of a single verification check."""
+class ProbeResult:
+    """Result of a single probe execution."""
 
-    claim_id: str
-    claim_text: str
+    rule_id: str
+    rule_text: str
     passed: bool
     message: str
-    kind: str  # Check kind: shell, llm, fact, url, none
-    check_id: str = ""  # ID of the specific check (if applicable)
-    output: str = ""  # Full command output (for shell checks)
-    skipped: bool = False  # Was this check skipped?
+    kind: str  # Probe kind: shell, llm, scan, url, none
+    probe_id: str = ""  # ID of the specific probe (if applicable)
+    output: str = ""  # Full command output (for shell probes)
+    skipped: bool = False  # Was this probe skipped?
     skip_reason: str = ""  # Why was it skipped?
 
-    def to_evidence(self) -> "ResultEvidence":
-        """Convert to Evidence for verification."""
-        return ResultEvidence(
-            check_id=self.check_id,
+    def to_fact(self) -> "ResultFact":
+        """Convert to Fact for verification."""
+        return ResultFact(
+            probe_id=self.probe_id,
             kind=self.kind,
             passed=self.passed,
             message=self.message,
@@ -92,8 +92,8 @@ class CheckResult:
 
 
 @dataclass
-class ResultEvidence(Evidence):
-    """Evidence created from a CheckResult for verification."""
+class ResultFact(Fact):
+    """Fact created from a ProbeResult for verification."""
 
     kind: str = "result"
     passed: bool = False
@@ -114,8 +114,8 @@ class ResultEvidence(Evidence):
 
 
 @dataclass
-class CheckContext:
-    """Context for running checks."""
+class ProbeContext:
+    """Context for running probes."""
 
     project_root: Path
     spec_path: Path
@@ -131,8 +131,8 @@ class CheckContext:
 
 
 @dataclass
-class Check:
-    """Base class for all check configurations."""
+class ProbeConfig:
+    """Base class for all probe configurations."""
 
     kind: str = ""
     id: str = ""
@@ -149,14 +149,23 @@ class Check:
         raise NotImplementedError
 
     def content_hash(self) -> str:
-        """Generate hash of check definition for cache invalidation."""
+        """Generate hash of probe definition for cache invalidation."""
         # Subclasses should override to include their specific fields
         return generate_id("h", f"{self.kind}:{self.id}")
 
 
-class Runner(Protocol):
-    """Protocol for check runners."""
+class Probe(Protocol):
+    """Protocol for probes that gather facts."""
 
-    def run(self, ctx: CheckContext, claim: Claim | None, check: Any) -> CheckResult:
-        """Run the check and return a result."""
+    def run(self, ctx: ProbeContext, rule: Rule | None, config: Any) -> ProbeResult:
+        """Run the probe and return a result."""
         ...  # pragma: no cover
+
+
+# Aliases for backward compatibility during transition
+Evidence = Fact
+CheckResult = ProbeResult
+ResultEvidence = ResultFact
+CheckContext = ProbeContext
+Check = ProbeConfig
+Runner = Probe

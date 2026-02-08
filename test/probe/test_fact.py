@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.check.core import CheckContext
-from certo.check.fact import clear_scan_cache, FactRunner
+from certo.probe.core import CheckContext
+from certo.probe.fact import clear_scan_cache, FactRunner
 from certo.spec import Claim
-from certo.check import FactCheck
+from certo.probe import FactCheck
 
 
 def test_fact_check_has_exists() -> None:

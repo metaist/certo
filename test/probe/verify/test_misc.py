@@ -2,29 +2,29 @@
 
 from __future__ import annotations
 
-from certo.check.core import Evidence
-from certo.check.verify import Verify, verify_claim
+from certo.probe.core import Fact
+from certo.probe.verify import Verify, verify_claim
 
 
-def test_missing_check(evidence_map: dict[str, Evidence]) -> None:
+def test_missing_check(fact_map: dict[str, Fact]) -> None:
     """Test missing check returns failure."""
     verify = Verify.parse({"k-nonexistent.exit_code": {"eq": 0}})
-    result = verify_claim(verify, evidence_map)
+    result = verify_claim(verify, fact_map)
     assert not result.passed
-    assert any("missing evidence" in d for d in result.details)
+    assert any("missing fact" in d for d in result.details)
 
 
-def test_missing_path(evidence_map: dict[str, Evidence]) -> None:
+def test_missing_path(fact_map: dict[str, Fact]) -> None:
     """Test missing path returns failure."""
     verify = Verify.parse({"k-pytest.nonexistent": {"eq": 0}})
-    result = verify_claim(verify, evidence_map)
+    result = verify_claim(verify, fact_map)
     assert not result.passed
 
 
-def test_unknown_operator(evidence_map: dict[str, Evidence]) -> None:
+def test_unknown_operator(fact_map: dict[str, Fact]) -> None:
     """Test unknown operator returns failure."""
     verify = Verify.parse({"k-pytest.exit_code": {"foo": 0}})
-    result = verify_claim(verify, evidence_map)
+    result = verify_claim(verify, fact_map)
     assert not result.passed
     assert any("unknown operator" in d for d in result.details)
 

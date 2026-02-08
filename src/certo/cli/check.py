@@ -7,7 +7,7 @@ from argparse import ArgumentParser, Namespace, _SubParsersAction
 from pathlib import Path
 from typing import Any, Callable
 
-from certo.check import CheckResult, check_spec, parse_check
+from certo.probe import CheckResult, check_spec, parse_check
 from certo.cli.output import Output, OutputFormat
 from certo.spec import Spec, generate_id
 
@@ -221,7 +221,7 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
 
     claim_results: dict[str, list[CheckResult]] = defaultdict(list)
     for result in results:
-        claim_results[result.claim_id].append(result)
+        claim_results[result.rule_id].append(result)
 
     # Display results grouped by claim
     passed = 0
@@ -235,7 +235,7 @@ def cmd_check_run(args: Namespace, output: Output) -> int:
         claim_passed = not claim_failed and not claim_skipped
 
         # Get claim text from first result
-        claim_text = claim_checks[0].claim_text
+        claim_text = claim_checks[0].rule_text
 
         # Count for summary (count claims, not individual checks)
         if claim_skipped:
@@ -335,10 +335,10 @@ def cmd_check_show(args: Namespace, output: Output) -> int:
     }
 
     # Add kind-specific fields
-    from certo.check.shell import ShellCheck
-    from certo.check.llm import LLMCheck
-    from certo.check.fact import FactCheck
-    from certo.check.url import UrlCheck
+    from certo.probe.shell import ShellCheck
+    from certo.probe.llm import LLMCheck
+    from certo.probe.fact import FactCheck
+    from certo.probe.url import UrlCheck
 
     # Note: UrlCheck must come before ShellCheck (UrlCheck extends ShellCheck)
     match check:
@@ -551,10 +551,10 @@ def _print_check_detail(check: Any, output: Output) -> None:
     if output.quiet:
         return
 
-    from certo.check.shell import ShellCheck
-    from certo.check.llm import LLMCheck
-    from certo.check.fact import FactCheck
-    from certo.check.url import UrlCheck
+    from certo.probe.shell import ShellCheck
+    from certo.probe.llm import LLMCheck
+    from certo.probe.fact import FactCheck
+    from certo.probe.url import UrlCheck
 
     print(f"ID:     {check.id}")
     print(f"Kind:   {check.kind}")
@@ -590,12 +590,12 @@ def _print_check_detail(check: Any, output: Output) -> None:
 def _result_to_dict(result: CheckResult) -> dict[str, Any]:
     """Convert CheckResult to dict, including all fields."""
     return {
-        "claim_id": result.claim_id,
-        "claim_text": result.claim_text,
+        "rule_id": result.rule_id,
+        "rule_text": result.rule_text,
         "passed": result.passed,
         "message": result.message,
         "kind": result.kind,
-        "check_id": result.check_id,
+        "probe_id": result.probe_id,
         "output": result.output,
         "skipped": result.skipped,
         "skip_reason": result.skip_reason,
@@ -633,7 +633,7 @@ def _output_claim(
         icon = "✓"
 
     # For skipped claims (no checks or level=skip), show reason
-    if skipped and len(checks) == 1 and not checks[0].check_id:
+    if skipped and len(checks) == 1 and not checks[0].probe_id:
         skip_reason = checks[0].skip_reason
         if output.verbose or failed:
             print(f"{icon} [{claim_id}] {claim_text} ({skip_reason})")
@@ -647,7 +647,7 @@ def _output_claim(
     if failed:
         for result in checks:
             if (
-                not result.passed and not result.skipped and not result.check_id
+                not result.passed and not result.skipped and not result.probe_id
             ):  # pragma: no cover
                 print(f"    {result.message}")
 
@@ -662,19 +662,19 @@ def _output_check_result(output: Output, result: CheckResult) -> None:
         return
 
     # Skip claim-level results without check_id (already shown in claim line)
-    if not result.check_id:  # pragma: no cover
+    if not result.probe_id:  # pragma: no cover
         return
 
     if result.skipped:
         if output.verbose:
-            print(f"  ⊘ {result.check_id} [{result.kind}] ({result.skip_reason})")
+            print(f"  ⊘ {result.probe_id} [{result.kind}] ({result.skip_reason})")
     elif result.passed:
         if not output.quiet:
             cached = " (cached)" if "(cached)" in result.message else ""
-            print(f"  ✓ {result.check_id} [{result.kind}]{cached}")
+            print(f"  ✓ {result.probe_id} [{result.kind}]{cached}")
     else:
         # Always show failures
-        print(f"  ✗ {result.check_id} [{result.kind}] {result.message}")
+        print(f"  ✗ {result.probe_id} [{result.kind}] {result.message}")
 
 
 def _output_summary(output: Output, passed: int, failed: int, skipped: int) -> None:

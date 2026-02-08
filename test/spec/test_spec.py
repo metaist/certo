@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from certo.check.shell import ShellCheck
+from certo.probe.shell import ShellCheck
 from certo.spec import Claim, Issue, Spec
 
 
@@ -59,7 +59,7 @@ def test_spec_load() -> None:
 name = "test"
 version = 1
 
-[[checks]]
+[[probes]]
 kind = "shell"
 id = "k-test"
 cmd = "echo test"
@@ -143,7 +143,7 @@ def test_spec_to_toml_with_checks() -> None:
     )
     result = spec.to_toml()
     assert "# CHECKS" in result
-    assert "[[checks]]" in result
+    assert "[[probes]]" in result
     assert 'id = "k-test"' in result
     assert 'cmd = "echo hello"' in result
 

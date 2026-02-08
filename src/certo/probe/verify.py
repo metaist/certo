@@ -1,4 +1,4 @@
-"""Verification logic for claims against evidence."""
+"""Verification logic for rules against facts."""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from certo.check.core import Evidence
-from certo.check.selector import parse_selector, resolve_selector
+from certo.probe.core import Fact
+from certo.probe.selector import parse_selector, resolve_selector
 
 
 @dataclass
 class VerifyResult:
-    """Result of verifying a claim."""
+    """Result of verifying a rule."""
 
     passed: bool
     message: str = ""
@@ -21,7 +21,7 @@ class VerifyResult:
 
 @dataclass
 class Verify:
-    """A verification rule for a claim.
+    """A verification specification for a rule.
 
     Supports:
     - Single property: {"k-pytest.exit_code": {"eq": 0}}
@@ -42,41 +42,45 @@ class Verify:
         return self.rules
 
 
-def verify_claim(
+def verify_rule(
     verify: Verify,
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
-    """Verify a claim against evidence.
+    """Verify a rule against facts.
 
     Args:
-        verify: Verification rules
-        evidence_map: Dict mapping check_id to Evidence
+        verify: Verification specification
+        fact_map: Dict mapping probe_id to Fact
 
     Returns:
         VerifyResult indicating pass/fail with details
     """
-    return _evaluate_rules(verify.rules, evidence_map)
+    return _evaluate_rules(verify.rules, fact_map)
+
+
+# Backward compat alias
+verify_claim = verify_rule
 
 
 def _evaluate_rules(
     rules: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
-    """Evaluate verification rules against evidence."""
+    """Evaluate verification rules against facts."""
     # Check for boolean operators at top level
     if "and" in rules:
-        return _evaluate_and(rules["and"], evidence_map)
+        return _evaluate_and(rules["and"], fact_map)
     if "or" in rules:
-        return _evaluate_or(rules["or"], evidence_map)
+        return _evaluate_or(rules["or"], fact_map)
     if "not" in rules:
-        return _evaluate_not(rules["not"], evidence_map)
+        return _evaluate_not(rules["not"], fact_map)
 
     # Otherwise, treat as selector rules (implicit AND)
     details: list[str] = []
     all_passed = True
 
     for selector_str, ops in rules.items():
-        result = _evaluate_selector(selector_str, ops, evidence_map)
+        result = _evaluate_selector(selector_str, ops, fact_map)
         if not result.passed:
             all_passed = False
         details.extend(result.details)
@@ -90,12 +94,12 @@ def _evaluate_rules(
 
 def _evaluate_and(
     clauses: list[dict[str, Any]],
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
     """Evaluate AND of multiple rule sets."""
     details: list[str] = []
     for clause in clauses:
-        result = _evaluate_rules(clause, evidence_map)
+        result = _evaluate_rules(clause, fact_map)
         details.extend(result.details)
         if not result.passed:
             return VerifyResult(passed=False, message="AND failed", details=details)
@@ -104,12 +108,12 @@ def _evaluate_and(
 
 def _evaluate_or(
     clauses: list[dict[str, Any]],
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
     """Evaluate OR of multiple rule sets."""
     details: list[str] = []
     for clause in clauses:
-        result = _evaluate_rules(clause, evidence_map)
+        result = _evaluate_rules(clause, fact_map)
         details.extend(result.details)
         if result.passed:
             return VerifyResult(passed=True, details=details)
@@ -120,10 +124,10 @@ def _evaluate_or(
 
 def _evaluate_not(
     clause: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
     """Evaluate NOT of a rule set."""
-    result = _evaluate_rules(clause, evidence_map)
+    result = _evaluate_rules(clause, fact_map)
     if result.passed:
         return VerifyResult(
             passed=False,
@@ -136,17 +140,17 @@ def _evaluate_not(
 def _evaluate_selector(
     selector_str: str,
     ops: dict[str, Any],
-    evidence_map: dict[str, Evidence],
+    fact_map: dict[str, Fact],
 ) -> VerifyResult:
-    """Evaluate a selector with its operators against evidence."""
+    """Evaluate a selector with its operators against facts."""
     selector = parse_selector(selector_str)
-    matches = resolve_selector(selector, evidence_map)
+    matches = resolve_selector(selector, fact_map)
 
     if not matches:
         return VerifyResult(
             passed=False,
-            message=f"missing evidence: {selector_str}",
-            details=[f"{selector_str}: missing evidence"],
+            message=f"missing fact: {selector_str}",
+            details=[f"{selector_str}: missing fact"],
         )
 
     # Check for collection operators

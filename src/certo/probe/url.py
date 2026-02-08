@@ -1,4 +1,4 @@
-"""URL check - config, runner, and evidence. Extends shell check."""
+"""URL probe - config, probe, and fact. Extends shell probe."""
 
 from __future__ import annotations
 
@@ -8,13 +8,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import CheckContext, CheckResult, Evidence, generate_id
-from certo.check.shell import ShellCheck, ShellRunner
+from certo.probe.core import Fact, ProbeContext, ProbeResult, generate_id
+from certo.probe.shell import ShellConfig, ShellProbe
 
 
 @dataclass
-class UrlCheck(ShellCheck):
-    """A check that fetches a URL and pipes to shell command."""
+class UrlConfig(ShellConfig):
+    """Configuration for a URL probe."""
 
     kind: str = "url"
     url: str = ""
@@ -22,8 +22,8 @@ class UrlCheck(ShellCheck):
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a URL check from TOML data."""
-        check = cls(
+        """Parse a URL probe config from TOML data."""
+        config = cls(
             kind="url",
             id=data.get("id", ""),
             status=data.get("status", "enabled"),
@@ -35,14 +35,14 @@ class UrlCheck(ShellCheck):
             not_matches=data.get("not_matches", []),
             timeout=data.get("timeout", 60),
         )
-        if not check.id and check.url:
-            check.id = generate_id("k", f"url:{check.url}")
-        return check
+        if not config.id and config.url:
+            config.id = generate_id("k", f"url:{config.url}")
+        return config
 
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[checks]]",
+            "[[probes]]",
             f'id = "{self.id}"',
             'kind = "url"',
         ]
@@ -66,25 +66,25 @@ class UrlCheck(ShellCheck):
         return "\n".join(lines)
 
 
-class UrlRunner(ShellRunner):
-    """Runner for URL checks - fetches URL then pipes to shell."""
+class UrlProbe(ShellProbe):
+    """Probe that fetches URL then pipes to shell."""
 
     kind_name = "url"
 
-    def run(self, ctx: CheckContext, claim: Any, check: Any) -> CheckResult:
+    def run(self, ctx: ProbeContext, rule: Any, config: Any) -> ProbeResult:
         """Fetch URL and pipe to shell command."""
-        url = getattr(check, "url", "")
+        url = getattr(config, "url", "")
         if not url:
-            return CheckResult(
-                claim_id=claim.id if claim else "",
-                claim_text=claim.text if claim else "",
+            return ProbeResult(
+                rule_id=rule.id if rule else "",
+                rule_text=rule.text if rule else "",
                 passed=False,
-                message="URL check has no url",
+                message="URL probe has no url",
                 kind="url",
             )
 
-        cache_ttl = getattr(check, "cache_ttl", 86400)
-        timeout = getattr(check, "timeout", 60)
+        cache_ttl = getattr(config, "cache_ttl", 86400)
+        timeout = getattr(config, "timeout", 60)
 
         # Cache path
         url_hash = hashlib.sha256(url.encode()).hexdigest()[:12]
@@ -107,9 +107,9 @@ class UrlRunner(ShellRunner):
         # Fetch if not cached
         if content is None:
             if ctx.offline:
-                return CheckResult(
-                    claim_id=claim.id if claim else "",
-                    claim_text=claim.text if claim else "",
+                return ProbeResult(
+                    rule_id=rule.id if rule else "",
+                    rule_text=rule.text if rule else "",
                     passed=True,
                     message="skipped (offline, no cache)",
                     kind="url",
@@ -129,9 +129,9 @@ class UrlRunner(ShellRunner):
                 cache_meta.write_text(f"{time.time()}\n{url}")
                 content = fetched
             except Exception as e:
-                return CheckResult(
-                    claim_id=claim.id if claim else "",
-                    claim_text=claim.text if claim else "",
+                return ProbeResult(
+                    rule_id=rule.id if rule else "",
+                    rule_text=rule.text if rule else "",
                     passed=False,
                     message=f"Failed to fetch URL: {e}",
                     kind="url",
@@ -141,14 +141,14 @@ class UrlRunner(ShellRunner):
         assert content is not None
 
         # If no command, just verify URL was fetchable
-        cmd = getattr(check, "cmd", "")
+        cmd = getattr(config, "cmd", "")
         if not cmd:
             msg = "URL fetched successfully"
             if from_cache:
                 msg += " (cached)"
-            return CheckResult(
-                claim_id=claim.id if claim else "",
-                claim_text=claim.text if claim else "",
+            return ProbeResult(
+                rule_id=rule.id if rule else "",
+                rule_text=rule.text if rule else "",
                 passed=True,
                 message=msg,
                 kind="url",
@@ -156,15 +156,15 @@ class UrlRunner(ShellRunner):
             )
 
         # Run shell command with content as stdin
-        result = self.run_with_stdin(ctx, claim, check, stdin=content)
+        result = self.run_with_stdin(ctx, rule, config, stdin=content)
         if from_cache and "(cached)" not in result.message:
             result.message += " (cached)"
         return result
 
 
 @dataclass
-class UrlEvidence(Evidence):
-    """Evidence from a URL check."""
+class UrlFact(Fact):
+    """Fact from a URL probe."""
 
     kind: str = "url"
     status_code: int = 0
@@ -185,12 +185,18 @@ class UrlEvidence(Evidence):
         """Create from dictionary."""
         timestamp = data.get("timestamp", "")
         return cls(
-            check_id=data["check_id"],
+            probe_id=data["probe_id"],
             kind=data.get("kind", "url"),
             timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
             duration=data.get("duration", 0.0),
-            check_hash=data.get("check_hash", ""),
+            probe_hash=data.get("probe_hash", ""),
             status_code=data.get("status_code", 0),
             body=data.get("body", ""),
             json=data.get("json"),
         )
+
+
+# Aliases for backward compatibility during transition
+UrlCheck = UrlConfig
+UrlRunner = UrlProbe
+UrlEvidence = UrlFact

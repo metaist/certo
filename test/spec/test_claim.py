@@ -92,7 +92,7 @@ def test_claim_to_toml() -> None:
 
 def test_claim_to_toml_all_fields() -> None:
     """Test claim TOML serialization with all optional fields."""
-    from certo.check.verify import Verify
+    from certo.probe.verify import Verify
 
     dt = datetime(2026, 2, 5, 12, 0, tzinfo=timezone.utc)
     claim = Claim(
@@ -138,7 +138,7 @@ def test_claim_parse_with_verify() -> None:
 
 def test_claim_to_toml_with_verify() -> None:
     """Test claim TOML serialization with verify field."""
-    from certo.check.verify import Verify
+    from certo.probe.verify import Verify
 
     claim = Claim(
         id="c-abc1234",

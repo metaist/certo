@@ -1,4 +1,4 @@
-"""Shell command check - config, runner, and evidence."""
+"""Shell command probe - config, probe, and fact."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Self
 
-from certo.check.core import Check, CheckContext, CheckResult, Evidence, generate_id
+from certo.probe.core import Fact, ProbeConfig, ProbeContext, ProbeResult, generate_id
 
 
 @dataclass
-class ShellCheck(Check):
-    """A check that runs a shell command."""
+class ShellConfig(ProbeConfig):
+    """Configuration for a shell command probe."""
 
     kind: str = "shell"
     id: str = ""
@@ -26,8 +26,8 @@ class ShellCheck(Check):
 
     @classmethod
     def parse(cls, data: dict[str, Any]) -> Self:
-        """Parse a shell check from TOML data."""
-        check = cls(
+        """Parse a shell probe config from TOML data."""
+        config = cls(
             kind="shell",
             id=data.get("id", ""),
             status=data.get("status", "enabled"),
@@ -37,14 +37,14 @@ class ShellCheck(Check):
             not_matches=data.get("not_matches", []),
             timeout=data.get("timeout", 60),
         )
-        if not check.id and check.cmd:
-            check.id = generate_id("k", f"shell:{check.cmd}")
-        return check
+        if not config.id and config.cmd:
+            config.id = generate_id("k", f"shell:{config.cmd}")
+        return config
 
     def to_toml(self) -> str:
         """Serialize to TOML."""
         lines = [
-            "[[checks]]",
+            "[[probes]]",
             f'id = "{self.id}"',
             'kind = "shell"',
         ]
@@ -63,40 +63,40 @@ class ShellCheck(Check):
         return "\n".join(lines)
 
 
-class ShellRunner:
-    """Runner for shell command checks."""
+class ShellProbe:
+    """Probe that runs shell commands."""
 
     kind_name = "shell"
 
-    def run(self, ctx: CheckContext, claim: Any, check: Any) -> CheckResult:
+    def run(self, ctx: ProbeContext, rule: Any, config: Any) -> ProbeResult:
         """Run a shell command and verify the result."""
-        return self.run_with_stdin(ctx, claim, check, stdin=None)
+        return self.run_with_stdin(ctx, rule, config, stdin=None)
 
     def run_with_stdin(
         self,
-        ctx: CheckContext,
-        claim: Any,
-        check: Any,
+        ctx: ProbeContext,
+        rule: Any,
+        config: Any,
         stdin: str | None = None,
-    ) -> CheckResult:
+    ) -> ProbeResult:
         """Run a shell command with optional stdin."""
-        claim_id = claim.id if claim else ""
-        claim_text = claim.text if claim else ""
+        rule_id = rule.id if rule else ""
+        rule_text = rule.text if rule else ""
 
-        cmd = getattr(check, "cmd", "")
+        cmd = getattr(config, "cmd", "")
         if not cmd:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
-                message="Shell check has no command",
+                message="Shell probe has no command",
                 kind=self.kind_name,
             )
 
-        timeout = getattr(check, "timeout", 60)
-        exit_code = getattr(check, "exit_code", 0)
-        matches = getattr(check, "matches", [])
-        not_matches = getattr(check, "not_matches", [])
+        timeout = getattr(config, "timeout", 60)
+        exit_code = getattr(config, "exit_code", 0)
+        matches = getattr(config, "matches", [])
+        not_matches = getattr(config, "not_matches", [])
 
         try:
             result = subprocess.run(
@@ -109,17 +109,17 @@ class ShellRunner:
                 input=stdin,
             )
         except subprocess.TimeoutExpired:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"Command timed out after {timeout}s",
                 kind=self.kind_name,
             )
         except Exception as e:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"Command failed: {e}",
                 kind=self.kind_name,
@@ -128,9 +128,9 @@ class ShellRunner:
         output = result.stdout + result.stderr
 
         if result.returncode != exit_code:
-            return CheckResult(
-                claim_id=claim_id,
-                claim_text=claim_text,
+            return ProbeResult(
+                rule_id=rule_id,
+                rule_text=rule_text,
                 passed=False,
                 message=f"Expected exit code {exit_code}, got {result.returncode}",
                 kind=self.kind_name,
@@ -139,9 +139,9 @@ class ShellRunner:
 
         for pattern in matches:
             if not re.search(pattern, output):
-                return CheckResult(
-                    claim_id=claim_id,
-                    claim_text=claim_text,
+                return ProbeResult(
+                    rule_id=rule_id,
+                    rule_text=rule_text,
                     passed=False,
                     message=f"Pattern not found: {pattern}",
                     kind=self.kind_name,
@@ -150,28 +150,28 @@ class ShellRunner:
 
         for pattern in not_matches:
             if re.search(pattern, output):
-                return CheckResult(
-                    claim_id=claim_id,
-                    claim_text=claim_text,
+                return ProbeResult(
+                    rule_id=rule_id,
+                    rule_text=rule_text,
                     passed=False,
                     message=f"Forbidden pattern found: {pattern}",
                     kind=self.kind_name,
                     output=output,
                 )
 
-        return CheckResult(
-            claim_id=claim_id,
-            claim_text=claim_text,
+        return ProbeResult(
+            rule_id=rule_id,
+            rule_text=rule_text,
             passed=True,
-            message=f"{self.kind_name.title()} check passed",
+            message=f"{self.kind_name.title()} probe passed",
             kind=self.kind_name,
             output=output,
         )
 
 
 @dataclass
-class ShellEvidence(Evidence):
-    """Evidence from a shell command check."""
+class ShellFact(Fact):
+    """Fact from a shell command probe."""
 
     kind: str = "shell"
     exit_code: int = 0
@@ -194,13 +194,19 @@ class ShellEvidence(Evidence):
         """Create from dictionary."""
         timestamp = data.get("timestamp", "")
         return cls(
-            check_id=data["check_id"],
+            probe_id=data["probe_id"],
             kind=data.get("kind", "shell"),
             timestamp=datetime.fromisoformat(timestamp) if timestamp else None,
             duration=data.get("duration", 0.0),
-            check_hash=data.get("check_hash", ""),
+            probe_hash=data.get("probe_hash", ""),
             exit_code=data.get("exit_code", 0),
             stdout=data.get("stdout", ""),
             stderr=data.get("stderr", ""),
             json=data.get("json"),
         )
+
+
+# Aliases for backward compatibility during transition
+ShellCheck = ShellConfig
+ShellRunner = ShellProbe
+ShellEvidence = ShellFact
